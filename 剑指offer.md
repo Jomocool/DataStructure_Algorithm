@@ -131,7 +131,7 @@ public:
 
 ### 剑指 Offer 35. 复杂链表的复制
 
-![1](D:\Code(Github)\C-\Jz_Offer-img\1.png)
+![image text]([D:\Code(Github)\C-\Jz_Offer-img\1.png](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/Jz_Offer-img/1.png))
 
 ```c++
 方法一：哈希表
