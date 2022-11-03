@@ -649,3 +649,88 @@ public:
 };
 ```
 
+## 第七天
+
+### 剑指 Offer 26. 树的子结构
+
+```c++
+class Solution {
+public:
+    bool isSubStructure(TreeNode* A, TreeNode* B) {
+        /*先序递归树A，因为要从根结点开始判断
+          A&&B：AB都不为空
+          recur(A,B)：判断以A结点值是否等于B结点值
+          isSubStructure(A->left,B)：判断以A的左子结点为根结点的树是否包含树B
+          isSubStructure(A->right,B)：判断以A的右子结点为根结点的树是否包含树B
+        */
+        return (A&&B)&&(recur(A,B)||isSubStructure(A->left,B)||isSubStructure(A->right,B));
+    }
+
+    bool recur(TreeNode*A,TreeNode*B){
+        //如果递归到B为空，且前面还没返回，说明A已经包含了B
+        if(!B)return true;
+        //如果A超过叶子结点且B不为空或者A的值不等于B的值，说明A不包含B
+        if(!A||A->val!=B->val)return false;
+        //前面条件都不满足时，往下层递归
+        return recur(A->left,B->left)&&recur(A->right,B->right);
+    }
+};
+```
+
+### 剑指 Offer 27. 二叉树的镜像
+
+```c++
+方法一：递归
+class Solution {
+public:
+    TreeNode* mirrorTree(TreeNode* root) {
+        if(!root)return root;
+        TreeNode*temp=root->left;
+        root->left=mirrorTree(root->right);
+        root->right=mirrorTree(temp);
+        return root;
+    }
+};
+
+方法二：栈
+class Solution {
+public:
+    TreeNode* mirrorTree(TreeNode* root) {
+        if(!root)return root;
+        stack<TreeNode*>stk;
+        //将根结点压栈
+        stk.push(root);
+        while(!stk.empty()){
+            //取栈顶元素
+            TreeNode*node=stk.top();
+            //消去
+            stk.pop();
+            if(node->left)stk.push(node->left);
+            if(node->right)stk.push(node->right);
+            TreeNode*temp=node->left;
+            node->left=node->right;
+            node->right=temp;
+        }
+        return root;
+    }
+};
+```
+
+### 剑指 Offer 28. 对称的二叉树
+
+```c++
+class Solution {
+public:
+    bool isSymmetric(TreeNode* root) {
+        return root==NULL?true:recur(root->left,root->right);
+    }
+
+    bool recur(TreeNode*L,TreeNode*R){//L和R为对称的两结点
+        if(!L&&!R)return true;
+        if(!L||!R||L->val!=R->val)return false;
+        return recur(L->left,R->right)&&recur(L->right,R->left);
+    }
+};
+```
+
+**第七天总结：**判断二叉树几何特性一般都用递归
