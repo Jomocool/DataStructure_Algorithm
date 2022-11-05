@@ -734,3 +734,232 @@ public:
 ```
 
 **第七天总结：**判断二叉树几何特性一般都用递归
+
+## 第八天
+
+### 剑指 Offer 10- I. 斐波那契数列
+
+```c++
+动态规划法：
+    由于整个过程中只需要3个数:f(n)=f(n-1)+f(n-2)，所以我们只需要不断的更新这三个数即可
+class Solution {
+public:
+    int fib(int n) {
+        if(n<2)return n;
+        int a=0;
+        int b=1;
+        int sum=0;
+        for(int i=0;i<n;i++){
+            sum=(a+b)%1000000007;
+            a=b;
+            b=sum;
+        }
+        //注意这里是return a，而不是return sum
+        return a;
+    }
+};
+```
+
+![image text](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/Jz_Offer-img/2.png)
+
+### 剑指 Offer 10- II. 青蛙跳台阶问题
+
+```c++
+动态规划：
+    由于青蛙上台阶的方法有两种：1级或2级，所以我们以第1级台阶和第2级台阶的方法数为基础，向上迭加，所以i从1开始，因为开始的台阶级数为1。
+class Solution {
+public:
+    int numWays(int n) {
+        int a=1;
+        int b=2;
+        int sum=0;
+        for(int i=1;i<n;i++){
+            sum=(a+b)%1000000007;
+            a=b;
+            b=sum;
+        }
+        return a;
+    }
+};
+```
+
+![image text](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/Jz_Offer-img/3.png)
+
+### 剑指 Offer 63. 股票的最大利润
+
+```c++
+由于股票只有在购入之后才能卖出，因此我们可以用变量cost来记录当前最低购入值，用变量profit来记录在最低购入点之前的最大利润，从而可以和在最低购入点购入之后再卖出的最大利润值作比较，不断地更新迭代。
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int cost=INT_MAX,profit=0;
+        //遍历每天的股票价格
+        for(auto&price:prices){
+            //找最低购入点
+            cost=min(cost,price);
+            //计算在最低购入点买入后的最大利润
+            profit=max(profit,price-cost);
+        }
+        return profit;
+    }
+};
+```
+
+**第八天总结：**动态规划并不一定要用二维数组，仔细观察真正用到的变量是哪几个，比如这三题用到的变量几乎都是dp[i],dp[i-1],dp[i-2]这三个变量，因此为了省略空间开销，我们可以用三个变量通过循环来实现动态规划的效果。
+
+
+
+## 第九天
+
+### 剑指 Offer 42. 连续子数组的最大和
+
+```c++
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int maxSum=nums[0];
+        int pre=0;
+        for(int sum:nums){
+            sum+=max(pre,0);
+            pre=sum;
+            maxSum=max(maxSum,sum);
+        }
+        return maxSum;
+    }
+};
+```
+
+![image text](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/Jz_Offer-img/4.png)
+
+### 剑指 Offer 47. 礼物的最大价值
+
+```c++
+思路：
+    由于只能向下或者向右走，因此除了第一行和第一列之外，其他格子都可以从它左边或者上边的格子抵达。
+    dp[i][j]=:
+			  1.dp[i][j]:i=0,j=0
+              2.dp[i-1][j]:i!=0,j=0
+              3.dp[i][j-1]:i=0,j!=0
+              4.max(dp[i-1][j],dp[i][j-1])+grid[i][j]
+class Solution {
+public:
+    int maxValue(vector<vector<int>>& grid) {
+        int row=grid.size();//棋盘行数
+        int column=grid[0].size();//棋盘列数
+        //dp[i][j]=从grid[0][0]到grid[i-1][j-1]的最大礼物价值
+        vector<vector<int>>dp(row+1,vector<int>(column+1));
+        //多一行一列可以让代码更简洁，且这一行一列的值都是0，所以不影响边界情况
+        for(int i=1;i<row+1;i++){
+            for(int j=1;j<column+1;j++){
+                dp[i][j]=max(dp[i-1][j],dp[i][j-1])+grid[i-1][j-1];
+            }
+        }
+        return dp[row][column];
+    }
+};
+```
+
+**第九天总结：**弄明白每个状态是由哪个状态推出来的，并且考虑特殊情况。
+
+
+
+## 第十天
+
+
+
+## 第十一天
+
+## 剑指 Offer 18. 删除链表的节点
+
+```c++
+剑指 Offer 18. 删除链表的节点class Solution {
+public:
+    ListNode* deleteNode(ListNode* head, int val) {
+        //边界情况
+        if(head->val==val)return head->next;
+        ListNode*temp=head;
+        //通过while循环找到val结点的前一个结点
+        while(temp->next->val!=val){
+            temp=temp->next;
+        }
+        //让temp指向的结点的next指针 指向 temp结点下一结点的后一个结点(即temp->next->next)
+        temp->next=temp->next->next;
+        return head;
+    }
+};
+```
+
+## 剑指 Offer 52. 两个链表的第一个公共节点
+
+```c++
+方法一：计算长度法
+class Solution {
+public:
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        //记录链表A的长度
+        int lenA=0;
+        //记录链表B的长度
+        int lenB=0;
+        //创建A，B链表头指针副本
+        ListNode*tempA=headA;
+        ListNode*tempB=headB;
+
+        //计算链表A，B的长度
+        while(tempA){
+            lenA++;
+            tempA=tempA->next;
+        }
+        while(tempB){
+            lenB++;
+            tempB=tempB->next;
+        }
+
+        //找长链表的头指针
+        ListNode*headLonger=lenA>lenB?headA:headB;
+        ListNode*headShorter=headLonger==headA?headB:headA;
+        /*犯错点：一开始我写成了：
+        ListNode*headLonger=lenA>lenB?headA:headB;
+		ListNode*headShorter=lenA<lenB?headA:headB;
+		这里会导致：当lenA==lenB时，headLonger=headShorter
+		导致后面while循环的判断中出问题，因为指针相等，所以不进入循环。
+		两种出错的情况：
+					1.A、B相交时：返回的不是相交结点
+					2.A、B不相交且长度相等时，直接返回headB，因为headLonger=headShorter=headB
+        */
+
+        //找长度差
+        int dif=lenA>lenB?(lenA-lenB):(lenB-lenA);
+
+        //让长链表的头指针先走，补上位移差
+        for(int i=0;i<dif;i++){
+            headLonger=headLonger->next;
+        }
+
+        //在距离相交点同样位移差的结点出发
+        while(headLonger!=headShorter&&headLonger&&headShorter){
+            headLonger=headLonger->next;
+            headShorter=headShorter->next;
+        }
+
+        return headShorter;
+    }
+};
+
+方法二：自动补距离法
+class Solution {
+public:
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        ListNode*A=headA,*B=headB;
+        /*当A或B切换到另一条链表时，此时在长链表还剩下没走的结点数就是两条链表的结点差，
+        又因为在长链表的指针还有剩余结点没走完，就给了从短链表到长链表的那根指针补上位移差的机会，
+        等到原本就在长链表的指针转到短链表时，二者距离相交结点或者空指针的距离是一样的*/
+        while(A!=B){
+            A=A?A->next:headB;
+            B=B?B->next:headA;
+        }
+        return A;
+    }
+};
+```
+
+
