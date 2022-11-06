@@ -863,33 +863,171 @@ public:
 
 
 
-## 第十天
+## 第十天：动态规划（中等）
 
-
-
-## 第十一天
-
-## 剑指 Offer 18. 删除链表的节点
+### 剑指 Offer 46. 把数字翻译成字符串
 
 ```c++
-剑指 Offer 18. 删除链表的节点class Solution {
+动态规划：
+方法一：字符串遍历
+    1.先将num转成字符串，方便后续处理，因为我们需要精确到每一位数字
+    2.状态定义：dp[i]:以s[i-1]为结尾的数字（即从头开始总共i位数）的翻译方案数量,
+    3.转移方程：s[i-1]s[i]组成的两位数字可以被翻译，则dp[i]=dp[i-1]+dp[i-2];否则，dp[i]=dp[i-1]
+    4.注意：如果s[i-1]=0，组成的两位数无法被翻译；因此翻译范围：10~25(包括边界)
+    5.定义初始状态：dp[0]=dp[1]=1;dp[0]表示无数字的时候。
+    6.那么dp[0]=1从何而来呢？
+      6.1 s[0]和s[1]组成两位数属于10~25时，dp[2]=2，而dp[2]=dp[1]+dp[0] => dp[0]=1;
+	  6.2 s[0]和s[1]组成两位数不属于10~25时，dp[2]=dp[1]=1，不关dp[0]的事
+    7.由于从始至终我们只需要3个变量：dp[i],dp[i-1],dp[i-2]，因此我们用变量c,b,a分别去对应这三个状态，
+      从而减少空间的开销
+class Solution {
+public:
+    int translateNum(int num) {
+        //先将num转字符串，方便后续处理
+        string numStr=to_string(num);
+        //定义dp[0]
+        int a=1;
+        //定义dp[1]
+        int b=1;
+        //从i=2开始，即开始算dp[2]，即以s[2-1]结尾的数
+        for(int i=2;i<=numStr.length();i++){
+            string tmpStr=numStr.substr(i-2,2);
+            int tmpVal=atoi(tmpStr.c_str());
+            int c=tmpVal>=10&&tmpVal<=25?a+b:b;
+            a=b;
+            b=c;
+        }
+        return b;
+    }
+};
+
+方法二：数字求余
+相比于方法一，方法二少了额外的整数转字符串的空间开销，只用了常数个变量就完成了
+class Solution {
+public:
+    int translateNum(int num) {
+        int a=1,b=1;
+        //从右向左计算翻译数量
+        while(num>9){
+            int c=num%100>=10&&num%100<=25?a+b:a;
+            b=a;
+            a=c;
+            num/=10;
+        }
+        return a;
+    }
+};
+```
+
+### 剑指 Offer 48. 最长不含重复字符的子字符串
+
+```c++
+方法一：滑动窗口
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        //用于判断字符c是否已经存在于哈希表中了
+        unordered_set<char>st;
+        //s的长度
+        int length=s.length();
+        //记录最长无重复字符子串的长度
+        int maxLen=0;
+        //用于滑动
+        int right=-1;
+        //遍历字符串
+        for(int i=0;i<length&&right+1<length;i++){
+            if(i!=0){
+                st.erase(s[i-1]);
+            }
+            while(right+1<length&&st.count(s[right+1])==0){
+                st.insert(s[right+1]);
+                right++;
+            }
+            maxLen=max(maxLen,right-i+1);
+        }
+        return maxLen;
+    }
+};
+```
+
+## 第十一天：双指针（简单）
+
+### 剑指 Offer 18. 删除链表的节点
+
+```c++
+class Solution {
 public:
     ListNode* deleteNode(ListNode* head, int val) {
         //边界情况
         if(head->val==val)return head->next;
-        ListNode*temp=head;
-        //通过while循环找到val结点的前一个结点
-        while(temp->next->val!=val){
-            temp=temp->next;
+        ListNode*cur=head;
+        //pre是cur的前驱结点
+        ListNode*pre=cur;
+        while(cur->val!=val){
+            pre=cur;
+            cur=cur->next;
         }
-        //让temp指向的结点的next指针 指向 temp结点下一结点的后一个结点(即temp->next->next)
-        temp->next=temp->next->next;
+        pre->next=pre->next->next;
         return head;
     }
 };
 ```
 
-## 剑指 Offer 52. 两个链表的第一个公共节点
+### 剑指 Offer 22. 链表中倒数第k个节点
+
+```c++
+class Solution {
+public:
+    ListNode* getKthFromEnd(ListNode* head, int k) {
+        ListNode*slow=head,*fast=head;
+        int t=0;
+        //让fast先走k步，然后当fast走完整个链表时，slow刚好走到倒数第k个结点
+        while(fast){
+            if(t>=k)slow=slow->next;
+            fast=fast->next;
+            t++;
+        }
+        return slow;
+    }
+};
+```
+
+**第十一天总结：**利用双指针可以补上链表长度差。
+
+
+
+## 第十二天：双指针（简单）
+
+### 剑指 Offer 25. 合并两个排序的链表
+
+```c++
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* l1, ListNode* l2) {
+        //创建新链表，用于指向合并的链表
+        ListNode*res=new ListNode(-1);
+        ListNode*temp=res;
+        while(l1&&l2){
+            //记录两指针遍历到的结点值
+            int x=l1->val;
+            int y=l2->val;
+            if(x<=y){//如果l1的值更小或等于l2的值，那么temp的next指针就指向l1
+                temp->next=l1;
+                l1=l1->next;
+            }else{//如果l2的值更小，那么temp的next指针就指向l2
+                temp->next=l2;
+                l2=l2->next;
+            }
+            temp=temp->next;
+        }
+        //处理还未遍历完的链表
+        temp->next=l1?l1:l2;
+        return res->next;
+    }
+};
+```
+
+### 剑指 Offer 52. 两个链表的第一个公共节点
 
 ```c++
 方法一：计算长度法
@@ -963,3 +1101,101 @@ public:
 ```
 
 
+
+## 第十三天：双指针（简单）
+
+### 剑指 Offer 21. 调整数组顺序使奇数位于偶数前面
+
+```c++
+方法一：左右指针互换法
+class Solution {
+public:
+    vector<int> exchange(vector<int>& nums) {
+        int i=0,j=nums.size()-1;
+        while(i<j){
+            //奇数二进制表达必定有一个2^0，即第一位肯定是1，和000...01作与运算，结果=1
+            while(i<j&&(nums[i]&1)==1)i++;
+            //偶数二进制表达必定没有2^0，即第一位肯定是0，和000...01作与运算，结果=0
+            while(i<j&&(nums[j]&1)==0)j--;
+            swap(nums[i],nums[j]);
+        }
+        return nums;
+    }
+};
+
+方法二：博主自成版
+class Solution {
+public:
+    vector<int> exchange(vector<int>& nums) {
+        int left=0;
+        int right=nums.size()-1;
+        while(left<right){
+            if(nums[left]%2==1&&nums[right]%2==1)left++;
+            else if(nums[left]%2==0&&nums[right]%2==0)right--;
+            else if(nums[left]%2==1&&nums[right]%2==0){
+                left++;
+                right--;
+            }
+            else if(nums[left]%2==0&&nums[right]%2==1){
+                swap(nums[left],nums[right]);
+                left++;
+                right--;
+            }
+        }
+        return nums;
+    }
+
+    void swap(int& a,int& b){
+        int temp=a;
+        a=b;
+        b=temp;
+    }
+};
+```
+
+### 剑指 Offer 57. 和为s的两个数字
+
+```c++
+方法一：左右指针法
+    思路：因为要想让和nums[i]+nums[j]增大或减小都各只有一种方法，那就是i++或j--，因此我们每次循环都是在
+    	 不断缩小范围去逼近target
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        int i=0,j=nums.size()-1;
+        while(i<j){
+            if(nums[i]+nums[j]==target)return {nums[i],nums[j]};
+            //这里用减法是防止溢出
+            else if(nums[i]<target-nums[j])i++;
+            else if(nums[i]>target-nums[j])j--;
+        }
+        return {nums[i],nums[j]};
+    }
+};
+```
+
+### 剑指 Offer 58 - I. 翻转单词顺序
+
+```c++
+class Solution {
+public:
+    string reverseWords(string s) {
+        string res;
+        for(int j=s.length()-1;j>=0;j--){
+            //找单词的最后一个字符
+            if(s[j]==' ')continue;
+            int i=j;
+            //找单词的第一个字符的前一个空格
+            while(i>=0&&s[i]!=' ')i--;
+            res.append(s.substr(i+1,j-i));
+            res.append(" ");
+            j=i;
+        }
+        //因为加入最后一个单词后，也会多加一个空格，所以我们需要删掉最后一个字符（即空格）
+        if(!res.empty())res.pop_back();
+        return res;
+    }
+};
+```
+
+**第十三天总结：**将双指针设置成相应的左右边界，从而限定范围。
