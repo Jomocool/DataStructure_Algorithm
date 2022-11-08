@@ -1199,3 +1199,297 @@ public:
 ```
 
 **第十三天总结：**将双指针设置成相应的左右边界，从而限定范围。
+
+## 第十四天：搜索与回溯算法（中等）
+
+### 剑指 Offer 12. 矩阵中的路径
+
+```c++
+class Solution {
+public:
+    bool exist(vector<vector<char>>& board, string word) {
+        rows=board.size();
+        clos=board[0].size();
+        for(int i=0;i<rows;i++){
+            for(int j=0;j<clos;j++){
+                //从i,j点开始
+                if(dfs(board,word,i,j,0))return true;
+            }
+        }
+        return false;
+    }
+
+private:
+    int rows,clos;
+    bool dfs(vector<vector<char>>&board,string word,int i,int j,int k){
+        if(i>=rows||i<0||j>=clos||j<0||board[i][j]!=word[k])return false;
+        if(k>=word.length()-1)return true;
+        board[i][j]='\0';//标记已被访问
+        //有一条路径能通就行
+        bool res=dfs(board,word,i-1,j,k+1)||dfs(board,word,i+1,j,k+1)||dfs(board,word,i,j-1,k+1)||dfs(board,word,i,j+1,k+1);
+        //写回去
+        board[i][j]=word[k];
+        return res;
+    }
+};
+```
+
+### 面试题13. 机器人的运动范围
+
+```c++
+思路：
+    模式识别：对于搜索问题（周游矩阵），递归实现的深度优先（DFS）和利用“队列”实现的广度优先（BFS）优先被考			   虑。
+    状态：当前坐标（i,j）看作状态，考虑机器人从（i,j）出发能到达哪些格子。
+    子问题：递归搜索（i-1,j）,（i+1,j）,（i,j-1）,（i,j+1）
+    回溯：需要记录格子是否已经被访问，如果被访问过，说明该格子被包含在了子问题中，回溯到上一个格子时，就不
+    	 能重复记录了。
+    总结：到达每个格子时，要做的就是三件事：
+    	 1.满足要求，格子数++
+    	 2.更改状态为已访问
+    	 3.解决子问题
+    
+方法一：深度优先探索
+    1.定义辅助函数：计算数位之和
+    2.定义递归函数
+      2.1递归出口：（越界||数位和大于k||已被访问）return 0;
+	3.更新当前状态，标记(i,j)已被访问
+    4.解决子问题：向格子四周探索
+        
+class Solution {
+public:
+    //定义辅助函数计算数位之和
+    int bitSum(int n){
+        int sum=0;
+        while(n!=0){
+            sum+=n%10;
+            n/=10;
+        }
+        return sum;
+    }
+
+    //定义深度优先探索函数
+    int dfsDiscover(vector<vector<bool>>&state,int i,int j,int k){
+        //退出递归条件
+        if(i<0||j<0||i>=state.size()||j>=state[0].size()||bitSum(i)+bitSum(j)>k||state[i][j])return 0;
+        //标记(i,j)已被访问
+        state[i][j]=true;
+        //解决子问题，向四周探索，因为能到这一步说明(i,j)符合要求，要加上这个格子，因此在后面+1
+        return dfsDiscover(state,i-1,j,k)+dfsDiscover(state,i+1,j,k)+dfsDiscover(state,i,j-1,k)+dfsDiscover(state,i,j+1,k)+1;
+    }
+
+    int movingCount(int m, int n, int k) {
+        //定义状态容器，记录每个格子的访问情况
+        vector<vector<bool>>state(m,vector<bool>(n));
+        //从原点出发
+        return dfsDiscover(state,0,0,k);
+    }
+};
+
+方法二：广度优先探索
+    思路：
+    	1.将数位之和大于k的格子看作是障碍物，就可以把这题当作一道传统的搜索题目了。
+    	2.由于从原点出发，因此所有连通的格子必然都是从左边或上边的格子连通而得，因此，我们将搜索方向缩减为
+    	  向右或向下即可。
+    	3.广度优先探索是利用队列实现的，与队列相匹配的就是while循环了。
+    
+class Solution {
+public:
+    //辅助函数，计算数位之和
+    int bitSum(int n){
+        int sum=0;
+        while(n!=0){
+            sum+=n%10;
+            n/=10;
+        }
+        return sum;
+    }
+
+    int movingCount(int m, int n, int k) {
+        //k=0的话，只有原点满足要求，返回1个格子数即可
+        if(!k)return 1;
+        //创建队列，放入(i,j)格子
+        queue<pair<int,int>>qu;
+        //创建向下和向右的方向数组
+        int di[2]={1,0};
+        int dj[2]={0,1};
+        //创建状态二维数组
+        vector<vector<int>>state(m,vector<int>(n));
+        //将原点放入qu
+        qu.push(make_pair(0,0));
+        //记录符合要求的格子数，已经有一个原点了，因此初始值为1
+        int ans=1;
+        //标记原点已被访问
+        state[0][0]=1;
+        //广度优先探索
+        while(!qu.empty()){
+            //取qu队列头，因为是符合要求的格子，从该格子出发向下向右探索
+            auto[i,j]=qu.front();   
+            //取完之后删去
+            qu.pop();
+            //向下向右探索，两次循环
+            for(int c=0;c<2;c++){
+                int ti=i+di[c];
+                int tj=j+dj[c];
+                //不满足要求直接继续循环，不用做下面的操作
+                if(ti>=m||tj>=n||state[ti][tj]||bitSum(ti)+bitSum(tj)>k)continue;
+                //如果满足要求，加入队列、标记已访问、ans++
+                qu.push(make_pair(ti,tj));
+                state[ti][tj]=1;
+                /*
+                误区：一开始的时候是在取完队列头之后才标记已访问，这样做会导致某些格子重复计算在ans内
+                	 因为队列后面的格子在加入时就已经计算了ans++，如果此时不标记已访问，那么队列前面
+                	 那些格子在走到队列后面的那些格子时又会再加一遍。所以ans++和标记已访问应该同步。
+                */
+                ans++;
+            }
+        }
+        return ans;
+    }
+};
+
+方法三：动态规划
+    思路：考虑到除了边界的格子之外，每个格子都可以从它左边或上边的格子抵达，这与动态规划不谋而合
+    转移方程：
+    		1.dp[i][j]=1;i=0,j=0
+			2.dp[i][j]=dp[i][j-1];i=0,j!=0
+    		3.dp[i][j]=dp[i-1][j];i!=0,j=0
+    		4.dp[i][j]=dp[i-1][j]|dp[i][j-1];i!=0,j!=0
+
+class Solution {
+public:
+    //辅助函数，计算数位之和
+    int bitSum(int n){
+        int sum=0;
+        while(n!=0){
+            sum+=n%10;
+            n/=10;
+        }
+        return sum;
+    }
+
+    int movingCount(int m, int n, int k) {
+        if(!k)return 1;
+        //记录满足要求的格子，如果满足条件，标记为1
+        vector<vector<int>>vec(m,vector<int>(n));
+        int ans=1;
+        vec[0][0]=1;
+        //利用两层for循环可以保证不会重复访问格子
+        for(int i=0;i<m;i++){
+            for(int j=0;j<n;j++){
+                if(i==0&&j==0||bitSum(i)+bitSum(j)>k)continue;
+                //用|=原因：只要上边或左边有一个格子是1，那么(i,j)就是可抵达的
+                //从上边格子抵达
+                if(i-1>=0)vec[i][j]|=vec[i-1][j];
+                //从左边格子抵达
+                if(j-1>=0)vec[i][j]|=vec[i][j-1];
+                ans+=vec[i][j];
+            }
+        }
+        return ans;
+    }
+};
+```
+
+**第十四天总结：**搜索与回溯算法关键点在于每个格子必须由它周围的格子抵达，不能有独立的格子。
+
+
+
+## 第十五天：搜索与回溯算法（中等）
+
+### 剑指 Offer 34. 二叉树中和为某一值的路径
+
+```c++
+class Solution {
+public:
+    //创建全局变量，避免递归传参，提高效率
+    vector<vector<int>>ret;//放入路径
+    vector<int>path;//放入该路径的结点
+
+    //深度递归探索，先序
+    void dfs(TreeNode*node,int tar){
+        //退出递归条件
+        if(!node)return;
+        path.emplace_back(node->val);
+        tar-=node->val;
+        if(!node->left&&!node->right&&tar==0){
+            ret.emplace_back(path);
+            //emplace_back()优于push_back()，因为不需要拷贝之后再放入
+        }
+        dfs(node->left,tar);
+        dfs(node->right,tar);
+        //关键！递归回溯过程中，为了避免路径包含了不属于自身的结点，要在最后删掉加入的结点值
+        path.pop_back();
+    }
+    vector<vector<int>> pathSum(TreeNode* root, int target) {
+        dfs(root,target);
+        return ret;
+    }
+};
+```
+
+### 剑指 Offer 36. 二叉搜索树与双向链表
+
+```c++
+思路：
+    1.由于是从小到大排列好，又因为在二叉排序树中，所以必然要用中序遍历。
+    2.因为是双向链表且有链表头，所以需要一个前驱结点指针。
+    3.边缘情况，递归完后，头尾结点实际上还没有连接起来，所以我们需要额外处理。
+    
+class Solution {
+public:
+    Node* treeToDoublyList(Node* root) {
+        //边界情况
+        if(!root)return root;
+        dfs(root);
+        //递归完之后，head的前驱结点为空，pre指向tail结点
+        head->left=pre;
+        pre->right=head;
+        return head;
+    }
+
+    //创建pre、head指针
+    Node*pre=NULL;
+    Node*head=NULL;
+    //中序递归
+    void dfs(Node*cur){
+        //退出递归的条件：当cur越过叶子结点时
+        if(!cur)return;
+        dfs(cur->left);
+        if(pre!=NULL)pre->right=cur;
+        else head=cur;//如果前驱结点为空，那cur必然是头结点
+        //cur的前驱结点是pre
+        cur->left=pre;
+        //都处理完之后，让pre后移
+        pre=cur;
+        dfs(cur->right);
+    }
+};
+```
+
+### 剑指 Offer 54. 二叉搜索树的第k大节点
+
+```c++
+class Solution {
+public:
+    int k,ans;
+    int kthLargest(TreeNode* root, int k) {
+        this->k=k;
+        dfs(root);
+        return ans;
+    }
+
+    //深度递归，因为是从大到小，因此顺序是右根左
+    void dfs(TreeNode*node){
+        if(!node)return;
+        //先遍历大的结点
+        dfs(node->right);
+        if(k==0)return;
+        //第k大的数就是当k=1时的结点值
+        if(--k==0)ans=node->val;
+        dfs(node->left);
+    }
+};
+```
+
+**第十五天总结：**递归传参可以考虑用全局变量，提高效率。
+
