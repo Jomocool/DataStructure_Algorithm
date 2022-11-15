@@ -526,3 +526,695 @@ void printProcess(int i,int N,bool down){
 }
 ```
 
+## 3.图
+
+创建一套属于自己的模板，在自己的模板里把算法玩熟悉
+
+**模板1：**
+
+```c++
+思路：
+    1.存储顶点用vector<char>
+    2.保存矩阵用vector<vector<int>>edges，表示边的关系
+    
+class Graph {
+private:
+	vector<char>vertex;//存储顶点集合
+	vector<vector<int>>edges;//存储图对应的领接矩阵
+	int numOfEdges;//边的数目
+public:
+	//构造器
+	Graph(int n) {
+		//初始化矩阵和vertexList
+		for (int i = 0; i < n; i++) {
+			edges.push_back(vector<int>(n));
+		}
+		numOfEdges = 0;
+	}
+
+	//图中常用的方法
+	//返回节点个数
+	int getNumOfVertex() {
+		return vertex.size();
+	}
+
+	//得到边的数目
+	int getNumOfEdges() {
+		return numOfEdges;
+	}
+
+	//返回节点i（下标）对应的数据
+	char getValueByIndex(int i) {
+		return vertex[i];
+	}
+
+	//返回[x][y]的权值
+	int getWeight(int x, int y) {
+		return edges[x][y];
+	}
+
+	//显示图对应的矩阵
+	void showGraph() {
+		for (auto& link : edges) {
+			cout << "[" << " ";
+			for (auto& n : link) {
+				cout << n << " ";
+			}
+			cout <<"]"<< endl;
+		}
+	}
+
+	//插入节点
+	void insertVertex(char vertex2) {
+		vertex.push_back(vertex2);
+	}
+
+	//添加边
+	void insertEdge(int x, int y, int weight) {
+		edges[x][y] = weight;
+		edges[x][y] = weight;
+		numOfEdges++;
+	}
+};
+```
+
+### 3.1 图的广度优先遍历：队列
+
+```c++
+	//得到第一个邻接节点的下标w，如果存在就返回对应的下标，否则返回-1
+	int getFirstNeighbor(int index) {
+		for (int j = 0; j < vertex.size(); j++) {
+			if (edges[index][j] > 0) {
+				return j;
+			}
+		}
+		return -1;
+	}
+
+	//根据前一个邻接节点的下标来获取下一个邻接节点
+	int getNextNeighbor(int v1, int v2) {
+		for (int j = v2 + 1; j < vertex.size(); j++) {
+			if (edges[v1][j] > 0) {
+				return j;
+			}
+		}
+		return -1;
+	}
+
+//对一个节点进行广度优先遍历的方法
+	void bfs(vector<bool>& isvisited, int i) {
+		int u=0;//表示队列头的对应下标
+		int w = 0;//邻接节点w
+		//队列，记录节点访问的顺序
+		queue<int>qu;
+		//能调用该函数，说明该节点可访问，输出节点信息
+		cout << getValueByIndex(i) << "=>";
+		//标记为已访问
+		isvisited[i] = true;
+		//将节点加入队列
+		qu.push(i);
+		
+		while (!qu.empty()) {
+			//取出队列的头节点下标
+			u = qu.front();
+			qu.pop();
+			//得到第一个邻接节点的下标
+			w = getFirstNeighbor(u);
+			while (w != -1) {//找到
+				//判断w节点是否被访问过
+				if (!isvisited[w]) {//未被访问过
+					//输出节点信息
+					cout << getValueByIndex(w) << "=>";
+					//标记已被访问
+					isvisited[w] = true;
+					//入队
+					qu.push(w);
+				}
+				//如果w已被访问过，那么就以u为前驱节点，找w后面的邻接节点
+				w = getNextNeighbor(u, w);//体现出广度优先
+			}
+		}
+	}
+
+	//重载bfs，遍历所有节点都进行广度优先搜索
+	void bfs() {
+		for (int i = 0; i < vertex.size(); i++) {
+			if (!isVisited[i]) {
+				bfs(isVisited, i);
+			}
+		}
+	}
+```
+
+### 3.2 图的深度优先遍历：递归
+
+```c++
+//得到第一个邻接节点的下标w，如果存在就返回对应的下标，否则返回-1
+	int getFirstNeighbor(int index) {
+		for (int j = 0; j < vertex.size(); j++) {
+			if (edges[index][j] > 0) {
+				return j;
+			}
+		}
+		return -1;
+	}
+
+	//根据前一个邻接节点的下标来获取下一个邻接节点
+	int getNextNeighbor(int v1, int v2) {
+		for (int j = v2 + 1; j < vertex.size(); j++) {
+			if (edges[v1][j] > 0) {
+				return j;
+			}
+		}
+		return -1;
+	}
+
+	//深度优先遍历算法
+	//i第一次就是0
+	void dfs(vector<bool>&isvisited,int i) {
+		//首先访问该节点，输出
+		cout << getValueByIndex(i) << "->";
+		//将该节点设置成已访问
+		isvisited[i] = true;
+		//查找i节点的第一个邻接节点
+		int w = getFirstNeighbor(i);
+		while (w != -1) {
+			if (!isvisited[w]) {
+				dfs(isvisited, w);
+			}
+			w = getNextNeighbor(i, w);
+		}
+	}
+
+	//重载dfs
+	void dfs() {
+		for (int i = 0; i < vertex.size(); i++) {
+			if (!isVisited[i]) {
+				dfs(isVisited, i);
+			}
+		}
+	}
+```
+
+### 3.3 拓扑排序
+
+确定做事的顺序：优先执行入度为0的点，然后擦拭掉该点的影响（即边）
+
+**模板2：**
+
+```c++
+class Node;
+
+class Edge{
+public:
+    int weight;//权重
+    Node*from=NULL;//出发点
+    Node*to;//终点
+    
+    Edge(int weight,Node*from,Node*to){
+        this->weight=weight;
+        this->from=from;
+        this->to=to;
+    }
+};
+
+class Node{
+public:
+    int value;//结点值
+    int in;//入度
+    int out;//出度
+    vector<Node*>nexts;//相邻结点
+    vector<Edge>edges;//相邻边
+    
+    Node(int value){
+        this->value=value;
+        in=0;
+        out=0;
+    }
+};
+
+class Graph{
+public:
+    map<int,Node*>nodes;
+    set<Edge>edges;
+};
+```
+
+**拓扑排序代码实现：**
+
+```c++
+list<Node*>sortedTopology(Graph&graph){
+    map<Node*,int>inMap;
+    //入度为0的点才可以进队列
+    queue<Node*>zeroInQueue;
+    for(auto it=graph.nodes){
+        inMap.insert(it->second,it->first);
+        if(it->second->in==0){
+            zeroInQueue.push(it->second);
+        }
+    }
+    //拓扑排序的结果，依次加入result
+    List<Node*>result;
+    while(!zeroInQueue.empty()){
+        Node*cur=zeroInQueue.front();
+        zeroInQueue.pop();
+        result.push(cur);
+        for(Node*next:cur.nexts){
+            inMap[next]-=1;
+            if(inMap[next]==0){
+                zeroInQueue.push(next);
+            }
+        }
+    }
+    return result;
+}
+```
+
+### 3.4 最小生成树
+
+1.保证所有点连通，但不一定需要所有的边
+
+2.既保证连通性，同时边的权值累加和最小
+
+#### 3.4.1 Kruskal算法
+
+**适用范围：**无向图
+
+```c++
+思路：
+    1.一开始把所有点看作孤立点，即每个点自成一个集合
+
+//使用INT_MAX表示两个顶点不连通
+int INF = INT_MAX;
+
+//创建一个类EData，它的对象实例就表示一条边
+class EData {
+public:
+	char start;//边的起点
+	char end;//边的终点
+	int weight;//边的权值
+
+	EData()
+		:start(' '), end(' '), weight(0) {}
+
+	EData(char start, char end, int weight) {
+		this->start = start;
+		this->end = end;
+		this->weight = weight;
+	}
+
+	void toString() {
+		cout << "start: " << this->start << " end: " << this->end << " weight: " << this->weight << endl;
+	}
+};
+
+class KruskalCase {
+private:
+	int edgeNum = 0;//边的个数
+	string vertexs;//顶点数组
+	vector<vector<int>>matrix;//邻接矩阵
+public:
+	KruskalCase(string vertexs, vector<vector<int>>& matrix) {
+		size_t vlen = vertexs.length();
+		this->vertexs=vertexs;
+        this->matrix=matrix;
+
+		//统计边数
+		for (size_t i = 0; i < vlen; i++) {
+			for (size_t j = i + 1; j < vlen; j++) {
+				if (this->matrix[i][j] != INF) {
+					edgeNum++;
+				}
+			}
+		}
+	}
+
+    //Kruskal算法
+	vector<EData> kruskal() {
+		int index = 0;//表示最后结果数组的索引
+		vector<int>ends(this->edgeNum);//用于保存“已有最小生成树”中的每个顶点在最小生成树中的终点
+		//创建结果数组，保存最后的最生成树
+		vector<EData>rets;
+
+		//获取图中所有边的集合，一共有12条边
+		vector<EData>edges = getEdges();
+
+		//按照边的权值大小进行排序（从小到大）
+		sortEdges(edges);
+
+		//遍历edges数组，将边添加到最小生成树中时，判断准备加入的边是否形成了回路，如果没有，就加入rets，否则不能加入
+		for (int i = 0; i < edgeNum; i++) {
+			//获取到第i条边的第一个顶点（起点）
+			int p1 = getPosition(edges[i].start);
+			//获取到第i条边的第二个顶点
+			int p2 = getPosition(edges[i].end);
+
+			//获取p1这个顶点在已有最小生成树中的终点
+			int m = getEnd(ends, p1);
+			//获取p2这个顶点在已有最小生成树中的终点
+			int n = getEnd(ends, p2);
+			if (m != n) {//不构成回路
+				ends[m] = n;//设置m 在“已有最小生成树”中的终点
+				rets.push_back(edges[i]);//有一条边加入到rets数组
+			}
+		}
+		for (int i = 0; i < rets.size(); i++) {
+			rets[i].toString();
+		}
+		return rets;
+	}
+
+	//打印邻接矩阵
+	void print() {
+		cout << "邻接矩阵为：" << endl;
+		for (int i = 0; i < vertexs.length(); i++) {
+			for (int j = 0; j < vertexs.length(); j++) {
+				cout << matrix[i][j] << "\t";
+			}
+			cout << endl;
+		}
+	}
+
+	//对边进行排序处理，冒泡排序
+	void sortEdges(vector<EData>& edges) {
+		for (int i = 0; i < edges.size(); i++) {
+			for (int j = 0; j < edges.size() - i-1; j++) {
+				if (edges[j].weight < edges[j + 1].weight) {
+					EData temp = edges[j];
+					edges[j] = edges[j + 1];
+					edges[j + 1] = temp;
+				}
+			}
+		}
+	}
+
+	int getPosition(char ch) {
+		for (int i = 0; i < vertexs.length(); i++) {
+			if (vertexs[i] == ch) {
+				return i;
+			}
+		}
+		//找不到，返回-1
+		return -1;
+	}
+
+	//获取图中边，放到EData数组中，后面我们需要遍历该数组
+	vector<EData> getEdges() {
+		vector<EData>edges;
+		for (int i = 0; i < vertexs.length(); i++) {
+			for (int j = i + 1; j < vertexs.length(); j++) {
+				if (matrix[i][j] != INF) {
+					edges.push_back(EData(vertexs[i], vertexs[j], matrix[i][j]));
+				}
+			}
+		}
+		return edges;
+	}
+
+	//获取下标为i的顶点的终点,，用于判断两个顶点的终点是否相同
+	//ends数组记录了各个顶点对应的终点，ends数组实在遍历过程中，逐步形成
+	int getEnd(vector<int>& ends, int i) {
+		while (ends[i] != 0) {
+			i = ends[i];
+		}
+		return i;
+	}
+};
+
+int main() {
+	string vertexs = "ABCDEFG";
+	vector<vector<int>>matrix = {
+		{0,12,INF,INF,INF,16,14},
+		{12,0,10,INF,INF,7,INF},
+		{INF,10,0,3,5,6,INF},
+		{INF,INF,3,0,4,INF,INF},
+		{INF,INF,5,4,0,2,8},
+		{16,7,6,INF,2,0,9},
+		{14,INF,INF,INF,8,9,0}
+	};
+
+	//创建KruskalCase对象实例
+	KruskalCase kruskalCase(vertexs, matrix);
+	//输出构建的
+	kruskalCase.print();
+	kruskalCase.kruskal();
+}
+```
+
+#### 3.4.2 Prim算法
+
+```c++
+思路：
+    1.从已在连通集合中的点中，找到与之相关权值最小的边，依次连通下一个点。
+
+class MGraph {
+public:
+	int verxs;//表示图的节点个数
+	string data;//存放节点数据
+	vector<vector<int>>weight;//存放边，邻接矩阵
+
+	MGraph(int verxs) {//构造函数
+		this->verxs = verxs;
+		for (int i = 0; i < verxs; i++) {
+			data.append(" ");
+			weight.push_back(vector<int>(verxs));
+		}
+	}
+};
+
+//创建最小生成树->村庄的图
+class MinTree {
+	//创建图的邻接矩阵
+public:
+	void createGraph(MGraph& graph, int verxs, string data, vector<vector<int>>& weight) {
+		for (int i = 0; i < verxs; i++) {//顶点
+			graph.data[i] = data[i];
+			for (int j = 0; j < verxs; j++) {
+				graph.weight[i][j] = weight[i][j];
+			}
+		}
+	}
+
+	void showGraph(MGraph&graph) {
+		for (auto& it0 : graph.weight) {
+			for (auto& it1 : it0) {
+				cout << it1 << " ";
+			}
+			cout << endl;
+		}
+	}
+
+	//Prim算法，得到最小生成树
+	void prim(MGraph&graph,int v) {//v表示从图的第几个顶点开始
+		//visited标记顶点是否被访问过
+		vector<int>visited(graph.verxs);
+
+		//把当前顶点标记为已访问
+		visited[v] = 1;
+
+		//h1和h2记录两个顶点的下标
+		int h1 = -1;
+		int h2 = -1;
+		int minWeight = 10000;//将minWeight初始成一个大数，在遍历过程中会被替换
+
+		//因为不是单纯的一次性遍历图，而是需要回溯，每次都要重新从第一个已访问的顶点去分析与各个相邻点的权
+        //重
+		for (int k = 1; k < graph.verxs; k++) {//因为有graph.verxs个顶点，所以有graph.verx-1
+            								   //条边
+			//确定每一次生成的子图和那个顶点的距离最近
+			for (int i = 0; i < graph.verxs; i++) {//i表示已访问过的顶点
+				if (visited[i] == 1) {
+					for (int j = 0; j < graph.verxs; j++) {//j表示还未访问过的顶点
+						if (visited[j] == 0 && graph.weight[i][j] < minWeight) {
+							minWeight = graph.weight[i][j];
+							h1 = i;
+							h2 = j;
+						}
+					}
+				}
+			}
+			cout << "边<" << graph.data[h1] << "," << graph.data[h2] << ">" << "权值：" << minWeight << endl;
+			//将h2设置为已访问
+			visited[h2] = 1;
+			//重新设置minWeight
+			minWeight = 10000;
+		}
+	}
+};
+
+int main() {
+	string data = "ABCDEFG";
+	int verxs = data.length();
+
+	//邻接矩阵，10000表示两个点不连通
+	vector<vector<int>>weight = {
+		{10000,5,7,10000,10000,10000,2},
+		{5,1000,10000,9,10000,10000,3},
+		{7,10000,10000,10000,8,10000,10000},
+		{10000,9,10000,10000,10000,4,10000},
+		{10000,10000,8,10000,10000,5,4},
+		{10000,10000,10000,4,5,10000,6},
+		{2,3,10000,10000,4,6,10000}
+	};
+
+	//创建MGraph对象
+	MGraph graph(verxs);
+	////创建一个MinTree对象
+	MinTree minTree;
+	minTree.createGraph(graph, verxs, data, weight);
+	minTree.showGraph(graph);
+	minTree.prim(graph, 1);
+}
+```
+
+#### 3.4.3 Dijkstra算法
+
+**Prim算法和Dijkstra算法十分相似**，惟一的区别是： Prim算法要寻找的是离已加入顶点距离最近的顶点； Dijkstra算法是寻找离固定顶点距离最近的顶点。
+
+```c++
+class VisitedVertex {
+public:
+	vector<int>already_arr;//记录各个顶点是否访问过 1-访问过，0-未访问过，会动态更新
+	vector<int>pre_visited;//每个下标对应的值为前一个顶点的下标，会动态更新
+	vector<int>dis;//记录出发顶点到其他所有顶点的距离，比如G为出发顶点，就会记录F到其他顶点的距离，会动态更新，求的最短距离就会存放到dis
+
+	VisitedVertex(){}
+
+	VisitedVertex(int length, int index) {//length：顶点个数  index:：起始顶点下标
+		already_arr = vector<int>(length);
+		pre_visited = vector<int>(length);
+		dis = vector<int>(length);
+
+		this->already_arr[index] = 1;//设置出发顶点被访问
+
+		//初始化dis数组
+		for (int i = 0; i < dis.size() - 1; i++) {
+			this->dis[i] = 65535;
+		}
+	}
+
+	//判断index顶点是否被访问过
+	bool in(int index) {
+		return already_arr[index] == 1;
+	}
+
+	//更新出发顶点到index顶点的距离
+	void updateDis(int index, int len) {
+		this->dis[index] = len;
+	}
+
+	//更新pre顶点的前驱顶点为index顶点
+	void updatePre(int pre, int index) {
+		this->pre_visited[pre] = index;
+	}
+
+	//返回出发顶点到index顶点的距离
+	int getDis(int index) {
+		return this->dis[index];
+	}
+
+	//继续访问未访问过的顶点
+	int updateArr() {
+		int min = 65535, index = 0;
+		for (int i = 0; i < already_arr.size(); i++) {
+			if (already_arr[i] == 0 && dis[i] < min) {
+				min = dis[i];
+				index = i;
+			}
+		}
+		//更新index顶点被访问过
+		already_arr[index] = 1;
+		return index;
+	}
+
+	//显示最后的结果
+	//即将三个数组的情况输出
+	void show() {
+		for (auto& it0 : already_arr) {
+			cout << it0 << "\t";
+		}
+		cout << endl;
+		for (auto& it1 : pre_visited) {
+			cout << it1 << "\t";
+		}
+		cout << endl;
+		for (auto& it2 : dis) {
+			cout << it2 << "\t";
+		}
+		cout << endl;
+	}
+};
+
+class Graph {
+private:
+	string vertrx;//顶点数组
+	vector<vector<int>>matrix;//邻接矩阵
+	VisitedVertex vv;//已经访问的顶点的集合
+public:
+	Graph(string vertrx, vector<vector<int>>& matrix) {
+		this->vertrx = vertrx;
+		this->matrix = matrix;
+	}
+
+	//显示图
+	void showGraph() {
+		for (auto& it0 : matrix) {
+			for (auto& it1 : it0) {
+				cout << it1 << "\t";
+			}
+			cout << endl;
+		}
+	}
+
+	//Dijstra算法实现
+	void dsj(int index) {//index：出发顶点
+		vv=VisitedVertex(this->vertrx.length(), index);
+		update(index);
+		for (int j = 0; j < vertrx.length()-1; j++) {//因为出发顶点已经处理过了，所以处理的顶点数为总顶点数-1
+			index = vv.updateArr();
+			update(index);
+		}
+	}
+
+	//更新index顶点到周围顶点的距离和周围顶点的前驱顶点
+	void update(int index) {
+		int len = 0;
+		//根据遍历邻接矩阵的matrix[index]行
+		for (int j = 0; j < matrix[index].size(); j++) {
+			//len：出发顶点到index顶点的距离+从index顶点到j顶点的距离
+			len = vv.getDis(index) + matrix[index][j];
+			//如果j顶点没被访问过，并且len小于出发顶点到j顶点的距离，就需要更新
+			if (!vv.in(j) && len < vv.getDis(j)) {
+				vv.updatePre(j, index);//更新j顶点的前驱顶点为index顶点
+				vv.updateDis(j, len);//更新出发顶点到j顶点的距离
+			}
+		}
+	}
+
+	void showDijstra() {
+		vv.show();
+	}
+};
+
+int main() {
+	string vertrx = "ABCDEFG";
+
+	int N = 65535;//表示不连通
+	//邻接矩阵
+	vector<vector<int>>matrix = {
+		{N,5,7,N,N,N,2},
+		{5,N,N,9,N,N,3},
+		{7,N,N,N,8,N,N},
+		{N,9,N,N,N,4,N},
+		{N,N,8,N,N,5,4},
+		{N,N,N,4,5,N,6},
+		{2,3,N,N,4,6,N}
+	};
+
+	Graph graph(vertrx, matrix);
+
+	graph.dsj(6);
+	graph.showDijstra();
+}
+```
+
