@@ -2233,6 +2233,6 @@ vector<int>getNext(string str) {
 }
 ```
 
-![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/.png)
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/21.png)
 
 ![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/22.png)
