@@ -193,7 +193,7 @@ public:
 
 ### 1.4 剑指 Offer II 022. 链表中环的入口节点
 
-![image-20221112154049200](C:\Users\86135\OneDrive\文档\数据结构与算法\zsLeetCode-img\1.png)
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/1.png)
 
 ```c++
 方法一：哈希表
@@ -1072,6 +1072,7 @@ int main() {
 **Prim算法和Dijkstra算法十分相似**，惟一的区别是： Prim算法要寻找的是离已加入顶点距离最近的顶点； Dijkstra算法是寻找离固定顶点距离最近的顶点。
 
 ```c++
+方法一：普通版
 class VisitedVertex {
 public:
 	vector<int>already_arr;//记录各个顶点是否访问过 1-访问过，0-未访问过，会动态更新
@@ -1216,5 +1217,1022 @@ int main() {
 	graph.dsj(6);
 	graph.showDijstra();
 }
+
+方法二：优化版（小根堆）
+思路：
+    1.设出发点到其他点的距离都为INT_MAX
+    2.利用小根堆不断更新出发点到其他点的最小权重路径：不需要遍历了，直接访问堆顶即可
+    3.系统的堆无法满足我们的要求：改变某一个值后重新排序变成小根堆
+  
+class Node;
+
+class Edge {
+public:
+    int weight;//权重
+    Node* from = NULL;//出发点
+    Node* to;//终点
+
+    Edge(int weight, Node* from, Node* to) {
+        this->weight = weight;
+        this->from = from;
+        this->to = to;
+    }
+};
+
+class Node {
+public:
+    int value;//结点值
+    int in;//入度
+    int out;//出度
+    vector<Node*>nexts;//相邻结点
+    vector<Edge>edges;//相邻边
+
+    Node(int value) {
+        this->value = value;
+        in = 0;
+        out = 0;
+    }
+};
+
+class NodeRecord {
+public:
+    Node* node;
+    int distance;
+
+    NodeRecord(Node* node, int distance) {
+        this->node = node;
+        this->distance = distance;
+    }
+};
+
+class NodeHeap {
+private:
+	vector<Node*>nodes;
+    map<Node*, int>heapIndexMap;//存放结点对应索引
+    map<Node*, int>distanceMap;//存放结点和起点的距离
+    int size;
+
+public:
+    NodeHeap(int size) {
+        nodes = vector<Node*>(size);
+        this->size = 0;//设置为0，方便后续直接在nodes[size]插入新结点
+    }
+
+    bool isEmpty() {
+        return size == 0;
+    }
+
+    void addOrUpdateOrIgnore(Node* node, int distance) {
+        //update
+        if (inHeap(node)) {
+            distanceMap[node] = min(distanceMap[node], distance);
+            insertHeapify(node,heapIndexMap[node]);
+        }
+        //add
+        if (!isEntered(node)) {
+            nodes[size] = node;
+            heapIndexMap[node] = size;
+            distance[node] = distance;
+            insertHeapify(node,size++);
+        }
+        //ignore：什么也不做
+    }
+
+    NodeRecord pop() {
+        NodeRecord nodeRecord(nodes[0], distanceMap[nodes[0]]);//记录堆顶信息
+        swap(0, size - 1);
+        heapIndexMap[nodes[size - 1]] = -1;
+        distanceMap.erase(nodes[size - 1]);
+        delete nodes[size - 1];
+        //重新调整树结构
+        heapify(0, --size);
+        return nodeRecord;
+    }
+
+    void insertHeapify(Node*node,int index) {
+        while (distanceMap[nodes[index]] < distanceMap[nodes[(index - 1) / 2]]) {
+            swap(index, (index - 1) / 2);
+            index = (index - 1) / 2;
+        }
+    }
+
+    //从index开始调整
+    void heapify(int index, int size) {
+        int left = index * 2 + 1;
+        int right = left + 1;
+        //因为循环条件需要left，所以必须在循环之前就定义好left
+        while (left < size) {
+            //right要在冒号前，因为是&&，任意有一个不满足都会赋值后者，因此我们要保证“一致性”
+            int smallest = right < size&& distanceMap[nodes[right]] < 
+                distanceMap[nodes[left]] ? right : left;
+            smallest = distanceMap[nodes[smallest]] < distanceMap[nodes[index]] ? smallest 
+                : index;
+            if (smallest == index)break;//如果父结点就是最小的，那么不用做任何处理
+            swap(smallest, index);
+            index = smallest;
+            left = index * 2 + 1;
+            right = left + 1;
+        }
+    }
+
+    bool isEntered(Node* node) {
+        return heapIndexMap.find(node) != heapIndexMap.end();
+    }
+
+    bool inHeap(Node* node) {
+        return isEntered(node) && heapIndexMap[node] != -1;
+    }
+
+    void swap(int index1, int index2) {
+        heapIndexMap[nodes[index1]] = index2;
+        heapIndexMap[nodes[index2]] = index1;
+        Node* tmp = nodes[index1];
+        nodes[index1] = nodes[index2];
+        nodes[index2] = tmp;
+    }
+};
+
+map<Node*, int> djs2(Node* head, int size) {
+    NodeHeap nodeHeap(size);
+    nodeHeap.addOrUpdateOrIgnore(head, 0);
+    map<Node*, int>res;
+    while (!nodeHeap.isEmpty()) {
+        NodeRecord record = nodeHeap.pop();
+        Node* cur = record.node;
+        int distance = record.distance;
+        for (Edge& edge : cur->edges) {
+            nodeHeap.addOrUpdateOrIgnore(edge.to, distance + edge.weight);
+        }
+        res[cur] = distance;//会不断更新成最小值，直到不能再更新时，nodeHeap会不断地pop而不会add了
+    }
+}
+```
+### 3.5 N皇后
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/9.png)
+
+```c++
+方法一：普通版
+int num1(int n) {
+	if (n < 1) {
+		return 0;
+	}
+	vector<int>record(n);//表明在第i行的皇后在第几列
+	return process1(0, record, n);
+}
+
+//判断i行j列的皇后是否有效
+bool isValid(vector<int>& record, int i, int j) {//只用和i行之前的判断
+	for (int k = 0; j < i; k++) {
+		if (record[k] == j || abs(i - k) == abs(j - record[k]))return false;
+	}
+	return true;
+}
+
+//i表示目前来到了第i行
+//record表示之前放过的皇后的位置
+//n代表共有多少行
+//返回值表示摆完所有的皇后，合理的摆法有多少种
+int process1(int i, vector<int>& record, int n) {
+	if (i == n)return 1;//终止行，i能到n，说明前面的都合法
+	int res = 0;
+	for (int j = 0; j < n; j++) {//测试第i行的所有列
+		//找合理位置
+		if (isValid(record, i, j)) {
+			record[i] = j;
+			res += process1(i + 1, record, n);
+		}
+	}
+	return res;
+}
+
+方法二：常数优化版（利用位运算）
+因为是位运算，所以尽量不要超过32位
+int num2(int n) {
+	if (n < 1||n>32) {
+		return 0;
+	}
+	//生成一个二进制的数
+	int limit = n == 32 ? -1 : (1 << n) - 1;
+	//能在limit中，位上的值为1上尝试放皇后，且一开始没有限制，所以全为0
+	return process2(limit, 0, 0, 0);
+}
+
+//colLim列的限制，1的位置不能放皇后，0的位置可以
+//leftDiaLim左斜线的限制，1的位置不能放皇后，0的位置可以
+//rightDiaLim右斜线的限制，1的位置不能放皇后，0的位置可以
+int process2(int limit, int colLim, int leftDiaLim, int rightDiaLim) {
+	if (colLim == limit) {//base case，colLim能递归到全为1，说明前面所有放置的皇后都合法
+		return 1;
+	}
+	int mostRightOne = 0;
+	// | 保留1，& 保留0，不要忘记最高位还有一个0，取反后变成1，需要让其和limit做&运算变回0
+	int pos = limit & (~(colLim | leftDiaLim | rightDiaLim));//保留所有能够填皇后的列--1
+	int res = 0;
+	while (pos != 0) {
+		//在最右侧放皇后
+		mostRightOne = pos & (~pos + 1);
+		pos = pos - mostRightOne;
+		//同时还保留了之前行对下面行的限制，注：右移是逻辑右移，因为保证左边0不变
+		res += process2(limit, colLim | mostRightOne, (leftDiaLim | mostRightOne) << 1, (rightDiaLim | mostRightOne) >> 1);
+	}
+	return res;
+}
+C++中，signed类型默认逻辑右移：即直接补0；unsigned类型默认算数右移：保留符号位0。重定义类型即可切换。
 ```
 
+
+## 4.前缀树
+
+何为前缀树？
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/2.png)
+
+```c++
+前缀树的功能：
+    1.判断是否加入过某些字符串
+    2.计算以某字符串为前缀的字符串有几个
+    
+//定义结点
+class TrieNode {
+public:
+	//遍历所有字符串后
+	int pass;//穿过该结点次数
+	int end;//如果是终点，则end=1，从而可以用来判断是否加过某些字符串
+	vector<TrieNode*>nexts;//存放该结点的后序结点，索引就是路
+	//如果是多字符的情况，可以换成哈希表，key代表路，value代表路通往的结点
+
+	TrieNode() {
+		pass = 0;
+		end = 0;
+		//nexts[0]==NULL，没有走向a的路
+		//nexts[0]!=NULL，有走向a的路
+		nexts = vector<TrieNode*>(26);//a~z，路是提前建好的，通过指针是否为空来判断路的存在
+	}
+};
+
+//定义前缀树
+class Trie {
+private:
+	//根结点的pass值代表有多少个字符串以空串""作为前缀(所有字符串)，end代表有几个空串
+	TrieNode* root;
+	
+public:
+	Trie() {
+		root = new TrieNode();
+	}
+
+	//插入字符串
+	void insert(string word) {
+		if (word.length() == NULL)return;
+		TrieNode* node = root;
+		node->pass++;
+		int index = 0;
+		for (int i = 0; i < word.length(); i++) {
+			index = word[i] - 'a';//计算应走哪一条路
+			if (node->nexts[index] == NULL)node->nexts[index] = new TrieNode();
+			node = node->nexts[index];
+			node->pass++;
+		}
+		//结束循环后，node指向word路径的终点
+		node->end++;
+	}
+
+	//查询word这个单词加入过几次
+	int search(string word) {
+		if (word.length() == 0) {
+			return root->end;
+		}
+		TrieNode* node = root;
+		int index = 0;
+		for (int i = 0; i < word.length(); i++) {
+			index = word[i] - 'a';
+			if (node->nexts[index] == NULL) {
+				return 0;
+			}
+			node = node->nexts[index];
+		}
+		return node->end;
+	}
+
+	//所有加入的字符串中，有几个是以pre这个字符串作为前缀的
+	int prefixNumber(string pre) {
+		if (pre.length() == 0) {
+			return root->end;
+		}
+		TrieNode* node = root;
+		int index = 0;
+		for (int i = 0; i < pre.length(); i++) {
+			index = pre[i] - 'a';
+			if (node->nexts[index] == NULL) {
+				return 0;
+			}
+			node = node->nexts[index];
+		}
+		return node->pass;
+	}
+
+	void deleteWord(string word) {
+		if (search(word) != 0) {//确认加入过word，才删除
+			TrieNode* node = root;
+			node->pass--;
+			int index = 0;
+
+			TrieNode* fatherNode = NULL;
+			int deleteIndex = -1;
+			set<TrieNode*>deleteSet;
+			for (int i = 0; i < word.length(); i++) {
+				index = word[i] - 'a';
+				if (--node->nexts[index] == 0) {
+					//记录第一个要删去结点的父节点
+					fatherNode = fatherNode == NULL ? node : fatherNode;
+					deleteIndex = deleteIndex == -1 ? index : deleteIndex;
+					//记录所有要删去的结点
+					deleteSet.insert(node->nexts[index]);
+				}
+				node = node->nexts[index];
+			}
+			node->end--;
+			fatherNode->nexts[deleteIndex] = NULL;
+			for (auto deleteNode : deleteSet) {
+				deleteNode = NULL;
+			}
+		}
+	}
+};
+删除结点时的误区：误以为只要将第一个pass=0的结点置空即可，实际上不对。因为后面还有结点pass=1，等待被删除，
+    		   所以，应该把所有待删除结点放入到一个容器先，循环结束后再去遍历该容器一个一个置空结点。
+```
+
+
+
+## 5.贪心算法
+
+### 5.1 定义
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/3.png)
+
+### 5.2 1353. 最多可以参加的会议数目
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/4.png)
+
+```c++
+class Program {
+public:
+	int start;
+	int end;
+
+	Program(int start, int end) {
+		this->start = start;
+		this->end = end;
+	}
+};
+
+bool programCompare(Program& p1, Program& p2) {
+	return p1.end < p2.end;
+}
+
+int bestArrange(vector<Program>& programs, int timePoint) {
+	sort(programs.begin(), programs.end(), programCompare);
+	int res = 0;
+	for (int i = 0; i < programs.size(); i++) {
+		if (timePoint <= programs[i].start) {
+			res++;
+			timePoint = programs[i].end;
+		}
+	}
+	return res;
+}
+```
+
+### 5.3 解题套路
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/5.png)
+
+**对数器：**对数器是通过用大量测试数据来验证算法是否正确的一种方式。
+
+### 5.4 最小字典序
+
+```c++
+问题：将所有字符串拼接起来，如何保证拼接完之后的字符串字典序最低？
+贪心策略：a.b<=b.a，a,b都为字符串
+有效比较策略：原始数据相对位置无论怎么改变，排完序之后的数据位置是固定的
+证明：
+    To show:a.b<=b.a,b.c<=c.b => a.c<=c.a
+    1. 把string看作k进制数，因为数才好比较=>a.b=a*k^b.length()+b
+    2. k^b.length()=m(b)
+    3. a.b<=b.a ：a*m(b)+b<=b*m(a)+a
+    4. b.c<=c.b ：b*m(c)+c<=c*m(b)+b
+    5. 由3、4可得：a*m(c)+c<=c*m(a)+a
+    6. 以上只能证明策略可以排序出一个唯一序列
+    7. 证明排好序后的序列任意两个字符串交换顺序，新的字符总串的字典序大于旧的
+    8. 一路和相邻的字符串交换，利用数学归纳法
+     
+bool stringCompare(string a, string b) {
+	return a + b <= b + a;
+}
+
+string lowestString(vector<string>& strs) {
+	if (strs.size() == 0) {
+		return "";
+	}
+	sort(strs.begin(), strs.end(), stringCompare);
+	string res;
+	for (int i = 0; i < strs.size(); i++) {
+		res += strs[i];
+	}
+    return res;
+}
+```
+
+### 5.5 分割金条
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/6.png)
+
+```c++
+赫夫曼编码
+    
+int lessMoney(vector<int>& vec) {
+	priority_queue<int, vector<int>, greater<int>>pQ;
+	for (int i = 0; i < vec.size(); i++) {
+		pQ.push(vec[i]);
+	}
+	int sum = 0;
+	int cur = 0;
+	while (pQ.size() > 1) {
+		cur = 0;
+		cur += pQ.top();
+		pQ.pop();
+		cur += pQ.top();
+		pQ.pop();
+		sum += cur;
+		pQ.push(cur);
+	}
+	return sum;
+}
+```
+
+### 5.6 最大钱数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/7.png)
+
+```c++
+class Project {
+public:
+	int profit;
+	int cost;
+
+	Project(int profit, int cost) {
+		this->profit = profit;
+		this->cost = cost;
+	}
+};
+
+class CostCompare {
+public:
+	bool compare(Project& p1, Project& p2) { return p1.cost < p2.cost; }
+};
+
+class ProfitCompare {
+public:
+	bool compare(Project& p1, Project& p2) { return p1.profit > p2.profit; }
+};
+
+int findMaximizedCapital(int k, int w, vector<int>& Profits, vector<int>& Capital) {
+	priority_queue<Project, vector<Project>, CostCompare>minCostQ;//存放成本最小的
+	priority_queue<Project, vector<Project>, ProfitCompare>maxProfitQ;//存放利润最大的
+	for (int i = 0; i < Profits.size(); i++) {
+		minCostQ.push(Project(Profits[i], Capital[i]));
+	}
+	for (int i = 0; i < k; i++) {
+		while (!minCostQ.empty() && minCostQ.top().cost <= w) {
+			maxProfitQ.push(minCostQ.top());
+			minCostQ.pop();
+		}
+		if (maxProfitQ.empty())return w;//没有可以做的项目了
+		w += maxProfitQ.top().profit;
+		maxProfitQ.pop();
+	}
+	return w;
+}
+```
+
+### 5.7 剑指 Offer 41. 数据流中的中位数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/8.png)
+
+```c++
+思路：
+    1. 准备一个小根堆和大根堆
+    2. 两个堆都为空时，默认放入大根堆
+    3. 判断cur<=大根堆堆顶
+       3.1 是：cur入大根堆
+       3.2 否：cur入小根堆
+    4. 判断两堆大小差距，超过2：较大的堆堆顶弹出放入另一个堆里
+    5. 最终：较小的n/2个数在大根堆，较大的n/2个数在小根堆里
+
+class MedianFinder{
+public:
+	priority_queue<int, vector<int>, less<int>>maxHeap;
+	priority_queue<int, vector<int>, greater<int>>minHeap;
+
+	void addNum(int num) {
+		if (maxHeap.empty() || num <= maxHeap.top()) {
+			maxHeap.push(num);
+		}
+		else {
+			minHeap.push(num);
+		}
+		if (maxHeap.size() == minHeap.size() + 2) {
+			minHeap.push(maxHeap.top());
+			maxHeap.pop();
+		}
+		if (minHeap.size() == maxHeap.size() + 2) {
+			maxHeap.push(minHeap.top());
+			minHeap.pop();
+		}
+	}
+
+	double findMedian() {
+		int maxHeapSize=maxHeap.size();
+        int minHeapSize=minHeap.size();
+        if(((maxHeapSize+minHeapSize)&1)==0)return (maxHeap.top()+minHeap.top())*0.5;
+        return maxHeapSize>minHeapSize?maxHeap.top():minHeap.top();
+	}
+};
+```
+
+
+
+## 6.暴力递归
+
+### 6.1 定义
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/10.png)
+
+### 6.2 打印字符串子序列/子集（无序）
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/11.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/12.png)
+
+```c++
+方法一：普通版剑指 Offer 38. 字符串的排列
+void process(string str, int i, string res) {
+	if (i == str.length()) {//base case
+		cout<<res<<endl;
+		return;
+	}
+	string resKeep = res;
+	resKeep += str[i];
+	process(str, i + 1, resKeep);//选择当前字符
+	string resNoInclude = res;
+	process(str, i + 1, resNoInclude);//不选择当前字符
+}
+
+方法二：省空间版
+void process(string str, int i) {
+	if (i == str.length()) {
+		cout << str << endl;
+		return;
+	}
+	process(str, i + 1);//选择当前字符
+	char tmp = str[i];
+	str[i] = '\0';
+	process(str, i + 1);//不选择当前字符
+	str[i] = tmp;//恢复
+}
+```
+
+### 6.3 打印字符串全排列
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/13.png)
+
+```c++
+//str[i...]范围上，所有的字符都可以在i位置上，后续都可以去尝试
+//str[0...i-1]范围上，是之前做的选择
+//请把所有的字符串形成的全排列，加入到res中
+void process(string str, int i, vector<string>& res) {
+	if (i == str.length()) {
+		res.push_back(str);
+	}
+	for (int j = i; j < str.length(); j++) {
+		swap(str[i], str[j]);
+		process(str, i + 1, res);
+		swap(str[i], str[j]);
+	}
+}
+```
+
+### 6.4 打印字符串全排列（不重复）
+
+```c++
+void process(string str, int i, vector<string>& res) {
+	if (i == str.length()) {
+		res.push_back(str);
+	}
+    vector<bool>visit(26);//判断26个字母是否被访问过
+	for (int j = i; j < str.length(); j++) {
+        if(!visit[str[j]-'a']){
+            visit[str[j]-'a']=true;
+            swap(str[i], str[j]);
+			process(str, i + 1, res);
+			swap(str[i], str[j]);
+        }
+	}
+}
+```
+
+### 6.5 拿牌
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/14.png)
+
+```c++
+int win1(vector<int>& arr) {
+	return max(f(arr, 0, arr.size() - 1), s(arr, 0, arr.size() - 1));
+}
+
+//先手
+int f(vector<int>& arr, int L, int R) {
+	if (L == R)return arr[L];
+    //先手有主动权，必定让自己拿到最多的分数
+	return max(arr[L] + s(arr, L + 1, R), arr[R] + s(arr, L, R - 1));
+}
+
+//后手
+int s(vector<int>& arr, int L, int R) {
+	if (L == R)return 0;
+    //后手被动，对手肯定会让我们获取最低分数
+	return min(f(arr, L + 1, R), f(arr, L, R - 1));
+}
+```
+
+### 6.6 逆序栈
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/15.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/16.png)
+
+```c++
+//取出栈底
+int f(stack<int>&stk) {
+	int result = stk.top();
+	stk.pop();
+	if (stk.empty())return result;
+	else {
+		int last = f(stk);
+		stk.push(result);
+		return last;
+	}
+}
+
+void reverse(stack<int>&stk){
+    if(stk.empty())return;
+    int i=f(stk);
+    reverse(stk);
+    stk.push(i);
+}
+```
+
+### 6.7 数转字符串
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/17.png)
+
+```c++
+思路：
+    s[i]之前有多少种结果是已经确定的
+    1. s[i]=0，只能尝试与s[i-1]组合
+    2. s[i]=1，一定可以和s[i+1]组合
+    3. s[i]=2，判断s[i+1]是否大于6
+    
+//i之前的位置如果转化已经做过判断了且有效
+int process(string str, int i) {
+	//能到最后一个字符说明s[i]之前的字符转化都是有效的，因此已经固定有1种了
+	if (i == str.length())return 1;
+	if (str[i] == '0')return 0;
+	if (str[i] == '1') {
+		int res = process(str, i + 1);//i作为单独的部分
+		if (i + 1 < str.length()) {
+			res += process(str, i + 2);//(i,i+1)看作一个整体
+		}
+		return res;
+	}
+	if (str[i] == '2') {
+		int res = process(str, i + 1);
+		if (i + 1 < str.length() && str[i + 1] >= '0' && str[i + 1] <= '6') {
+			res += process(str, i + 2);
+		}
+		return res;
+	}
+	//str[i]=='3'~'9'
+	return process(str, i + 1);
+}
+```
+
+### 6.8 载物
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/18.png)
+
+```c++
+思路：从左往右一个一个试，max(选择，不选择)
+
+int process(vector<int>&weights, vector<int>&values, int i, int alreadyweight,int alreadyvalue, int bag) {
+	if (alreadyweight > bag)return 0;//超重，该方案根本不应该存在
+	if (i == weights.size())return alreadyvalue;//越界
+	return max(process(weights, values, i + 1, alreadyweight,alreadyvalue, bag),
+		process(weights, values, i + 1, alreadyweight + weights[i], alreadyvalue+ values[i],bag));
+}
+```
+
+
+
+## 7.哈希函数与哈希表等
+
+### 7.1 40亿个数出现次数最多的数
+
+```c++
+思路：
+    只允许1GB内存
+    1.遍历数组，利用哈希函数计算哈希值，再取模100
+    2.先把取模为0的数放到0号文件的哈希表(记录次数)中
+    3.循环遍历数组，依次处理1~99号文件
+    4.平均每次只需要用到[(2^35)/100]GB
+    5.使用哈希函数的目的：让值平均分布
+```
+
+### 7.2 随机返回池
+
+```c++
+template<typename K>
+class RandomPool{
+private:
+	map<K, int>keyIndexMap;
+	map<int, K>indexKeyMap;
+	int size;
+public:
+	RandomPool() {
+		size = 0;
+	}
+
+	void insert(K key) {
+		if (keyIndexMap.find(key) == keyIndexMap.end()) {
+			keyIndexMap[key] = size;
+			indexKeyMap[size++] = key;
+		}
+	}
+
+	void deleteKey(K key) {
+		if (keyIndexMap.find(key) != keyIndexMap.end()) {
+			int deleteIndex = keyIndexMap[key];
+			int lastIndex = --size;
+			K lastKey = indexKeyMap[lastIndex];
+			keyIndexMap[lastKey] = deleteIndex;
+			indexKeyMap[deleteIndex] = lastKey;
+			keyIndexMap.erase(key);
+			indexKeyMap.erase(lastIndex);
+		}
+	}
+
+	//等概率随机返回
+	K getRandom() {
+		if (size == 0)_Throw_range_error("容器为空！");
+		srand((unsigned)time(NULL));
+		int randomIndex = rand() % size;
+		return indexKeyMap[randomIndex];
+	}
+};
+```
+
+### 7.3 布隆过滤器
+
+```c++
+作用：通过查询黑名单，判断是否在黑名单里。还有爬虫驱虫
+只需要实现加入和查询功能，空间占用少且允许一定失误率
+思路：
+    1.创建位图：bit map。即一个位图的格子占用一个bit位
+    2.用基础类型实现：int[10]可储存320位信息
+    
+int arr[10];
+int i=178;
+//1.取第178位信息
+int numIndex=178/32;//计算在哪个格子的数
+int bitIndex=178%32;//计算在该数的第几位
+int s=((arr[numIndex]>>(bitIndex))&1);//第178位的信息
+//2.把第i位的状态改成1
+arr[numIndex]=arr[numIndex]|(1<<(bitIndex));
+//3.把第i位的状态改成0
+arr[numIndex]=arr[numIndex]&(~(1<<bitIndex));
+
+流程：每个URL通过k个哈希函数，对相应的位描黑，因此可能会把白判成黑，但黑一定是黑。
+   
+问题：什么时候可以用布隆过滤器
+已有条件：n=样本量，p=失误率
+1.看需不需要有删除行为， 2.看允不允许有失误率
+样本大小无关紧要
+m=-(n*lnp)/((ln2)^2)(bit)
+k=ln2*(m/n)=0.7*(m/n)(个)，向上取整
+p真=(1-e^(-(n*k真)/m真))^k真
+```
+
+### 7.4 一致性哈希原理
+
+```c++
+1.解决数据服务器怎么组织的问题
+2.让高频中频低频都能作数据的划分，所以要选择合适的key使其能够达到均分
+3.把存储的机器连接起来形成一个哈希环，经过哈希函数后，数据按顺时针的方式选择最近的机器
+4.因为机器均分环，所以数据刚好均分
+5.增加机器和迁出机器的迁移量低，因为只需向顺时针的第一个机器要数据即可
+6.问题：
+  6.1机器很少时，难把环均分
+  6.2增加机器后，负载不均衡
+7.用虚拟节点技术解决问题：
+  3台机器去抢环上的点，即圈环上任一处，各机器的点各占 1/3；机器4加入时，去夺环上的点，这样夺的点中，另三台
+   机器的点等分，就能做到环上的点被4台机器均分；机器4下机后，也是等比例的把点归还给其他3台数据。
+8.管理负载：负载能力强的机器负责更多的点
+```
+
+
+
+## 8.有序表、并查表等
+
+### 8.1 岛问题（并查集）
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/19.png)
+
+```c++
+方法一：普通版
+思路：
+    利用infect函数把一片1统一变成2，本质上是记录访问过的1
+ 
+//"感染"函数
+/*
+* vec：必须传引用，因为修改的值需要保存，并且引用的是原容器的副本，所以不会修改原先内容
+* i：行
+* j：列
+* m：行界限
+* n：列界限
+*/
+void infect(vector<vector<int>>& vec, int i, int j, int m, int n) {
+	if (i < 0 || i >= m || j < 0 || j >= m || vec[i][j] != 1)return;
+	//vec[i][j]=1，修改成2
+	vec[i][j] = 2;
+    //由于for循环遍历的方向是从左到右，从上到下，因此每个1必定是从它的左边或上边抵达，因此只需向右和向下走
+	infect(vec, i, j + 1, m, n);
+	infect(vec, i + 1, j, m, n);
+}
+递归时间复杂度： O(N*M)
+
+int countIslands(vector<vector<int>>vec) {//不传引用避免修改原容器里的内容
+	int m = vec.size();//行
+	int n = vec[0].size();//列
+	int res = 0;//岛的数量
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			if (vec[i][j] == 1) {
+				//到达1处才开始感染，每调用一次感染岛数＋1
+				res++;
+				infect(vec, i, j, m, n);
+			}
+		}
+	}
+	return res;
+}
+
+
+并查集：向上指的结构
+//样本进来包一层，叫做元素
+template<typename V>
+class Element{
+public:
+	V value;
+	Element(V value) {
+		this->value = value;
+	}
+};
+
+//定义并查集结构
+template<typename V>
+class UnionFindSet {
+public:
+	//key元素对应value元素"圈"
+	map<V, Element<V>>elementMap;
+	//value元素是key元素的父
+	map<Element<V>, Element<V>>fatherMap;
+	//key元素是某个集合的代表元素，value是该集合的大小
+	map<Element<V>, int>sizeMap;
+	//并查集在构建时要求用户把样本都传过来
+	UnionFindSet(list<V>ls) {
+		for (V value : list) {
+			Element<V>element = new Element<V>(value);
+			elementMap[value] = element;
+			fatherMap[element] = element;
+			sizeMap[element] = 1;
+		}
+	}
+
+	Element<V>findHead(Element<V>element) {
+		stack<Element<V>>path;
+		while (element != fatherMap[element]) {
+			path.push(element);
+			element = fatherMap[element];
+		}
+		//把结构变成扁平的，降低高度
+		//不用考虑每个元素集合size的变化，因为改变的元素都不是代表元素
+		while (!path.isEmpty()) {
+			fatherMap[path.top] = element;
+			path.pop();
+		}
+		return element;
+	}
+
+	bool isSameSet(V a, V b) {
+		if (elementMap.find(a) != elementMap.end() && elementMap.find(b) != elementMap.end()) {
+			return findHead(elementMap[a]) == findHead(elementMap[b]);
+		}
+		return false;
+	}
+
+	void union(V a, V b) {
+		if (elementMap.find(a) != elementMap.end() && elementMap.find(b) != elementMap.end()) {
+			Element<V>aF = findHead(elementMap[a]);
+			Element<V>bF = findHead(elementMap[b]);
+			if (aF != bF) {
+				Element<V>big = sizeMap[aF] > sizeMap[bF] ? aF : bF;
+				Element<V>small = big == aF ? bF : aF;
+				fatherMap[small] = big;
+				sizeMap[big] += sizeMap[small];
+				sizeMap.erase(small);
+			}
+		}
+	}
+};
+
+方法二：并行算法
+问题1：切开图分配给不同的CPU之后，可能会把原本连通的切断。
+解决1：记录切割边边界点的感染源。不同的感染源感染到的点分配在不同集合中，最后通过能否合并集合来算出实际岛数
+```
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/20.png)
+
+### 8.2 KMP
+
+```c++
+解决str2是否为str1子串且如果是子串从str1哪个位置开始的问题
+暴力方法时间复杂度： O(N*M)，N、M分别为str1和str2长度
+KMP：
+    思路：
+    1.找str[i]字符前的字符串前缀后缀的最大匹配长度，且不能取整体
+    2.需要str2每个字符的信息(该字符前的字符串的前缀后缀的最大匹配长度)放入next数组中
+    3.人为规定next[0]=-1，next[1]=0
+	4.实际代码过程中不是把str2[0]向后移，而是让str2中不同的字符索引Y=next[Y](跳到前缀的后一个字符)，但
+      逻辑上相同
+    
+int kmp(string str1, string str2) {
+	int i1 = 0;//str1中比对的位置
+	int i2 = 0;//str2中比对的位置
+	vector<int>next = getNext(str2);//O(M)
+	//O(N)
+	while (i1 < str1.length() && i2 < str2.length()) {
+		if (str1[i1] == str2[i2]) {
+			i1++;
+			i2++;
+		}else if(i2==0) {//next[i2]==-1
+			//说明第一个字符就不等，str2中比对的位置已经无法往前跳了，让str1换一个开头去匹配
+			i1++;
+		}
+		else {
+			//str2比对的位置跳到前缀的后一个字符
+			i2 = next[i2];
+		}
+	}
+	//i1越界 或者 i2越界
+	//如果匹配成功，i1到达str1中匹配的最后一个字符，i2也到达str2中最后一个字符，start=i1-i2.length()+1=i1-i2
+	return i2 == str2.length() ? i1 - i2 : -1;
+}
+
+vector<int>getNext(string str) {
+	if (str.length() == 1) {
+		return { -1 };
+	}
+	vector<int>next(str.length());
+	next[0] = -1;
+	int i = 2;
+	int cn = 0;//cn是用来和i-1字符比较的字符索引，且cn恰好等于next[i-1]
+	while (i < next.size()) {
+		if (str[i - 1] == str[cn]) {
+			next[i++] = ++cn;
+		}
+		else if (cn > 0) {
+			cn = next[cn];
+		}
+		else {
+			next[i++] = 0;
+		}
+	}
+	return next;
+}
+```
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/22.png)
