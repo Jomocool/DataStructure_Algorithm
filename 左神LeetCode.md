@@ -2174,7 +2174,9 @@ public:
 
 ![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/20.png)
 
-### 8.2 KMP
+## 9.KMP、Manacher算法
+
+### 9.1 KMP
 
 ```c++
 解决str2是否为str1子串且如果是子串从str1哪个位置开始的问题
@@ -2236,3 +2238,541 @@ vector<int>getNext(string str) {
 ![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/21.png)
 
 ![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/22.png)
+
+### 9.2 Manacher算法
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/23.png)
+
+```c++
+1.经典方法：
+依次以每个字符为中心，向两边扩，两边字符相同就继续向外扩，直至两边字符不同。
+问题：当回文子串长度为偶数时，该方法失效。
+解决：在字符串两边和每两个字符之间添加特殊符号'#'(并不一定要与原字符串的字符不同，因为都
+     是"实"与"实"比，"虚"与"虚"比)，再依次遍历新字符去扩。
+时间复杂度： O(n^2)
+
+2.Manacher算法：
+回文直径：从中心出发向两边扩，包含的子串长度。
+回文半径：回文直径的一半。
+(1)创建回文半径数组，每个字符都有回文半径。
+(2)右边界(int)R记录每次扩到的最右边界，如果比上次扩得远则更新。
+(3)中心点(int)C记录由哪个点扩到最右边界，和R同步更新。
+(4)分类讨论：假设开始扩展的点为str[i]，以下我们简称为i
+    4.1 i>=R：直接暴力扩(向两边扩)，无优化。
+    4.2 i<R：
+    	左边界L：R关于C的对称点
+    	i关于C的对称点j
+    	4.2.1 j的回文区域彻底属于(L,R)：i的回文区域长度与j相同
+    	4.2.2 j的回文区域的左半区域部分在L左边：i的回文半径=R-i
+    	4.2.3 j的回文区域左边界=L(压线)：至少有一个回文区域，但是不确定会不会更大。
+
+string manacherString(string str) {
+	string res;
+	int index = 0;
+	for (int i = 0; i < str.length() * 2 + 1; i++) {
+		char c = (i & 1) == 0 ? '#' : str[index++];
+		res.push_back(c);
+	}
+	return res;
+}
+
+int maxLcpsLength(string s) {
+	if (s.length() == 0)return 0;
+	string str = manacherString(s);
+	vector<int>pArr(str.length());
+	int C = -1;
+	int R = -1;
+	int maxLen = INT_MIN;
+	for (int i = 0; i != str.length(); i++) {
+		//先算出每种情况下不用至少不用验的区域，再去扩展
+		pArr[i] = R > i ? min(pArr[2 * C - i], R - i) : 1;
+		while (i + pArr[i]<str.length() && i - pArr[i]>-1) {
+			if (str[i + pArr[i]] == str[i - pArr[i]]) pArr[i]++;
+			else break;
+		}
+		if (i + pArr[i] > R) {
+			R = i + pArr[i];
+			C = i;
+		}
+		maxLen = max(maxLen, pArr[i]);
+	}
+	return maxLen - 1;
+}
+时间复杂度分析：
+由于四个分支中，i都是增加，R要么增加要么不变，总增长幅度是2n，所以时间复杂度是 O(n)
+Manacher算法保证了i和R都是增长状态，所以可以把时间复杂度从O(n^2)优化到O(n)
+```
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/24.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/25.png)
+
+### 9.3 窗口更新最大最小值
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/26.png)
+
+```c++
+窗口：
+    1. 左边界L、右边界R只能向右移动
+    2. L<R
+    3. 可以选择L或R二者之一往右动
+    
+思路：利用双端队列实现：存索引（即能知道值，还能知道索引）
+    1. R往右走时，从尾部添加新元素，并保证从头到尾严格单调递增，不满足就删掉队尾元素
+    2. L往右走时，如果队头元素与过期元素相同则删去，否则不管
+    3. 下标大且对应的值也大，那么就可以把前面比它小的元素删去了，因为前面小的元素再也没可能成为最大值了
+       原因：因为索引大且值大的元素比前面那些元素晚过期
+    
+双端队列维持的信息：如果目前窗口不再添加新元素，而L依次往右动，谁会依次成为最大值，最大值优先级信息。
+
+最大值：
+vector<int>getMaxWindow(vector<int>vec, int w) {
+	if (vec.size() == 0 || w < 1 || vec.size() < w)return {};
+	deque<int>qmax;
+	vector<int>res(vec.size() - w + 1);
+	int index = 0;
+	for (int i = 0; i < vec.size(); i++) {
+		while (!qmax.empty() && vec[qmax.back()] <= vec[i]) {//不满足严格递减的删去
+			qmax.pop_back();
+		}
+		//删掉一定数量的元素后加入新元素
+		qmax.push_back(vec[i]);
+		if (qmax.front() == i - w) {//因窗口右移过期
+			qmax.pop_front();
+		}
+		//i至少遍历到索引为2的元素窗口才处理过3个元素
+		if (i >= w - 1) {
+			res[index++] = vec[qmax.front()];
+		}
+	} 
+	return res;
+}
+最小值：双端队列从头到尾严格递增，逻辑与求最大值类似。
+
+时间复杂度分析：
+每个元素进出队列最多各一次，所以是 O(n)
+```
+
+### 9.4 单调栈
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/27.png)
+
+```c++
+左右两边离得最近的比当前值大的元素的索引：
+思路：
+    1.创建一个栈，从底到顶按从小到大排序，添加的元素对应的索引。
+    2.如果准备添加的元素不符合顺序，那么就删栈顶，同时我们知道栈里所有数右边离得最近且比这个数小的元素就是
+      准备新加的元素，左边离得最近且比这个数小的元素就是该元素在栈中底下的那一个元素。
+    3.遍历结束后，若栈中还有数，就进入清算阶段，弹出所有元素并处理。右边都没有比该元素小的元素。
+    
+//有重复元素的，把重复元素的索引按顺序放入vector中
+vector<vector<int>>getNearLess(vector<int>vec) {
+	//创建二维数组，第一列存放左边最近小数索引，第二列存放右边最近小数索引
+	vector<vector<int>>res(vec.size(), vector<int>(2));
+	//单调栈
+	stack<vector<int>>stk;
+	//遍历数组
+	for (int i = 0; i < vec.size(); i++) {
+		//如果栈不为空，且待添加数不符合单调性，那就要删去栈顶，同时更新删去元素的信息
+		while (!stk.empty() && vec[stk.top()[0]] > vec[i]) {
+			vector<int>popIs = stk.top();
+			stk.pop();
+			//stk.top()[stk.top().size() - 1]，相同元素的索引中最后一个加进来的。
+			int leftLessIndex = stk.empty() ? -1 : stk.top()[stk.top().size() - 1];
+			//可能有多个索引，所以要遍历完
+			for (int popi : popIs) {
+				res[popi][0] = leftLessIndex;
+				res[popi][1] = i;
+			}
+		}
+		if (!stk.empty() && vec[stk.top()[0]] == vec[i]) {
+			stk.top().push_back(i);
+		}
+		else {
+			vector<int>indexs;
+			indexs.push_back(i);
+			stk.push(indexs);
+		}
+	}
+	//清算
+	while (!stk.empty()) {
+		vector<int>popIs = stk.top();
+		stk.pop();
+		int leftLessIndex = stk.empty() ? -1 : stk.top() [stk.top().size() - 1];
+		for (int popi : popIs) {
+			res[popi][0] = leftLessIndex;
+			res[popi][1] = -1;
+		}
+	}
+	return res;
+}
+时间复杂度分析：
+每个元素进栈出栈的次数都各位1次，所有时间复杂度是 O(n)
+```
+
+### 9.5 最大指标
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/28.png)
+
+```c++
+思路：单调栈
+    1.遍历数组，利用单调栈的信息，求每次以vec[i]作为最小值的子数组（范围是vec[i]左边最近小数到右边最近小
+      数）的指标，并记录遍历过程中的最大指标。
+
+int max2(vector<int>vec) {
+	int size = vec.size();
+	vector<int>sums(size);
+	sums[0] = vec[0];
+	for (int i = 1; i < size; i++) {
+		sums[i] = sums[i - 1] + vec[i];
+	}
+	int maxVal = INT_MIN;
+	stack<int>stk;
+	for (int i = 0; i < size; i++) {
+		while (!stk.empty() && vec[stk.top()] >= vec[i]) {
+			int j = stk.top();
+			stk.pop();
+			//栈为空，说明弹出的元素左边没有比它更小的了
+			maxVal = max(maxVal, (stk.empty() ? sums[i - 1] : (sums[i - 1] - sums[stk.top()])) * vec[j]);
+		}
+		stk.push(i);
+	}
+	while (!stk.empty()) {
+		int j = stk.top();
+		stk.pop();
+		//栈为空，说明弹出的元素左边没有比它更小的了
+		maxVal = max(maxVal, (stk.empty() ? sums[size - 1]: (sums[size - 1] - sums[stk.top()])) * vec[j]);
+	}
+	return maxVal;
+}
+```
+
+
+
+## 10.二叉树的Morris遍历等
+
+### 10.1 二叉树结点间的最大距离
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/29.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/31.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/30.png)
+
+```c++
+最大距离分析：
+    1.根结点不参与
+      1.1最大距离在根结点左树
+      1.2最大距离在根结点右树
+    2.根结点参与
+      从根结点左树最远的结点到右树最远的结点：由高度决定
+    3.最大距离=上述3种情况的最大值
+
+class Node {
+public:
+	int value;
+	Node* left;
+	Node* right;
+	Node(int data) {
+		this->value = data;
+	}
+};
+
+class Info {
+public:
+	int maxDistance;
+	int height;
+	Info(int dis, int h) {
+		maxDistance = dis;
+		height = h;
+	}
+};
+
+//返回以x为头的整棵树，两个信息
+Info process(Node* x) {
+	if (x == NULL)return Info(0, 0);
+	Info leftInfo = process(x->left);
+	Info rightInfo = process(x->right);
+	//info
+	int p1 = leftInfo.maxDistance;
+	int p2 = rightInfo.maxDistance;
+	int p3 = leftInfo.height + 1 + rightInfo.height;
+	int maxDistance = max(p3, max(p1, p2));
+	int height = max(leftInfo.height, rightInfo.height) + 1;
+	return Info(maxDistance, height);
+}
+
+int maxDistance(Node* head) {
+	return process(head).maxDistance;
+}
+```
+
+### 10.2 派对的最大快乐值
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/32.png)
+
+```c++
+可能性分类：每个员工在上级的影响下决定来与不来，所以分成两种情况即可。
+
+class Info {
+public:
+	int laiMaxHappy;
+	int buMaxHappy;
+	Info(int lai, int bu) {
+		laiMaxHappy = lai;
+		buMaxHappy = bu;
+	}
+};
+
+class Employee {
+public:
+	int happy;
+	vector<Employee>nexts;//直接下属
+};
+
+Info process(Employee x) {
+	if (x.nexts.empty())return Info(x.happy, 0);//x是基层员工
+	int lai = x.happy;//x来的情况下，整棵树的最大收益的初始值
+	int bu = 0;//x不来的情况下，整棵树最大收益的初始值
+	//遍历直接下属，提取信息
+	for (Employee next : x.nexts) {
+		//取一名下属员工
+		Info info = process(next);
+		//如果x来，那么x的直系下属就不来
+		lai += info.buMaxHappy;
+		//如果x不来，x的直系下属可来也可不来，取最大值
+		bu += max(info.laiMaxHappy, info.buMaxHappy);
+	}
+	return Info(lai, bu);
+}
+
+int maxHappy(Employee boss) {
+	Info headInfo = process(boss);
+	return max(headInfo.laiMaxHappy, headInfo.buMaxHappy);
+}
+递归实际上就是暴力地罗列出所有可能性(可能性是我们提前想出来的)，然后在所有情况中选择自己想要的，由局部组合成
+整体。
+```
+
+### 10.3 Morris遍历
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/33.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/34.png)
+
+```c++
+class Node {
+public:
+	int value;
+	Node* left;
+	Node* right;
+	Node(int val){
+		this->value = value;
+		this->left = NULL;
+		this->right = NULL;
+	}
+};
+
+void morris(Node* head) {
+	if (head == NULL)return;
+	Node* cur = head;
+	Node* mostRight = NULL;
+	while (cur != NULL) {//流程
+		mostRight = cur->left;//mostRight暂时作cur的左孩子
+		if (mostRight != NULL) {//有左子树
+			//由于会手动更改右指针，所以多加一个判断条件
+			while (mostRight->right != NULL && mostRight != cur) {
+				mostRight = mostRight->right;
+			}
+			//mostRight变成了cur左子树最右的节点
+			if (mostRight->right == NULL) {
+				//第一次来到cur节点
+				mostRight->right = cur;
+				cur = cur->left;
+				continue;
+			}
+			else {
+				//第二次来到cur节点，恢复指针
+				mostRight->right = NULL;
+			}
+		}
+		cur = cur->right;
+	}
+}
+
+先序：
+    1.只经过一次的节点，直接打印
+    2.经过两次的节点，只有第一次才打印
+void morrisPre(Node* head) {
+	if (head == NULL)return;
+	Node* cur = head;
+	Node* mostRight = NULL;
+	while (cur != NULL) {//流程
+		mostRight = cur->left;//mostRight暂时作cur的左孩子
+		if (mostRight != NULL) {//有左子树，说明会遍历两次该节点
+			//由于会手动更改右指针，所以多加一个判断条件
+			while (mostRight->right != NULL && mostRight != cur) {
+				mostRight = mostRight->right;
+			}
+			//mostRight变成了cur左子树最右的节点，第一次遍历时才打印
+			if (mostRight->right == NULL) {
+				//第一次来到cur节点
+				cout << cur->value << " ";
+				mostRight->right = cur;
+				cur = cur->left;
+				continue;
+			}
+			else {
+				//第二次来到cur节点，恢复指针
+				mostRight->right = NULL;
+			}
+		}
+		else {//没有左子树的情况，说明只会遍历一次该节点，直接打印
+			cout << cur->value << " ";
+		}
+		cur = cur->right;
+	}
+}
+
+中序：
+    1.只经过一次的节点，直接打印
+    2.经过两次的节点，只有第二次才打印
+void morrisIn(Node* head) {
+	if (head == NULL)return;
+	Node* cur = head;
+	Node* mostRight = NULL;
+	while (cur != NULL) {//流程
+		mostRight = cur->left;//mostRight暂时作cur的左孩子
+		if (mostRight != NULL) {//有左子树，说明会遍历两次该节点
+			//由于会手动更改右指针，所以多加一个判断条件
+			while (mostRight->right != NULL && mostRight != cur) {
+				mostRight = mostRight->right;
+			}
+			//mostRight变成了cur左子树最右的节点
+			if (mostRight->right == NULL) {
+				//第一次来到cur节点
+				mostRight->right = cur;
+				cur = cur->left;
+				continue;
+			}
+			else {
+				//第二次来到cur节点，恢复指针
+				mostRight->right = NULL;
+			}
+		}
+		else {//没有左子树的情况，说明只会遍历一次该节点，直接打印
+			cout << cur->value << " ";
+		}
+		//第二次遍历完之后跳出循环直接打印该节点
+		cout << cur->value << " ";
+		cur = cur->right;
+	}
+}
+
+后序：
+    1.只有在第二次遍历到能被二次遍历的节点时才做事：逆序打印其左树的右边界
+    2.最后单独逆序打印整棵树的右边界
+Node* reverseEdge(Node* from) {
+	Node* pre = NULL;
+	Node* next = NULL;
+	while (from != NULL) {
+		next = from->right;
+		from->right = pre;
+		pre = from;
+		from = next;
+	}
+	return pre;
+}
+
+//以x为头的树，逆序打印这棵树的右边界
+void printEdge(Node* x) {
+	Node* tail = reverseEdge(x);
+	Node* cur = tail;
+	while (cur != NULL) {
+		cout << cur->value << " ";
+		cur = cur->right;
+	}
+	reverseEdge(tail);
+}
+
+void morriPos(Node* head) {
+	if (head == NULL)return;
+	Node* cur = head;
+	Node* mostRight = NULL;
+	while (cur != NULL) {//流程
+		mostRight = cur->left;//mostRight暂时作cur的左孩子
+		if (mostRight != NULL) {//有左子树，说明会遍历两次该节点
+			//由于会手动更改右指针，所以多加一个判断条件
+			while (mostRight->right != NULL && mostRight != cur) {
+				mostRight = mostRight->right;
+			}
+			//mostRight变成了cur左子树最右的节点
+			if (mostRight->right == NULL) {
+				//第一次来到cur节点
+				mostRight->right = cur;
+				cur = cur->left;
+				continue;
+			}
+			else {
+				//第二次来到cur节点，恢复指针
+				mostRight->right = NULL;
+				//逆序打印左树右边界
+				printEdge(cur->left);
+			}
+		}
+		cur = cur->right;
+	}
+	//单独逆序打印整棵树右边界
+	printEdge(head);
+}
+
+判断搜索二叉树：
+bool isBST(Node* head) {
+	if (head == NULL)return true;
+	Node* cur = head;
+	Node* mostRight = NULL;
+	int preValue = INT_MIN;
+	while (cur != NULL) {//流程
+		mostRight = cur->left;//mostRight暂时作cur的左孩子
+		if (mostRight != NULL) {//有左子树，说明会遍历两次该节点
+			//由于会手动更改右指针，所以多加一个判断条件
+			while (mostRight->right != NULL && mostRight != cur) {
+				mostRight = mostRight->right;
+			}
+			//mostRight变成了cur左子树最右的节点
+			if (mostRight->right == NULL) {
+				//第一次来到cur节点
+				mostRight->right = cur;
+				cur = cur->left;
+				continue;
+			}
+			else {
+				//第二次来到cur节点，恢复指针
+				mostRight->right = NULL;
+			}
+		}
+		if (cur->value <= preValue)return false;
+		preValue = cur->value;
+		cur = cur->right;
+	}
+}
+```
+
+**最优解：**
+
+如果要做第三次信息的强整合，用递归；否则，用Morris
+
+
+
+## 11.大数据题目等
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/35.png)
+
+```c++
+1.需要2^32个bit去记录每个数存在与否，如果存在在就让相应bit位的值改为1
+2.进阶：3KB
+3KB/4=750B，向下取整就是512=2^9，申请数组int arr[512]，记录词频
+将2^32个数分成512组，int len=2^32/2^9，遍历文件数组，arr[nums[i]/len]++，由于只有40亿个数，所以必定
+有的小于len，那么就在该小于len的范围上继续分成512份，直到找到一个数为止。
+```
+
