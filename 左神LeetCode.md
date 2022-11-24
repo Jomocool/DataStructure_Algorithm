@@ -2766,6 +2766,12 @@ bool isBST(Node* head) {
 
 ## 11.大数据题目等
 
+**大数据题目的解题技巧：**
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/36.png)
+
+### 11.1 未出现过的数
+
 ![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/35.png)
 
 ```c++
@@ -2774,5 +2780,161 @@ bool isBST(Node* head) {
 3KB/4=750B，向下取整就是512=2^9，申请数组int arr[512]，记录词频
 将2^32个数分成512组，int len=2^32/2^9，遍历文件数组，arr[nums[i]/len]++，由于只有40亿个数，所以必定
 有的小于len，那么就在该小于len的范围上继续分成512份，直到找到一个数为止。
+```
+
+### 11.2 所有重复的URL
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/37.png)
+
+```c++
+补充题：
+    1.创建若干个大根堆(按照词频排序)
+    2.取所有大根堆的堆顶放入总堆(大根堆)
+    3.取总堆堆顶(剩余词汇中词频最大)放入返回容器中
+    4.找到刚刚被取出总堆的所在原堆，并在其中删去它，然后取该堆的新堆顶放入总堆中，周而复始，直到返回容器中
+      有100个词汇
+```
+
+### 11.3 找数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/38.png)
+
+```c++
+思路：
+    1.用两个bit记录x出现得次数：00(0次),01(1次),10(2次),11(>2次)
+    2.大小：((2^32)*2)/8=2^30(Byte)=1GB
+    
+补充题：
+    1.10KB/4B=2500B，向下取整就是2048=2^11，申请数组int arr[2048]，记录每个范围出现次数
+    2.将2^32个数分成2048组，int len=2^32/2^11，遍历文件数组，arr[nums[i]/len]++
+    3.去找第二十亿个数所在范围即可，然后再分组，直到找到第二十亿个数
+```
+
+### 11.4 无序变有序
+
+```c++
+将10GB无序数通过5GB内存转变成有序数：5GB/16=5*2^26=>2^28
+创建大根堆，遍历数组，每次都找最小的2^28个数，记录数和对应的词频，然后按照词频放入文件中，最多循环2^6次
+```
+
+### 11.5 位运算
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/39.png)
+
+```c++
+//1->0
+//0->1
+int flip(int n) {
+	return n ^ 1;
+}
+
+//n是非负数，返回1
+//n是负数，返回0
+int sign(int n) {
+	return flip((n >> 31) & 1);
+}
+
+//考虑了c溢出
+int getMax(int a, int b) {
+	int c = a - b;
+	int sa = sign(a);
+	int sb = sign(b);
+	int sc = sign(c);
+	int difSab = sa ^ sb;//a和b符号不一样，为1；一样，为0
+	int sameSab = flip(difSab);//a和b符号一样，为1；不一样，为0
+	int returnA = difSab * sa + sameSab * sc;//返回a：a、b同号&&a-b>=0 || a，b不同号&&a>0
+	int returnB = flip(returnA);//返回b：不返回a就一定返回b
+	return a * returnA + b * returnB;
+}
+```
+
+### 11.6 判断一个32位正数是不是2的幂、4的幂
+
+```c++
+2的幂：x中只能右一个1
+方法一：找最右1与原数对比
+x最右1：x&(~x+1)
+bool is2Power(int x){
+    return x==(x&(~x+1));
+}
+
+方法二：x-1
+bool is2Power(int x){
+    return (x&(x-1))==0;
+}
+
+4的幂：x是4的幂必然也是2的幂
+1.判断x是否只有一个1
+2.1只能在 0/2/4/8/.../2n位上
+3.x&0101010101010101...01：即让x和在偶数位上全是1的数作与运算，如果不等于0，那么就是4的幂；否则不是。
+bool 4Power(int x){
+    return (x&(x-1)==0)&&(x&0x55555555)!=0;
+}
+```
+
+### 11.7 a和b的加减乘除
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/40.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/41.png)
+
+```c++
+1.加法：
+a^b：a和b无进位相加
+(a&b)<<1：a和b产生的进位
+(a^b)^(a&b),(a^b)&((a&b)<<1)
+不断重复上述操作直到产生的进位等于0，结果就出来了
+int add(int a, int b) {
+	int sum = a;
+	while (b != 0) {
+		sum = a ^ b;//无进位相加的结果
+		b = (a & b) << 1;//进位信息
+		a = sum;
+	}
+	return sum;
+}
+
+2.减法：减数取反加1，放入加法中实现
+int negNum(int n) {
+	return add(~n, 1);
+}
+
+int minus(int a, int b) {
+	return add(a, negNum(b));
+}
+
+3.乘法：
+int multi(int a, int b) {
+	int res = 0;
+	while (b != 0) {
+		if ((b & 1) != 0) {
+			res = add(res, a);
+		}
+		a <<= 1;//a左移，b的1一直处于最低位，实际上a应该是在和b的高位1相乘，所以a要左移扩大
+		b >>= 1;//b右移
+	}
+	return res;
+}
+
+4.除法：a/b
+让b左移但不超过a：0111100/0000101，让b左移3位，00001也相应左移3位：01000，意味着0111100可以有01000个
+000101。但实际代码是让a右移，因为右移更安全，左移可能会溢出。
+x=a-b：让b左移但不超过x，直到减完b之后等于0。
+bool isNeg(int n) {
+	return n < 0;
+}
+
+int divide(int a, int b) {
+	int x = isNeg(a) ? negNum(a) : a;
+	int y = isNeg(b) ? negNum(b) : b;
+	int res = 0;
+	for (int i = 31; i > -1; i = minus(i, 1)) {
+		if ((x >> i) >= y) {//左移y可能会溢出，x右移更安全
+			res |= (1 << i);
+			x = minus(x, y << i);
+		}
+	}
+	return isNeg(a) ^ isNeg(b) ? negNum(res) : res;
+}
 ```
 
