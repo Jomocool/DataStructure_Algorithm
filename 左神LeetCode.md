@@ -2938,3 +2938,853 @@ int divide(int a, int b) {
 }
 ```
 
+## 12.暴力递归
+
+### 12.1 机器人移动
+
+**问题：**
+
+int N：N个格子(1~N)
+
+int s：开始位置
+
+int E：结束位置
+
+int k：机器人必须走k步
+
+机器人移动方式：向左或向右一格，但不能越界
+
+求：总共有几种方式，用k步从s到e？
+
+```c++
+方法一：普通版
+/*
+N：一共是N个位置
+E：终点
+rest：还剩rest步要走，rest初始值其实就是k
+cur：当前位置
+反回方法数
+*/
+int f1(int N, int E, int rest, int cur) {
+	if (rest == 0) {
+		return cur == E ? 1 : 0;
+	}
+	//防止越界，强行干预机器人移动
+	if (cur == 1) return f1(N, E, rest - 1, 2);
+	if (cur == N)return f1(N, E, rest - 1, N - 1);
+	//中间位置，机器人即可向左走也可向右走
+	return f1(N, E, rest - 1, cur - 1) + f1(N, E, rest - 1, cur + 1);
+}
+
+int walkWays1(int N, int E, int S, int K) {
+	return f1(N, E,K,S);
+}
+方法一的问题：由于f1函数只和rest、cur这两个变量有关，而每个格子（除边界格子）又可能从左边或右边来，因此子
+    		过程可能会有重复的f1函数。
+时间复杂度分析：
+机器人既可往左也可往右，类似二叉树，总共有k步，所以是一棵高度为k的二叉树，那么时间复杂度就是 O(2^k)
+
+方法二：优化版(利用可变参数做二维表)
+int f2(int N, int E, int rest, int cur,vector<vector<int>>&dp) {
+	if (dp[rest][cur] != -1) {//如果算过，直接返回算过的返回值
+		return dp[rest][cur];
+	}
+	//缓存未命中
+	if (rest == 0) {
+		dp[rest][cur] = cur == E ? 1 : 0;
+		return dp[rest][cur];
+	}
+	//防止越界，强行干预机器人移动
+	if (cur == 1) {
+		dp[rest][cur] = f2(N, E, rest - 1, 2, dp);
+	}
+	else if (cur == N) {
+		dp[rest][cur] = f2(N, E, rest - 1, N-1, dp);
+	}
+	else {//中间位置，机器人即可向左走也可向右走
+		dp[rest][cur]= f2(N, E, rest - 1, cur - 1, dp) + f2(N, E, rest - 1, cur + 1, dp);
+	}
+	return dp[rest][cur];
+}
+
+int walkWays2(int N, int E, int S, int K) {
+	vector < vector<int>>dp(K + 1, vector<int>(N + 1,-1));
+	return f2(N, E,K,S,dp);
+}
+时间复杂度分析：
+dp的大小是k*N，而求每个dp的时间复杂度是 O(1)，因此，总时间复杂度就是 O(k*N)
+```
+
+### 12.2 最少硬币数
+
+给定不同面额的硬币 coins (硬币数各只有一个)和一个总金额 amount。编写一个函数来计算可以凑成
+
+总金额所需的最少的硬币个数。如果没有任何一种硬币组合能组成总金额，返回 -1。
+
+```c++
+方法一：普通版
+//返回组成rest的最少硬币数
+int process1(vector<int>& coins, int index, int rest) {
+	if (rest < 0) {//该枚硬币不可取，删去
+		return -1;
+	}
+	if (rest == 0) {//该枚硬币取完之后刚好组成aim，但因为已经算过该枚硬币了，所以这里返回0
+		return 0;
+	}
+	if (index == coins.size()) {//越界，因此多算了一枚，要删去
+		return -1;
+	}
+	int p1 = process1(coins, index + 1, rest);//不取
+	int p2Next = process1(coins, index + 1, rest - coins[index]);//取
+	if (p1 == -1 && p2Next == -1) {
+		return -1;//无效解
+	}
+	else {
+		if (p1 == -1)return 1 + p2Next;
+		if (p2Next == -1)return p1;
+	}
+	return min(p1, 1 + p2Next);
+}
+
+int minCoins1(vector<int>& coins, int aim) {
+	return process1(coins, 0, aim);
+}
+
+方法二：优化版
+int process2(vector<int>& coins, int index, int rest,vector<vector<int>>&dp) {
+	if (rest < 0) {//该枚硬币不可取，删去
+		return -1;
+	}
+	if (dp[index][rest] != -2) {
+		return dp[index][rest];
+	}
+	if (rest == 0) {//该枚硬币取完之后刚好组成aim，但因为已经算过该枚硬币了，所以这里返回0
+		dp[index][rest] = 0;
+	}
+	if (index == coins.size()) {//越界，因此多算了一枚，要删去
+		dp[index][rest] = -1;
+	}
+	else {
+		int p1 = process2(coins, index + 1, rest, dp);//不取
+		int p2Next = process2(coins, index + 1, rest - coins[index], dp);//取
+		if (p1 == -1 && p2Next == -1) {
+			dp[index][rest] = -1;//无效解
+		}
+		else {
+			if (p1 == -1) {
+				dp[index][rest] = 1 + p2Next;
+			}
+			else if (p2Next == -1) {
+				dp[index][rest] = p1;
+			}
+			else {
+				dp[index][rest] = min(p1, 1 + p2Next);
+			}
+		}
+	}
+	return dp[index][rest];
+}
+
+int minCoins2(vector<int>& coins, int aim) {
+	vector<vector<int>>dp(coins.size() + 1, vector<int>(aim + 1, -2));
+	return process2(coins, 0, aim, dp);
+}
+
+方法三：动态规划
+int minCoins3(vector<int>coins, int aim) {
+	int N = coins.size();
+	vector<vector<int>>dp(N + 1, vector<int>(aim + 1));
+	for (int col = 1; col <= aim; col++) {
+		dp[N][col] = -1;
+	}
+	for (int index = N - 1; index >= 0; index--) {
+		for (int rest = 1; rest <= aim; rest++) {
+			int p1 = dp[index + 1][rest];
+			int p2Next = -1;
+			if (rest - coins[index] >= 0) {//防止越界
+				p2Next = dp[index + 1][rest - coins[index]];
+			}
+			if (p1 == -1 && p2Next == -1) {
+				dp[index][rest] = -1;
+			}
+			else {
+				if (p1 == -1) {
+					dp[index][rest] = p2Next + 1;
+				}
+				else if (p2Next == -1) {
+					dp[index][rest] = p1;
+				}
+				else {
+					dp[index][rest] = min(p1, p2Next + 1);
+				}
+			}
+		}
+	}
+	return dp[0][aim];
+}
+```
+
+### 12.3 马到终点的方法数
+
+**问题：**
+
+给定一个中国象棋棋盘，马走日，从(0,0)到(a,b)必须走k步的方法数有多少？
+
+```c++
+思路：
+    可以反着来，从（a，b）到（0，0），step递减，最终看step=0时，是否到达（0，0）
+
+//防止越界访问数组
+int getValue(vector<vector<vector<int>>>& dp, int step, int row, int col) {
+	if (row < 0 || row>9 || col < 0 || col>8)return 0;
+	return dp[step][row][col];
+}
+
+int dpWays(int i, int j, int step) {
+	if (j < 0 || j>8 || i < 0 || i>9 || step < 0) {
+		return 0;
+	}
+	vector<vector<vector<int>>>dp(step + 1, vector<vector<int>>(10, vector<int>(9)));
+	dp[0][0][0] = 1;
+	for (int h = 1; h <= step; h++) {//层
+		for (int r = 0; r < 10; r++) {
+			for (int c = 0; c < 9; c++) {
+				dp[h][r][c] = getValue(dp, h - 1, r - 1, c + 2);
+				dp[h][r][c] = getValue(dp, h - 1, r - 1, c - 2);
+				dp[h][r][c] = getValue(dp, h - 1, r + 1, c + 2);
+				dp[h][r][c] = getValue(dp, h - 1, r + 1, c - 2);
+				dp[h][r][c] = getValue(dp, h - 1, r - 2, c + 1);
+				dp[h][r][c] = getValue(dp, h - 1, r - 2, c - 1);
+				dp[h][r][c] = getValue(dp, h - 1, r + 2, c + 1);
+				dp[h][r][c] = getValue(dp, h - 1, r + 2, c - 1);
+			}
+		}
+	}
+	return dp[step][i][j];
+}
+```
+
+### 12.4 最少方法数
+
+给定不同面额的硬币 coins (硬币数各有任意个)和一个总金额 amount。编写一个函数来计算可以凑成
+
+总金额所需的最少的硬币个数。如果没有任何一种硬币组合能组成总金额，返回 -1。
+
+```c++
+方法一：递归版
+int process(vector<int>& coins, int index, int rest) {
+	if (index == coins.size()) {
+		return rest == 0 ? 1 : 0;
+	}
+	int ways = 0;
+	//张数过大就没意义了，因为已经超出rest了
+	for (int zhang = 0; coins[index] * zhang < rest; zhang++) {
+		ways += process(coins, index + 1, rest - coins[index] * zhang);
+	}
+	return ways;
+}
+
+方法二：动态规划
+int way2(vector<int>coins, int aim) {
+	if (coins.size() == 0)return 0;
+	int N = coins.size();
+	vector<vector<int>>dp(N + 1, vector<int>(aim + 1));
+	dp[N][0] = 1;
+	for (int index = N - 1; index >= 0; index--) {
+		for (int rest = 0; rest <= aim; rest++) {
+			int ways = 0;
+			for (int zhang = 0; coins[index] * zhang <= rest; zhang++) {
+				ways += dp[index + 1][rest - coins[index] * zhang];
+			}
+			dp[index][rest] = ways;
+		}
+	}
+	return dp[0][aim];
+}
+时间复杂度： O(N*aim^2)
+
+优化版：用临近值代替枚举
+int way3(vector<int>coins, int aim) {
+	if (coins.size() == 0)return 0;
+	int N = coins.size();
+	vector<vector<int>>dp(N + 1, vector<int>(aim + 1));
+	dp[N][0] = 1;
+	for (int index = N - 1; index >= 0; index--) {
+		for (int rest = 0; rest <= aim; rest++) {
+			dp[index][rest] = dp[index+1][rest];
+            if(rest-coins[index]){//防止越界
+                dp[index][rest]+=dp[index][rest-coins[index]]
+            }
+		}
+	}
+	return dp[0][aim];
+}
+时间复杂度： O(N*aim)
+```
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/42.png)
+
+**总结：**
+
+递归（定）=> 记忆搜索 => 严格位置依赖
+
+1. 可变参数范围
+2. 目标值
+3. base case
+4. 中间范围的依赖关系
+5. 求值顺序
+
+
+
+## 13.有序表
+
+1. **BST:**
+
+   - 红黑树
+
+   - AVL(平衡二叉搜索树)
+
+   - SBT(Size Balanced Tree)
+
+2. **list:**
+
+   - 跳表(skip list)
+
+时间复杂度：O(logN)
+
+### 13.1 AVL
+
+```c++
+每添加一个节点都要判断一次左右子树的高度差然后相应地进行左右旋转
+
+当右子树高度大于左子树高度时，且高度差大于1：
+左旋转：(本质：让一个更适中的数作根节点使得两边的节点数差不多，以此达到平衡)
+    1.创建一个新的节点，值等于当前根节点的值：Node*newNode=new Node(root->value);
+    2.把新节点的左子树设置为当前节点的左子树：newNode->left=left;
+    3.把新节点的右子树设置为当前节点的右子树的左子树：newNode->right=right->left;
+    4.把当前节点的值换为右子节点的值：value=right->value;
+    5.把当前节点的右子树设置成右子树的右子树：right=right->right;
+    6.把当前节点的左子树设置为新节点：left=newNode;
+
+当左子树高度大于左子树高度时，且高度差大于1：
+右旋转：
+    1.创建一个新的节点，值等于当前根节点的值：Node*newNode=new Node(root->value);
+    2.把新节点的右子树设置为当前节点的右子树：newNode->rihgt=right;
+    3.把新节点的左子树设置为当前节点的左子树的右子树：newNode->left=left->right;
+    4.把当前节点的值换为左子节点的值：value=left->value;
+    5.把当前节点的左子树设置成左子树的左子树：left=left->left;
+    6.把当前节点的左子树设置为新节点 right=newNode;
+
+
+问题分析：
+    1.符合右旋转条件
+    2.如果当前节点的左子树的右子树高度大于它的左子树的左子树的高度
+    3.先对当前节点的左节点进行左旋转
+    4.再对当前节点进行右旋转
+    
+//创建节点
+class Node {
+public:
+	int value;
+	Node* left = NULL;
+	Node* right = NULL;
+	
+	Node(int value) {
+		this->value = value;
+	}
+
+	//返回左子树高度
+	int leftheight() {
+		if (left == NULL) {
+			return 0;
+		}
+		return left->height();
+	}
+	//返回右子树高度
+	int rightheight() {
+		if (right == NULL) {
+			return 0;
+		}
+		return right->height();
+	}
+
+	//返回以该节点为根节点的树的高度
+	int height() {
+		return max(left ? left->height() : 0, right ? right->height() : 0)+1 ;
+	}
+
+	//左旋转方法
+	void leftRotate() {
+		//创建新的节点，以当前根节点的值
+		Node* newNode = new Node(value);
+		//把新节点的左子树设置为当前节点的左子树
+		newNode->left = left;
+		//把新的节点的右子树设置为当前节点的右子树的左子树
+		newNode->right = right->left;
+		//把当前节点的值替换成右子节点的值
+		value = right->value;
+		//把当前节点的右子树设置成右子树的右子树
+		right = right->right;
+		//把当前节点的左子树设置成新的节点
+		left = newNode;
+	}
+
+	void rightRotate() {
+		Node* newNode = new Node(value);
+		newNode->right = right;
+		newNode->left = left->right;
+		value = left->value;
+		left = left->left;
+		right = newNode;
+	}
+
+	//查找要删除的节点
+	Node* research(int value) {
+		if (value == this->value) {//就是该节点
+			return this;
+		}
+		else if (value < this->value) {//如果查找的值小于当前节点，向左子树递归
+			if (this->left == NULL)return NULL;
+			return this->left->research(value);
+		}
+		else {
+			if (this->right == NULL)return NULL;
+			return this->right->research(value);
+		}
+	}
+
+	//查找要删除节点的父节点
+	Node* searchParent(int value) {
+		if ((this->left != NULL && this->left->value == value) ||
+			(this->right != NULL && this->right->value == value)) {
+			return this;
+		}
+		else {
+			//如果查找的值小于当前节点的值，并且当前节点的左子节点不为空
+			if (value < this->value && this->left != NULL) {
+				return this->left->searchParent(value);//向左子树递归查找
+			}
+			else if (value >= this->value && this->right != NULL) {
+				return this->right->searchParent(value);
+			}
+			else {
+				return NULL;//没有父节点
+			}
+		}
+	}
+
+	//添加节点
+	//递归的形式添加节点，注意需要满足树的要求
+	void add(Node* node) {
+		if (!node) return;
+
+		//判断传入的节点的值和当前节点值得关系
+		if (node->value < this->value) {
+			//如果当前节点的左子节点为空
+			if (this->left == NULL) {
+				this->left = node;
+			}
+			else {
+				//递归向左子树添加
+				this->left->add(node);
+			}
+		}
+		else {//添加的节点的值大于当前节点的值
+			if (this->right == NULL) {
+				this->right = node;
+			}
+			else {
+				//递归向右子树添加
+				this->right->add(node);
+			}
+		}
+
+		//当添加完一个节点后，如果：（右子树的高度-左子树高度）>1，左旋转
+		if (rightheight() - leftheight() > 1) {
+			//如果它的右子树的左子树高度大于它的右子树的右子树的高度
+			if (right != NULL && right->leftheight() > right->rightheight()) {
+				right->rightRotate();
+			}
+
+			leftRotate();
+
+			return;//直接return，不然还要接下去做判断，以免引起不必要的bug
+		}
+
+		//当添加完一个节点，如果（左子树的高度-右子树的高度）>1，右旋转
+		if (leftheight() - rightheight() > 1) {
+			//如果它的左子树的右子树高度大于它的左子树的左子树的高度
+			if (left != NULL && left->rightheight() > left->leftheight()) {
+				//先对当前这个节点的左节点进行左旋转
+				left->leftRotate();
+			}
+			rightRotate();
+
+			return;
+		}
+	}
+    
+    //1.返回以node为根节点的树的最小节点的值
+	//2.删除以node为根节点的树的最小节点
+	int delRightTreeMin(Node* node) {//node当作一棵树的根节点，返回以node为根节点的树的最小
+        							 //节点的值
+		Node* target = node;
+		//循环查找左节点，就会找到最小值
+		while (target->left != NULL) {
+			target = target->left;
+		}
+		//这时target就指向了最小节点
+		//删除最小节点，最小节点必然无子树，所以不会调用本函数
+		delNode(target->value);
+		return target->value;
+	}
+    
+    //删除节点
+	void delNode(int value) {
+		if (root == NULL)return;
+
+		//1.需要先去找到要删除的节点targetNode
+		Node* targetNode = search(value);
+		//2.如果没有找到要删除的节点
+		if (targetNode == NULL) {
+			return;
+		}
+		//如果该树只有一个节点，且存在值为value的节点，那必然是root
+		if (root->left == NULL && root->right == NULL) {
+			root = NULL;
+			return;
+		}
+
+		//寻找targetNode的父节点
+		Node* parent = searchParent(value);
+
+		//删除叶子节点
+		if (targetNode->left == NULL && targetNode->right == NULL) {
+			//判断targetNode是父节点的左子节点。还是右子节点
+			if (parent->left != NULL && parent->left->value == value) {
+				parent->left = NULL;
+			}
+			else if (parent->right != NULL && parent->right->value == value) {
+				parent->value = NULL;
+			}
+		}
+		else if (targetNode->left!=NULL&&targetNode->right!=NULL) {//删除有两棵子树的节点
+			int minVal = delRightTreeMin(targetNode->right);
+			targetNode->value = minVal;
+		}
+		else {//删除只有一棵子树的节点，关键：当树只剩两个节点时，要注意父节点可能为空
+			//如果要删除的节点有左子节点
+			if (targetNode->left != NULL) {
+				if (parent != NULL) {
+					//如果targetNode是parent的左子节点
+					if (parent->left->value == value) {
+						parent->left = targetNode->left;
+					}
+					else {//targetNode是parent的右子节点
+						parent->right = targetNode->left;
+					}
+				}
+				else {
+					root = targetNode->left;
+				}
+			}
+			else {
+				if (parent != NULL) {
+					//如果targetNode是parent的左子节点
+					if (parent->left->value == value) {
+						parent->left = targetNode->right;
+					}
+					else {//targetNode是parent的右子节点
+						parent->right = targetNode->right;
+					}
+				}
+				else {
+					root = targetNode->right;
+				}
+			}
+		}
+	}
+};
+```
+
+### 13.2 SB树
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/43.png)
+
+### 13.3 红黑树
+
+```c++
+红黑树：
+    1.每个结点不是红就是黑
+    2.头结点，叶节点(最下面的空白区域)必须为黑
+    3.红结点之间不相邻
+    4.从头部cur出发，每条到结束的路黑结点一样多。因为是红黑交替，所以可以保证长度大概一致
+```
+
+### 13.4 跳表
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/44.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/45.png)
+
+
+
+## 14.中级提升班1
+
+### 14.1 窗口不回退
+
+#### 14.1.1 最多覆盖点
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/46.png)
+
+```c++
+方法一：贪心
+思路：
+    1.把绳子的右端依次放在每个点上，记录所覆盖过的最多点数
+    2.确定绳子右端后，找大于等于绳子左端的最左位置
+
+//返回大于等于value的最左的值对应的索引
+int nearestIndex(vector<int>& vec, int R, int value) {
+	int left = 0;
+	int index = R;
+	while (left < R) {
+		int mid = left + ((R - left) >> 1);
+		if (vec[mid] >= value) {
+			index = mid;
+			R = mid - 1;
+		}
+		else {
+			left = mid + 1;
+		}
+	}
+	return index;
+}
+
+int maxPoint1(vector<int>& vec, int L) {
+	int res = 1;
+	for (int i = 0; i < vec.size(); i++) {
+		int nearest = nearestIndex(vec, vec[i], vec[i] - L);
+		res = max(res, i - nearest + 1);//索引差+1即为覆盖点数
+	}
+	return res;
+}
+时间复杂度： O(N*logN)
+    
+方法二：滑动窗口
+思路：把绳子的左端依次放在每个点上，维持一个窗口，记录所覆盖过的最多点数
+    
+int maxPoint2(vector<int>& vec, int L) {
+	int res = 1;
+	int R = 0;
+	//R没必要回退
+	for (int i = 0; i < vec.size(); i++) {
+		while (vec[R] - vec[i] <= L)R++;
+		res = max(res, R - i + 1);
+	}
+	return res;
+}
+时间复杂度： O(N)，因为左边界右边界都不需要回退
+```
+
+### 14.2 打表法
+
+####  14.2.1 买苹果
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/47.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/48.png)
+
+```c++
+思路：
+需要n个苹果，尽量都买8个每袋的可以保证袋数最小，然后余下的苹果用6个每袋的解决。但是，当余下的苹果大于24时，
+就不需要再试了。假设余下27个，27=24+3；再递减，余下35个，35=24+11；余下43个，
+43=24+19。都是前面的基础类型出现过的，因为24是6和8的最小公倍数。24的那部分可以用8搞定，用6搞定袋数更多，不符合题意要求。
+    
+int minBags1(int apple) {
+	if (apple < 0)return -1;
+	int bag6 = -1;
+	int bag8 = apple / 8;
+	int rest = apple - 8 * bag8;
+	while (bag8 >= 0 && rest < 24) {
+		int bagUse6 = rest % 6 == 0 ? (rest / 6) : -1;
+		if (bagUse6 != -1) {
+			bag6 = bagUse6;
+			break;
+		}
+		rest = apple - 8 * (--bag8);
+	}
+	return bag6 == -1 ? -1 : bag6 + bag8;
+}
+
+总结规律后：打表法
+int minBagAwesome(int apple){
+    if((apple&1)!=0)return -1;
+    if(apple<18){
+        return apple==0?0:(apple==6||apple==8)?1:(apple==12||apple==14||appple==16)?2:-1;
+    }
+    return (apple-18)/8+3;
+}
+```
+
+#### 14.2.2 先后手吃草
+
+**问题：**
+
+两只羊每次只能选择吃4的幂次方草，给定n草，在先后手顺序吃草的情况下，谁刚好把草吃光就赢。
+
+```c++
+string winner1(int n) {
+	//0    1    2    3   4
+	//后  先   后  先  先
+	if (n < 5) {
+		return (n == 0 || n == 2) ? "后手" : "先手";
+	}
+	//n>=5时
+	int base = 1;//先手决定吃的草
+	while (base <= n) {//试吃1/4/16……份草，看各个结果，有一个能赢就行。
+		//当前先手吃掉base份草，留下n-base份草给后手
+		//母过程的“先手”是子过程的“后手”
+		if (winner1(n - base) == "后手")return "先手";
+		if (base>n/4)break;//防止base*4后溢出，即防止base大于INT_MAX
+		base *= 4;
+	}
+	return "后手";
+}
+
+总结规律后：打表法
+string winner2(int n){
+    if(n%5==0||n%5==2)return "先手";
+    return "后手";
+}
+```
+
+### 14.3 预处理
+
+#### 14.3.1 染色
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/49.png)
+
+```c++
+int minPaint(string s) {
+	if (s.length() == 0 || s.length() == 1)return 0;
+	int len = s.length();
+	vector<int>leftG(len);//记录左半部分有多少G
+	vector<int>rightR(len);//记录右半部分有多少R
+	leftG[0] = s[0] == 'G' ? 1 : 0;
+	rightR[0] = s[len - 1] == 'R' ? 1 : 0;
+	for (int i = 1; i < len - 1; i++) {
+		leftG[i] = leftG[i - 1] + (s[i] == 'G' ? 1 : 0);
+		rightR[len - 1 - i] = rightR[len - i] + (s[len - 1 - i] == 'R' ? 1 : 0);
+	}
+    //注意边界，因为循环时i不达到边界
+	leftG[len - 1] = leftG[len - 2] + (s[len - 1] == 'G' ? 1 : 0);
+	rightR[0] = rightR[1] + (s[0] == 'R' ? 1 : 0);
+	int res = rightR[0];
+	for (int j = 0; j < len; j++) {
+		res = min(res, leftG[j] + rightR[j]);//不会重复包含，因为s[j]要么是R要么是G
+	}
+	return res;
+}
+```
+
+#### 14.3.2 最大正方形边长
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/50.png)
+
+```c++
+长方形子矩阵数:(N^4)/2，在总矩阵找两个点，可能性各为n^2，两点可确定一个矩阵（对角线），最多重复一次。
+正方形子矩阵数:(N^3)/2，n^2*n=n^3，因为第二个点有特殊要求
+
+创建辅助结构：
+    1.right：记录二维数组每行中每个数右边（包含自己）有多少个连续的1，如果自身为0，那么直接就是0个
+    2.down：每个数下方有多少个连续的1，逻辑和right类似
+    
+void setBorderMap(vector<vector<int>>& m, vector<vector<int>>& right, vector<vector<int>>& down) {
+	int r = m.size();
+	int c = m[0].size();
+	if (m[r - 1][c - 1] == 1) {
+		right[r - 1][c - 1] = 1;
+		down[r - 1][c - 1] = 1;
+	}
+	//处理右边
+	for (int i = r - 2; i != -1; i--) {
+		if (m[i][c - 1] == 1) {
+			right[i][c - 1] = 1;
+			down[i][c - 1] = down[i + 1][c - 1] + 1;
+		}
+	}
+	//处理下边
+	for (int i = c - 2; i != -1; i--) {
+		if (m[r - 1][i] == 1) {
+			right[r - 1][i] = right[r - 1][i + 1] + 1;
+			down[r - 1][i] = 1;
+		}
+	}
+	//处理中间
+	for (int i = r - 2; i != -1; i--) {
+		for (int j = c - 2; j != -1; j--) {
+			if (m[i][j] == 1) {
+				right[i][j] = right[i][j + 1] + 1;
+				down[i][j] = down[i + 1][j] + 1;
+			}
+		}
+	}
+}
+
+bool hasSizeOfBorder(int size, vector<vector<int>>& right, vector<vector<int>>& down) {
+	for (int i = 0; i != right.size() - size + 1; i++) {
+		for (int j = 0; j != right[0].size() - size + 1; j++) {
+			if (right[i][j] >= size && down[i][j] >= size && right[i + size - 1][j] >= size && down[i][j + size - 1] >= size) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+int getMaxSize(vector<vector<int>>& m) {
+	vector<vector<int>> right(m.size(),vector<int>(m[0].size()));
+	vector<vector<int>> down(m.size(), vector<int>(m[0].size()));
+	setBorderMap(m, right, down);
+	for (int size = min(m.size(), m[0].size()); size != 0; size--) {
+		if (hasSizeOfBorder(size, right, down)) {
+			return size;
+		}
+	}
+	return 0;
+}
+```
+
+#### 14.3.3  加工函数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/51.png)
+
+```c++
+//等概率返回0和1的函数
+int r01(){
+    int res=0;
+    do{
+        res=f();
+    }while(res==3);
+ return res<3?0:1; //等分数字，小于的范围返回0,；大于的范围返回1；多余的那一个数重做。  
+}
+
+//1~7
+int g(){
+    int res=0;
+    do{
+        res=(r01()<<2)+(r01()<<1)+r01();
+    }while(res==7);//大于所需范围的重做
+    return res+1;//因为res是从0开始的，所以加上c之后就属于需要等概率返回的范围了
+}
+
+//调用两次f，如果是01返回0，如果是10就返回1，其他重做。因为这两种情况等概率，都是p(1-p)
+int g(){
+    int res=0;
+    do{
+        res=(f()<<1)+f();
+    }while(res==0||res==3);
+    return res-1;
+}
+```
+
