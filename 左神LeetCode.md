@@ -3788,3 +3788,206 @@ int g(){
 }
 ```
 
+## 15.中级提升班2
+
+### 15.1 动态规划
+
+#### 15.1.1 二叉树结构数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/52.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/53.png)
+
+```c++
+方法一：递归
+int process(int n) {
+	if (n < 0)return 0;
+	if (n == 0)return 1;
+	if (n == 1)return 1;
+	if (n == 2)return 2;
+	int res = 0;
+	for (int leftNum = 0; leftNum <= n - 1; leftNum++) {
+		int leftWays = process(leftNum);
+		int rightWays = process(n - 1 - leftNum);
+		res += leftWays * rightWays;
+	}
+	return res;
+}
+
+方法二：动态规划
+int numTrees(int n) {
+	if (n < 2)return 1;
+	vector<int>dp(n+1);
+	dp[0] = 1;
+	for (int i = 1; i <= n; i++) {//结点个数为i时
+		for (int j = 0; j <= i-1; j++) {//左侧结点个数为j-1，右侧结点个数为i-j
+			dp[i] += dp[j] * dp[i - j - 1];
+		}
+	}
+	return dp[n];
+}
+```
+
+#### 15.1.2 完整括号字符串
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/54.png)
+
+```c++
+完整括号字符串定义：每个左括号都有右括号与之配对，且每个右括号都有左括号与之配对
+
+思路：
+    1.定义变量count，遍历字符串，碰到'('，count++，碰到')'，count--
+    2.遍历过程中，如果count<0，说明')'过多
+    3.遍历结束后，count必须等于0，否则可以判断'('过多
+
+int needParenttheses(string str) {
+	int count = 0;
+	int ans = 0;
+	for (int i = 0; i < str.length(); i++) {
+		if (str[i] == '(')count++;
+		else {
+			if (count == 0)ans++;
+			else count--;
+		}
+	}
+	return count + ans;
+}
+```
+
+### 15.2 差值为k的数字对
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/55.png)
+
+```c++
+vector<pair<int, int>>numPair(vector<int>& vec) {
+	map<int, int>m;
+	vector<pair< int, int>>res;
+	for (int i = 0; i < vec.size(); i++) {
+			m[vec[i]] = vec[i] + 2;//map的性质决定了不会有重复元素
+	}
+	for (auto& p : m) {//map是一个大的容器，里面装着多个pair
+		if (m.count(p.second) != 0) {
+			res.push_back(p);
+		}
+	}
+	return res;
+}
+```
+
+### 15.3 平均值变大
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/56.png)
+
+```c++
+int maxOps(vector<int>vec1, vector<int>vec2) {
+	double sum1 = 0;
+	for (int i = 0; i < vec1.size(); i++) {
+		sum1 += (double)vec1[i];
+	}
+	double sum2 = 0;
+	for (int i = 0; i < vec2.size(); i++) {
+		sum2 += (double)vec2[i];
+	}
+	if (avg(sum1, vec1.size()) == avg(sum2, vec2.size()))return 0;
+	vector<int>vecMore;
+	vector<int>vecLess;
+	double sumMore = 0;
+	double sumLess = 0;
+	if (avg(sum1, vec1.size()) > avg(sum2, vec2.size())) {
+		vecMore = vec1;
+		sumMore = sum1;
+		vecLess = vec2;
+		sumLess = sum2;
+	}
+	else {
+		vecMore = vec2;
+		sumMore = sum2;
+		vecLess = vec1;
+		sumLess = sum1;
+	}
+	sort(vecMore.begin(), vecMore.end());
+	set<int>setLess;
+	for (int num : vecLess) {
+		setLess.insert(num);
+	}
+	int moreSize = vecMore.size();
+	int lessSize = vecLess.size();
+	int ops = 0;
+	for (int i = 0; i < vecMore.size(); i++) {
+		double cur = (double)vecMore[i];
+		if (cur<avg(sumMore, moreSize) && cur>avg(sumLess, lessSize) && setLess.count(vecMore[i]) == 0) {
+			sumMore -= cur;
+			sumLess += cur;
+			moreSize--;
+			lessSize++;
+			setLess.insert(vecMore[i]);
+			ops++;
+		}
+	}
+	return ops;
+}
+
+double avg(double sum, int size) {
+	return sum / (double)size;
+}
+```
+
+### 15.4 最长有效括号子串
+
+```c++
+dp[i]:子串以i位置字符为结尾时，最长的有效长度。如果s[i]='('，dp[i]=0
+
+int maxLength(string s){
+    if(s.length()==0)return 0;
+    int res=0;
+    int pre=0;
+    vector<int>dp(s.length());
+    for(int i=1;i<s.length();i++){
+        if(s[i]==')'){//s[i]是右括号时才有得配对
+            pre=i-dp[i-1]-1;//与s[i]配对的左括号索引pre
+        	if(pre>=0&&s[pre]=='('){
+            	dp[i]=dp[i-1]+2+(pre>0?dp[pre-1]:0);//还要加上能被左括号接上的一段
+        	}
+            res=max(res,dp[i]);
+        }
+    }
+    return res;
+}
+```
+
+### 15.5 无序栈变有序(栈顶为最大元素)
+
+```c++
+void sortStack(stack<int>&stk){
+    if(stk.size()==0)return;
+    stack<int>temp;
+    while(!stk.empty()){
+        int val=stk.top();
+        stk.pop();
+        while(!temp.empty()&&temp.top()<val){
+            stk.push(temp.top());
+            temp.pop();
+        }
+        temp.push(val);
+    }
+    while(!temp.empty()){
+        stk.push(temp.top());
+        temp.pop();
+    }
+}
+```
+
+### 15.6 有序二维数组找数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/57.png)
+
+```c++
+思路：
+    1. 从右上角开始找
+    2. matrix[i][j]<aim，i++
+    3. matrix[i][j]>aim，j--
+```
+
+### 15.7 最多1的行
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/58.png)
