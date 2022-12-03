@@ -3991,3 +3991,331 @@ void sortStack(stack<int>&stk){
 ### 15.7 最多1的行
 
 ![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/58.png)
+
+## 16.中级提升班3
+
+### 16.1 平分
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/59.png)
+
+```c++
+思路：
+    1.求出总物品数sum，判断sum%n==0?
+    2.分析单个机器，每个机器的左右两边可能缺物品也可能多物品
+    3.所需物品数等于avg*m
+    4.多：往外扔；少：往外拿
+      4.1左右皆负(l,r)：至少|l|+|r|次，因为机器一次只能扔一个物品
+      4.2左右皆正：至少max(l,r)次，因为可以一起接收物品
+      4.3左负右正、左正右负：至少max(|l|,|r|)次
+    5.遍历求每个位置的机器调用次数，所需次数最大的机器目标达成时，其他机器也一定完成了。
+    6.因此总次数=所有机器中的最大次数
+    
+int minOps(vector<int>&arr){
+    if(arr.size()==0){
+        return 0;
+    }
+    int size=arr.size();
+    int sum=0;
+    for(int i=0;i<size;i++){
+        sum+=arr[i];
+    }
+    if(sum%size!=0){
+        return -1;
+    }
+    int avg=sum/size;
+    int leftSum=0;
+    int ans=0;
+    for(int i=0;i<size;i++){
+        //负需要输入，正需要输出
+        int leftRest=leftSum-i*avg;
+        int rightRest=(sum-leftSum-arr[i])-(size-i-1)*avg;
+        if(leftRest<0&&rightRest<0){
+            ans=max(ans,abs(leftRest)+abs(rightRest));
+        }else{
+            ans=max(ans,max(abs(leftRest,rightRest)));
+        }
+        leftSum=arr[i];
+    }
+    return ans;
+}
+```
+
+### 16.2 螺旋打印矩阵
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/60.png)
+
+```c++
+思路：
+    1.找对角两点，按顺时针方向打印
+    2.对角两点沿对角线方向向内收缩
+    3.两点行号相同时：向右打印
+    4.两点列号相同时：向下打印
+    5.两点错过时停止
+
+//辅助打印函数
+void printEdge(vector<vector<int>>&m,int ia,int ja,int ib,int jb){
+    if(ia==ib){
+        for(int i=ja;i<=jb;i++){
+            cout<<m[ia][i]<<" ";
+        }
+    }else if(ja==jb){
+        for(int i=ia;i<=ib;i++){
+            cout<<m[i][ja]<<" ";
+        }
+    }else{
+        int curR=ia;
+        int curC=ja;
+        while(curC!=jb){
+            cout<<m[ia][curC++]<<" ";
+        }
+        while(curR!=ib){
+            cout<<m[curR++][jb]<<" ";
+        }
+        while(curC!=ja){
+            cout<<m[ib][curC--]<<" ";
+        }
+        while(curR!=ia){
+            cout<<m[curR--][ja]<<" ";
+        }
+    }
+}
+
+void spiralOrderPrint(vector<vector<int>>&m){
+    int tR=0;
+    int tC=0;
+    int dR=m.size()-1;
+    int dC=m[0].size()-1;
+    while(tR<=dR&&tC<=dC){
+        printEdge(m,tR++,tC++,dR--,dC--);
+    }
+}
+```
+
+### 16.3 转动正方形矩阵
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/61.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/62.png)
+
+```c++
+void rotateEdge(vector<vector<int>>&m,int tR,int tC,int dR,int dC){
+    int times=dC-tC;
+    int tmp=0;
+    for(int i=0;i<times;i++){
+        tmp=m[tR][tC+i];
+        m[tR][tC+i]=m[dR-i][tC];
+        m[dR-i][tC]=m[dR][dC-i];
+        m[dR][dC-i]=m[tR+i][dC];
+        d[tR+i][dC]=tmp;
+    }
+}
+
+void rotate(vector<vector<int>>&m){
+    int tR=0;
+    int tC=0;
+    int dR=m.size()-1;
+    int dC=m[0].size()-1;
+    while(tR<dR){
+        rotate(m,tR++,tC++,dR--,dC--);
+    }
+}
+```
+
+### 16.4 zigzag打印矩阵
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/63.png)
+
+```c++
+思路：
+    1. 两点A，B从左上角出发
+    2. A往下走，不能再往下就往右走；B往右走，走到不能再往右就往下走。
+    3. 两点每次同时动一步
+    4. 如果两点之间有斜线，就不断地从左下到右上然后从右上到左下交替打印
+    
+void printLevel(vector<vector<int>>&m,int tR,int tC,int dR,int dC,bool f){
+    if(f){
+        while(tR!=dR+1){
+            cout<<m[tR++][tC--]<<" ";
+        }
+    }else{
+        while(dR!=tR-1){
+            cout<<m[dR--][dC++]<<" ";
+        }
+    }
+}
+
+void printMatrixZigZag(vector<vector<int>>&m){
+    int ar=0;
+    int ac=0;
+    int br=0;
+    int bc=0;
+    int endR=m.size()-1;
+    int endC=m[0].size()-1;
+    bool fromUp=false;
+    while(ar!=endR+1){
+        printLevel(m,ar,ac,br,bc,fromUp);
+        ar=ac==endC?ar+1:ar;
+        ac=ac==endC?ac:ac+1;
+        br=br==endR?br:br+1;
+        bc=br==endR?bc+1:bc;
+        fromUp=!fromUp;
+    }
+}
+```
+
+### 16.5 最少操作步骤数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/64.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/65.png)
+
+```c++
+思路：
+    1. n是质数，只调用操作2。因为操作1无法拼成质数长度的a
+    2. n不是质数，n=a*b*c*d，（a，b，c，d）是质数，且已经是最优顺序
+    3. a-2次操作2,1次操作1，b-2次操作2,1次操作1，c-2次操作2,1次操作1，d-2次操作2,1次操作1。
+    4.总次数等于a+b+c+d-质数因子个数
+
+bool isPrim(int n){
+    if(n<2){
+        return false;
+    }
+    int max=(int)sqrt((double)n);
+    for(int i=2;i<=max;i++){
+        if(n%i==0){
+            return false;
+        }
+    }
+    return true;
+}
+    
+vector<int>divsSumAndCount(int n){
+    int sum=0;
+    int count=0;
+    for(int i=2;i<=n;i++){
+        while(n%i==0){
+            sum+=i;
+            count++;
+            n/=i;
+        }
+    }
+    return {sum,count};
+}
+
+int minOps(int n){
+    if(n<2)return 0;
+    if(isPrim(n)){
+        return n-1;
+    }
+    vector<int>divSumAndCount=divsSumAndCount(n);
+    return divSumAndCount[0]-divSumAndCount[1];
+}
+```
+
+### 16.6 出现次数最多的前k个数
+
+```c++
+思路：
+    1.准备一个小根堆
+    2.当堆里的元素个数为k个时，堆顶元素就是门槛
+    3.哈希表中只有大于堆顶元素的才能入堆
+    
+提升：实时显示
+class Node{
+public:
+    string str;
+    int times;
+    Node(string s,int t){
+        this->str=s;
+        this->times=t;
+    }
+}
+
+class TopKRecord{
+private:
+    map<string,Node>strNodeMap;
+    vector<Node>heap;
+    int index;
+    map<Node,int>nodeIndexMap;
+public:
+    TopKRecord(int k){
+        heap=vector<int>(k);
+        heapSize=0;
+    }
+    
+    void add(string str){
+        Node curNode;
+        int preIndex=-1;
+        //当前str对应的节点对象
+        if(strNodeMap.count(str)==0){//str第一次出现
+            curNode=Node(str,1);
+            strNodeMap[str]=curNode;
+            nodeIndexMap[curNode]=-1;
+        }else{//str并非第一次出现
+            curNode=strNodeMap[str];
+            curNode.times++;
+            preIndex=nodeIndexMap[curNode];
+        }
+        //当前str对应的节点对象是否在堆上
+        if(preIndex==-1){
+            if(heapSize==heap.size()){//堆满，和门槛判断
+                if(heap[0].times<curNode.times){
+                    nodeIndexMap[heap[0]]=-1;
+                    nodeIndexMap[curNode]=0;
+                    heap[0]=curNode;
+                    heapify(0,heapSize);//调整堆
+                }
+            }else{//堆没满，直接进，再用heapInsert
+                nodeIndexMap[curNode]=heapSize;
+                heap[heapSize]=curNode;
+                heapInsert(heapSize++);
+            }
+        }else{//已经在堆上，str对应节点的times增加之后调整堆
+            heapify(preIndex,heapSize);
+        }
+    }
+    
+    void heapInsert(int index){
+        while(index!=0){
+            int parent=(index-1)/2;
+            if(heap[index].times<heap[parent].times){
+                swap(parent,index);
+                index=parent;
+            }else{
+                break;
+            }
+        }
+    }
+    
+    void heapify(int index,int heapSize){
+        int l=index*2+1;
+        int r=l+1;
+        int smallest=index;
+        while(l<heapSize){
+            if(heap[l].times<heap[index].times){
+                smallest=l;
+            }
+            if(r<heapSize&&heap[r].times<heap[smallest].times){
+                smallest=r;
+            }
+            if(smallest!=index){
+                swap(smallest,index);
+            }else{
+                break;
+            }
+            index=smallest;
+            l=index*2+1;
+            r=l+1；
+        }
+    }
+    
+    void swap(int index1,int index2){
+        nodeIndexMap[heap[index1]]=index2;
+        nodeIndexMap[heap[index2]]=index1;
+        Node temp=heap[index1];
+        heap[index1]=heap[index2];
+        heap[index2]=temp;
+    }
+}
+```
+
