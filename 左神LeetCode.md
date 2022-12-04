@@ -4319,3 +4319,261 @@ public:
 }
 ```
 
+## 17.中级提升班4
+
+### 17.1 自定义栈
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/66.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/67.png)
+
+```c++
+思路：
+    1. 定义两个栈Data和Min
+    2. Data正常放入数据
+    3. Min在有新数据放入Data时，也会被重复放入当前Data中的最小值，所以Data中的最小值保存在Min栈顶
+    4. Data做一次pop操作时，Min也做一次pop操作
+```
+
+### 17.2 队列成栈，栈成队列
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/68.png)
+
+```c++
+队列成栈：
+    class TwoQueueStack {
+private:
+	queue<int>qu;
+	queue<int>help;
+public:
+	void push(int pushInt) {
+		qu.push(pushInt);
+	}
+
+	//交换的原因：push操作是把元素插入到qu队列中，让qu一直是保留多个元素的队列，才能保证元素的相对顺序。
+	int top() {
+		if (qu.empty()) {
+			throw runtime_error("Stack is empty");
+		}
+		while (qu.size() != 1) {
+			help.push(qu.front());
+			qu.pop();
+		}
+		int res = qu.front();
+		qu.pop();
+		swap();
+		return res;
+	}
+
+	void pop() {
+		if (qu.empty()) {
+			throw runtime_error("Stack is empty");
+		}
+		while (qu.size() >1) {
+			help.push(qu.front());
+			qu.pop();
+		}
+		qu.pop();
+		swap();
+	}
+
+	void swap() {
+		queue<int>temp = qu;
+		qu = help;
+		help = temp;
+	}
+};
+
+栈成队列：
+    1. 定义两个栈push和pop
+    2. 用户push新数据时就放入push栈
+    3. 用户pop时先判断pop栈是否为空，然后再把push栈的全部数据弹出到pop栈中
+    
+class TwoStackQueue {
+private:
+	stack<int>stackPush;
+	stack<int>stackPop;
+	
+public:
+	void push(int pushInt) {
+		stackPush.push(pushInt);
+		dao();
+	}
+
+	void pop() {
+		if (stackPop.empty() && stackPush.empty()) {
+			throw runtime_error("Queue is empty!");
+		}
+		dao();
+		stackPop.pop();
+	}
+
+	int front() {
+		if (stackPop.empty() && stackPush.empty()) {
+			throw runtime_error("Queue is empty!");
+		}
+		dao();
+		return stackPop.top();
+	}
+
+	void dao() {
+		if (stackPop.empty()) {//pop栈为空push栈才能倒数据
+			while (!stackPush.empty()) {//一次性倒空
+				stackPop.push(stackPush.top());
+				stackPush.pop();
+			}
+		}
+	}
+};
+
+因为队列和栈可以互通，所以图的深度或广度优先遍历既可以用栈实现，也可以用队列实现。
+```
+
+### 17.3 动态规划的空间压缩技巧
+
+#### 17.3.1 最小路径和
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/69.png)
+
+```c++
+思路：
+根据转移方程决定需要几行数组
+    
+int minPathSum(vector<vector<int>>& m) {
+	if (m.size() == 0)return 0;
+	int more = max(m.size(), m[0].size());
+	int less = min(m.size(), m[0].size());
+	bool rowmore = more == m.size();
+	vector<int>arr(less);
+	arr[0] = m[0][0];
+	for (int i = 1; i < less; i++) {
+		arr[i] = arr[i - 1] + (rowmore ? m[0][i] : m[i][0]);
+	}
+	for (int i = 1; i < more; i++) {
+		arr[0] = arr[0] + (rowmore ? m[0][i] : m[i][0]);
+		for (int j = 1; j < less; j++) {
+			arr[j] = min(arr[j - 1], arr[j]) + (rowmore ? m[i][j]:m[j][i]);
+		}
+	}
+	return arr[less - 1];
+}
+```
+
+#### 17.3.2 装水
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/70.png)
+
+```c++
+思路：
+只关心每个位置上方能够留下多少水
+V[i]=max(min(左max,右max)-arr[i],0)
+    1. 利用双指针L=1、R=arr.size()-2指向数组左右两侧
+    2. 定义两变量maxLeft、maxRight，分别记录L、R扫过区域的最大值
+    3. 计算水量all：瓶颈由小的确定，哪边高度低就移动哪边的指针
+      3.1 maxLeft<maxRight：all+=maxLeft-arr[L]>0?maxLeft-arr[L]:0;右移L，更新maxLeft
+      3.2 maxRight<maxLeft：all+=maxRight-arr[R]>0?maxRight-arr[R]:0;左移R，更新maxRight
+      3.3 maxRight==maxLeft：all+=maxLeft-arr[L]>0?maxLeft-arr[L]:0;右移L，更新maxLeft；左移
+    	  R，更新maxRight
+    4. maxLeft是L位置左边真实的最大值，maxRight是R位置右边真实的最大值，所以当哪边真实的最大值更小时，
+       对应那边指针的水量才可以计算，因为真实的瓶颈我们已经知道了。
+    
+int getWater(vector<int>& arr) {
+	if (arr.size() < 3) return 0;
+	int L = 1;
+	int R = arr.size() - 2;
+	int maxLeft = arr[0];
+	int maxRight = arr[arr.size() - 1];
+	int all = 0;
+	while (L <= R) {
+		if (maxLeft <= maxRight) {
+			all += max(maxLeft - arr[L], 0);
+			maxLeft = max(maxLeft, arr[L++]);
+		}
+		else {
+			all += max(maxRight - arr[R], 0);
+			maxRight = max(maxRight, arr[R--]);
+		}
+	}
+	return all;
+}
+```
+
+### 17.4 最大绝对差值
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/71.png)
+
+```c++
+思路：
+    1.遍历数组找到最大值maxVal
+    2.由于maxVal是全局最大值，所以maxVal必定是左部分最大值或者右部分最大值
+    3.又因为无论怎么划分，arr[0]和arr[arr.size()-1]必定分别在左部分和右部分
+    4.所以左部分的最大值要么是arr[0]，要么就是比arr[0]更大的数，右部分同理
+    5.最终答案就是：max(maxVal-arr[0],maxVal-arr[arr.size()-1])
+```
+
+### 17.5 互为旋转词
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/72.png)
+
+```c++
+思路：
+    1. 判断a、b长度是否一样
+    2. a+=a;
+    3. 利用kmp算法判断b是否为a的子串
+```
+
+### 17.6 咖啡机问题
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/73.png)
+
+```c++
+(1)vector<int>arr：数组大小代表咖啡机数量，数据代表冲一杯咖啡所需时间
+(2)int n：n个人要喝咖啡，每人一杯
+(3)int a：洗杯器（洗一个杯子所需时间a），只能串行，一次只能洗一个杯子
+(4)int b：咖啡杯自然挥发变干净的时间
+问题：从第一个人开始泡咖啡开始，到所有杯子都变干净至少需要多少时间？
+
+思路：
+    1.创建一个小根堆，如上图所示，第一个数代表开始时刻，第二个数代表所需时间，按结束时间早晚来排序。
+    2.每个人拿完咖啡(取堆顶)后，更新小根堆里的数据，例如第一个人拿完后，(0,2)更新成(2.2)
+    3.将每个人拿到咖啡的时间放入drinks数组中，该数据也是开始洗杯子的时间
+    
+//洗杯子
+int process(vector<int>&drinks,int a,int b,int index,int washLine){
+    if(index==drinks.size()-1){
+        return min(max(washLine,drinks[index])+a,drinks[index]+b);
+    }
+    //用洗杯器
+    int wash=max(washLine,drinks[index])+a;//洗完该杯子的结束时间，喝完才能洗
+    int next1=process(drinks,a,b,index+1,wash);//洗完剩下杯子所需时间
+    int p1=max(wash,next1);//全部事情做完所需时间
+    
+    //自然风干
+    int dry=drink[index]+b;
+    int next2=process(drinks,a,b,index+1,washLine);
+    int p2=max(dry,next2);
+    
+    return min(p1,p2);//p1和p2是当前杯子选择不同干净的方式所需的总时间，返回最小的即可
+}
+
+由于上述递归只有两个可变参数，因此可以利用一张二维表动态规划完成
+index:0~n-1
+washLine:0~drinks[n-1]+n*a（准备足够用的表即可）
+```
+
+### 17.7 任意相邻两数之积是4的倍数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/74.png)
+
+```c++
+思路：
+    1.统计奇数个数(a)、偶数个数（2的数量(b)、包含4因子的数(c)）
+    2.讨论b：
+      2.1 b==0：奇4奇4奇4奇4奇4奇4奇4奇4……；a==1(c>=1),a>1(c>=a-1)
+      2.2 b==1：a==0(c>=1),a==1(c>=1),a>1(c>=a)
+      2.3 b>1：22222224奇4奇4奇4奇4……；a==0(c>=0),a==1(c>=1),a>1(c>=a)=>c>=a
+    3.if(b==0)return a==1?c>=1:c>=a-1;
+	  else if(b==1)return a==0?c>=1:(a==1?c>=1:c>=a)
+	  else(b>1)return c>=a;
+```
+
