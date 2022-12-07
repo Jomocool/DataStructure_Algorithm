@@ -4780,3 +4780,279 @@ vector<int>getMoneys(vector<Job>job,vector<int>ability){
     7.if(res<minq||res==minq&&cur<minr)，判断溢出条件
 ```
 
+## 19.中级提升班6
+
+### 19.1 目录路径
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/84.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/85.png)
+
+```c++
+思路：
+    1.创建前缀树，将相应文件名转成结点放入前缀树中
+    2.深度优先遍历前缀树打印文件名
+    
+class Node {
+public:
+	string name;
+	map<string, Node*>nextMap;//map默认有序，nextMap储存着文件路径
+
+	Node(string name) {
+		this->name = name;
+	}
+};
+
+vector<string> stringSplit(string str, const char split)
+{
+	istringstream iss(str);	// 输入流
+	string token;			// 接收缓冲区
+	vector<string>res;
+	while (getline(iss, token, split))	// 以split为分隔符
+	{
+		res.push_back(token); // 放入res中
+	}
+	return res;
+}
+
+Node* generateFolderTree(vector<string>& folderPaths) {
+	Node* head = new Node("");
+	for (string foldPath : folderPaths) {
+		vector<string>paths = stringSplit(foldPath, '\\');
+		Node* cur = head;
+		for (int i = 0; i < paths.size(); i++) {
+			if (cur->nextMap.count(paths[i]) == 0) {
+				cur->nextMap[paths[i]] = new Node(paths[i]);
+			}
+			cur = cur->nextMap[paths[i]];
+		}
+	}
+	return head;
+}
+
+string get2nSpace(int n) {
+	string res = "";
+	for (int i = 1; i < n; i++) {
+		res += "  ";
+	}
+	return res;
+}
+
+void printProcess(Node* head, int level) {
+	if (level != 0) {
+		cout << get2nSpace(level) << head->name << endl;
+	}
+	for (auto next : head->nextMap) {
+		printProcess(next.second, level + 1);
+	}
+}
+
+void print(vector<string>& folderPaths) {
+	if (folderPaths.size() == 0)return;
+	Node* head = generateFolderTree(folderPaths);
+	printProcess(head, 0);
+}
+```
+
+### 19.2 二叉树经典套路
+
+#### 19.2.1 搜索二叉树转双向链表
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/86.png)
+
+```c++
+思路：
+    1.返回以每个结点为根结点时，双向链表的头和尾
+    2.左子结点的尾的right指针指向其父结点(父结点的left指针反指)，父结点的right指针指向右子结点的头(右子       节点的头的left指针反指)，然后返回左子结点的头和右子结点的尾，作为自己的头和尾
+    
+class Node {
+public:
+	Node* left;
+	Node* right;
+	int value;
+
+	Node(int value) {
+		this->value = value;
+		left = NULL;
+		right = NULL;
+	}
+};
+
+//搜索二叉树转化成双向链表后，返回头和尾的信息
+class Info {
+public:
+	Node* start;
+	Node* end;
+
+	Info(Node* start, Node* end) {
+		this->start = start;
+		this->end = end;
+	}
+};
+
+Info process(Node* x) {
+	if (x == NULL)return Info(NULL, NULL);
+	Info leftHeadEnd = process(x->left);
+	Info rightHeadEnd = process(x->right);
+	if (leftHeadEnd.end != NULL) {//左子结点的尾的next指针指向其父结点
+		leftHeadEnd.end->right = x;
+	}
+	//父结点的left指针反指
+	x->left = leftHeadEnd.end;
+	//父结点的right指针指向右子结点的头
+	x->right = rightHeadEnd.start;
+	if (rightHeadEnd.start != NULL) {//右子节点的头的left指针反指
+		rightHeadEnd.start->left = x;
+	}
+	return Info(leftHeadEnd.start ? leftHeadEnd.start : x, rightHeadEnd.end ? rightHeadEnd.end : x);
+}
+
+Node* convert(Node* head)
+{
+	return process(head).start;
+}
+```
+
+#### 19.2.2 最大搜索子树节点个数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/87.png)
+
+```c++
+提升版：不返回节点个数，返回头节点
+class Node {
+public:
+	Node* left;
+	Node* right;
+	int value;
+
+	Node(int value) {
+		this->value = value;
+		left = NULL;
+		right = NULL;
+	}
+};
+
+class Info {
+public:
+	Node* maxBSTHead;
+	bool isBST;
+	int minVal;
+	int maxVal;
+	int maxBSTSize;
+
+	Info(Node* head, bool is, int min, int max, int size) {
+		this->maxBSTHead = head;
+		this->isBST = is;
+		this->minVal = min;
+		this->maxVal = max;
+		this->maxBSTSize = size;
+	}
+};
+
+Info process(Node* x) {
+	if (x == NULL) {//不能影响后续判断，左树最大值小于x的值，所以max设置为INT_MIN；min同理
+		return Info(NULL, true, INT_MAX, INT_MIN, 0);
+	}
+	Info leftInfo = process(x->left);
+	Info rightInfo = process(x->right);
+	//用完黑盒后，自身也要完善黑盒
+	int minVal = x->value;
+	int maxVal = x->value;
+	if (x->left) {
+		minVal = min(minVal, leftInfo.minVal);
+		maxVal = max(maxVal, leftInfo.maxVal);
+	}
+	if (x->right) {
+		minVal = min(minVal, rightInfo.minVal);
+		maxVal = max(maxVal, rightInfo.maxVal);
+	}
+
+	int maxBSTSize = 0;
+	Node* maxBSTHead = NULL;
+	if (x->left) {
+		maxBSTSize = leftInfo.maxBSTSize;
+		maxBSTHead = leftInfo.maxBSTHead;
+	}
+	if (x->right&&rightInfo.maxBSTSize>maxBSTSize) {
+		maxBSTSize = rightInfo.maxBSTSize;
+		maxBSTHead = rightInfo.maxBSTHead;
+	}
+
+	bool isBST = false;
+	if ((x->left == NULL || leftInfo.isBST) &&(x->right == NULL || rightInfo.isBST)) {
+		if ((x->left == NULL || leftInfo.maxVal < x->value)&&(x->right == NULL || rightInfo.minVal > x->value)) {
+			isBST = true;
+			maxBSTHead = x;
+			int leftSize = x->left ? leftInfo.maxBSTSize : 0;
+			int rightSize = x->right ? rightInfo.maxBSTSize : 0;
+			maxBSTSize = leftSize + 1 + rightSize;
+		}
+	}
+	return Info(maxBSTHead, isBST, minVal, maxVal, maxBSTSize);
+}
+
+Node*getMaxBSTHead(Node*head){
+    if(head==NULL)return NULL;
+    return process(head).maxBSTHead;
+}
+```
+
+### 19.3 最大累加和问题
+
+#### 19.3.1 历史最高分
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/88.png)
+
+```c++
+思路：
+    1. 定义两个变量cur，maxVal
+    2. cur+=arr[i]，maxVal跟踪cur不断更新
+    3. 如果cur<0，令cur=0；否则继续循环
+    
+int maxSum(vector<int>& arr) {
+	if (arr.size() == 0)return 0;
+	int maxVal = INT_MIN;
+	int cur = 0;
+	for (int i = 0; i < arr.size(); i++) {
+		cur += arr[i];
+		maxVal = max(maxVal, cur);
+		//cur<0，说明i之前的任何位置到当前位置的累加和都小于0，已经没有保留的必要了
+		cur = cur < 0 ? 0 : cur;
+	}
+	return maxVal;
+}
+```
+
+#### 19.3.2 子矩阵最大累加和
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/89.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/90.png)
+
+```c++
+思路：
+    1. n行矩阵
+    2. 只包含0~0；0~1；……；0~n-1；1~1；……；1~n-1；……；n-1~n-1行中，累加和最大在哪一项里
+    3. 由于子矩阵是矩形的特性，可将每行的数据合并后，找子数组最大累加和，降低维度
+    
+int maxSum(vector<vector<int>>&m) {
+	if (m.size() == 0 || m[0].size() == 0)return 0;
+	int maxVal = INT_MIN;
+	int cur = 0;
+	vector<int>s;
+	for (int i = 0; i < m.size(); i++) {
+		s = vector<int>(m[i].size());
+		for (int j = i; j < m.size(); j++) {
+			cur = 0;
+			for (int k = 0; k < s.size(); k++) {
+				s[k] += m[j][k];
+				cur += s[k];
+				maxVal = max(maxVal, cur);
+				cur = cur < 0 ? 0 : cur;
+			}
+		}
+	}
+	return maxVal;
+}
+```
+
