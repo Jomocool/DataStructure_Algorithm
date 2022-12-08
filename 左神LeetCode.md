@@ -5056,3 +5056,187 @@ int maxSum(vector<vector<int>>&m) {
 }
 ```
 
+## 20.中级提升班7
+
+### 20.1 最少路灯数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/91.png)
+
+```c++
+方法一：贪心
+int minLight(string str) {
+	if (str.length() == 0)return 0;
+	int light = 0;
+	int index = 0;
+	while (index < str.length()) {
+		if (str[index] == 'X')index++;
+		else {
+			if (index+1==str.length() || str[index + 1] == 'X') {
+				light++;
+				index++;
+			}
+			else {
+				light++;
+				index += 3;//保证每个遍历到的'.'的前一个位置都没有灯，不会影响后续的判断
+			}
+		}
+	}
+	return light;
+}
+```
+
+### 20.2 给定先序中序，找到后序
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/92.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/93.png)
+
+```c++
+思路：
+    1. 找到pre[i](当前根节点，用于区分左右树)在in数组中对应的位置find
+    2. in数组中find左边对应左树，右边对应右树
+    3. 对于二叉树，要有把整数拆分成各棵小树的想象力
+    
+//利用pre[prei...prej]，结合in[ini...inj]
+//填写好pos[posi...posj]
+void setPos(vector<int>& pre, vector<int>& in, vector<int>&pos, 
+	int prei, int prej, 
+	int ini, int inj, 
+	int posi, int posj
+    map<int,int>m) {
+	if (prei > prej)return;
+	if (prei == prej) {//只剩最后一个数，直接填
+		pos[posi] = pre[prei];
+	}
+	pos[posj] = pre[prei];//先序遍历的第一个是后序遍历的最后一个
+	int find = ini;
+	for (; find <= inj; find++) {//找到当前根节点在in数组中的位置
+		if (in[find] == pre[prei])break;
+	}
+	//左树
+	setPos(pre, in, pos, prei + 1, prei + find - ini, ini, find - 1, posi, posi + find - ini-1);
+	//右树，每次递归只搞定pos[j]，所以posj每次减1即可
+	setPos(pre, in, pos, prei + find - ini + 1, prej, find + 1, inj, posi + find - ini, posj-1);
+}
+
+优化：优化找find的步骤，可用哈希表
+void setPos(vector<int>& pre, vector<int>& in, vector<int>&pos, 
+	int prei, int prej, 
+	int ini, int inj, 
+	int posi, int posj
+    map<int,int>&m) {
+	if (prei > prej)return;
+	if (prei == prej) {//只剩最后一个数，直接填
+		pos[posi] = pre[prei];
+	}
+	pos[posj] = pre[prei];//先序遍历的第一个是后序遍历的最后一个
+	int find = m[pre[i]];//找到当前根节点在in数组中的位置
+	//左树
+	setPos(pre, in, pos, prei + 1, prei + find - ini, ini, find - 1, posi, posi + find - ini-1,m);
+	//右树，每次递归只搞定pos[j]，所以posj每次减1即可
+	setPos(pre, in, pos, prei + find - ini + 1, prej, find + 1, inj, posi + find - ini, posj-1,m);
+}
+
+vector<int>getPos(vector<int>&pre,vector<int>&in){
+    int len=pre.size();
+    vector<int>Pos(len);
+    map<int,int>m;
+    for(int i=0;i<len;i++){
+        map[in[i]]=i;
+    }
+    setPos(pre,in,pos,0,len-1,0,len-1,0,len-1,0,len-1,m);
+    return pos;
+}
+```
+
+### 20.3 完全二叉树的节点个数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/94.png)
+
+```c++
+方法一：遍历树(O(N))
+
+方法二：
+思路：
+    1.一直往左子树移动，找到层数h
+    2.判断右树的最左节点高度
+      2.1等于h：左树肯定是满二叉树(高度为h-1)，n=(2^(h-1)-1)+1+右树节点数(继续递归)
+      2.2小于h：右树肯定是满二叉树(高度为h-2)，n=(2^(h-2)-1)+1+左树节点数(继续递归)
+
+class Node {
+public:
+	Node* left;
+	Node* right;
+	int value;
+
+	Node(int value) {
+		this->value = value;
+		left = NULL;
+		right = NULL;
+	}
+};
+
+int mostLeftLevel(Node* node, int level) {
+	while (node->left != NULL) {
+		node = node->left;
+		level++;
+	}
+	return level;
+}
+
+//node在level层，h是总深度，全局变量不变
+int bs(Node* node, int level, int h) {
+	if (level == h) return 1;
+	if (mostLeftLevel(node->right, level + 1) == h) {//2.1
+		return (1 << (h - level)) + bs(node->right, level + 1, h);
+	}
+	else {//2.2
+		return (1 << (h - level - 1)) + bs(node->left, level + 1, h);//高度差不超过1，所以右树的高度肯定只比左树高度小1
+	}
+}
+时间复杂度分析：
+每次递归只选一侧移动，每次递归遍历（h-n）个节点，所以时间复杂度是O(h^2)，h=logN，O(h^2)=O((logN)^2)
+```
+
+### 20.4 最长递增子序列
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/95.png)
+
+```c++
+子序列：从左到右可以不连在一起
+eg.{3,1,2,6,3,4}=>{1,2,3,4}
+
+思路：动态规划
+ends[i]：所有长度为i+1的递增子序列中最小结尾值，如果有更小的值的dp[i]满足长度要求，之前的位置需要被更新
+ends数组的有效区域是单调递增的，因为长度为i的子序列最小结尾必定小于长度为i+1的子序列最小结尾，如果不满足，
+就意味着长度为i+1的子序列中有更小的长度为i的子序列最小结尾(因为长度为i+1的子序列是包括长度为i的子序列的)
+    
+int maxSubsequence(vector<int> arr) {
+	if (arr.size() <= 1)return arr.size();
+	vector<int>ends(arr.size());
+	ends[0] = arr[0];
+	int right = 0;
+	for (int i = 1; i < arr.size(); i++) {
+		if (ends[right] < arr[i]) {//ends没有比arr[i]更大的
+			right++;
+			ends[right] = arr[i];
+		}
+		else {
+			int l = 0;
+			while (l <= right && ends[l] <= arr[i])l++;//找到ends最左边比arr[i]大的
+			ends[l] = arr[i];
+		}
+	}
+	//由于ends的特性，所以ends有多少有效区域就意味着最长子序列有多长
+	return right + 1;
+}
+```
+
+### 20.5 被3整除
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/96.png)
+
+```c++
+10%3可以等效看成(1+0)%3，所以也可以反向操作回去，直接算等差数列求和取模3即可
+```
+
