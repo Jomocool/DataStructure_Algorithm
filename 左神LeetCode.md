@@ -5240,3 +5240,258 @@ int maxSubsequence(vector<int> arr) {
 10%3可以等效看成(1+0)%3，所以也可以反向操作回去，直接算等差数列求和取模3即可
 ```
 
+## 21.中级提升班8
+
+### 21.1 所有未出现过的数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/97.png)
+
+```c++
+思路：在原数组里操作
+    1.遍历数组，碰到值与索引不符的元素，将值val与索引(val-1)上的值?作比较
+      1.1?==val：停止，直接处理下一个元素
+      1.2?!=val：将val放入对应位置后，继续处理?，直到满足上一个条件为止
+
+
+vector<int>numberNoInArr(vector<int>arr) {//为了不修改原数组的值，我们用赋值拷贝
+	if (arr.size() == 0)return {};
+	for (int& num : arr) {
+		while (arr[num - 1] != num) {
+			int tmp = arr[num - 1];
+			arr[num - 1] = num;
+			num = tmp;
+		}
+	}
+	vector<int>res;
+	for (int i = 0; i < arr.size(); i++) {
+		if (arr[i] != i + 1) {
+			res.push_back(i + 1);
+		}
+	}
+	return res;
+}
+```
+
+### 21.2 最少C币
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/98.png)
+
+```c++
+分析1：递归限制不够（通用）
+    /*
+end：想要达到的目标
+cur：目前达到的分数
+三种决策：
+1.cur+2
+2.cur*2
+3.cur-2
+*/
+int func(int x, int y, int z, int end, int cur) {
+	if (cur == end)return 0;
+	int p1 = (x, y, z, end, cur + 2) + x;
+	int p2 = (x, y, z, end, cur * 2) + y;
+	int p3 = (x, y, z, end, cur - 2) + z;
+	return min(p1, min(p2, p3));
+}
+该递归无法结束，所以我们需要多加一个变量记录当前已经花的钱数，每次递归时和频繁解（普通解）比较，如果大于频繁
+解，说明不是最优解，直接结束
+    
+分析2：没有必要到达2*end的程度
+最终代码：
+/*
+* preMoney：之前已经花了多少钱
+* aim：目标
+* add：x
+* times：y
+* del：z
+* cur：当前人气
+* limitAim：人气到一定程度时不需要再尝试了
+* limitCoin：花到一定程度的C币时就不需要在尝试了
+*/
+int process(int preMoney, int aim, int add, int times, int del, int cur, int limitAim, int limitCoin) {
+	if (preMoney > limitCoin || cur<0 || cur>limitAim) {
+		return INT_MAX;
+	}
+	if (cur == aim)return preMoney;
+	int p1 = process(preMoney + add, aim, add, times, del, cur + 2, limitAim, limitCoin);
+	int p2 = process(preMoney + del, aim, add, times, del, cur - 2, limitAim, limitCoin);
+	int p3 = process(preMoney + times, aim, add, times, del, cur * 2, limitAim, limitCoin);
+	return min(p1, min(p2, p3));
+}
+
+//start和end都是偶数
+int minCcoins(int add, int times, int del, int start, int end) {
+	if (start > end)return -1;
+	return process(0, end, add, times, del, start, end * 2, ((end - start) / 2) * add);
+}
+```
+
+### 21.3 最大奖励
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/99.png)
+
+```c++
+思路：反向宽度优先遍历
+从最后一个结点出发，每个结点有一张有序表，key：从该结点开始到做完最后一个结点需要多少天，value：响应的奖励
+```
+
+### 21.4 达到desired的组合数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/100.png)
+
+```c++
+bool isValid(string exp) {
+	if ((exp.length() & 1) == 0) {//长度为奇数
+		return false;
+	}
+	for (int i = 0; i < exp.length(); i += 2) {
+		if ((exp[i] != '1') && (exp[i] != '0')) {
+			return false; 
+		}
+		if ((exp[i+1] != '&') && (exp[i+1] != '|') && (exp[i + 1] != '^')) {
+			return false;
+		}
+	}
+	return true;
+}
+
+int p(string exp, bool desired, int L, int R) {
+	if (L == R) {
+		if (exp[L] == '1') {
+			return desired ? 1 : 0;
+		}
+		else {
+			return desired ? 0 : 1;
+		}
+	}
+	int res = 0;
+	if (desired) {
+		for (int i = L + 1; i < R; i += 2) {//i运算符作最后运算符
+			switch(exp[i]) {
+			case'&':
+				res += p(exp, true, L, i - 1) * p(exp, true, i + 1, R);
+				break;
+			case'|':
+				res += p(exp, true, L, i - 1) * p(exp, false, i + 1, R);
+				res += p(exp, false, L, i - 1) * p(exp, true, i + 1, R);
+				res += p(exp, true, L, i - 1) * p(exp, true, i + 1, R);
+				break;
+			case'^':
+				res += p(exp, true, L, i - 1) * p(exp, false, i + 1, R);
+				res += p(exp, false, L, i - 1) * p(exp, true, i + 1, R);
+				break;
+			}
+		}
+	}
+	else {
+		for (int i = L + 1; i < R; i += 2) {
+			switch (exp[i]) {
+			case'&':
+				res += p(exp, true, L, i - 1) * p(exp, false, i + 1, R);
+				res += p(exp, false, L, i - 1) * p(exp, true, i + 1, R);
+				res += p(exp, false, L, i - 1) * p(exp, false, i + 1, R);
+				break;
+			case'|':
+				res += p(exp, false, L, i - 1) * p(exp, false, i + 1, R);
+				break;
+			case'^':
+				res += p(exp, true, L, i - 1) * p(exp, true, i + 1, R);
+				res += p(exp, false, L, i - 1) * p(exp, false, i + 1, R);
+				break;
+			}
+		}
+	}
+	return res;
+}
+
+int num1(string exp, bool desired) {
+	if (exp.length() == 0||!isValid(exp))return 0;
+	return p(exp, desired, 0, exp.length() - 1);
+}
+```
+
+### 21.5 最长无重复字符子串
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/101.png)
+
+```c++
+思路：看到子串子序列的问题，就思考以i位置的字符为最后字符的情况下，结果怎么样
+
+int maxUnique(string str) {
+	if (str.length() == 0)return 0;
+	//ASCII码是0~255
+	vector<int>map(256,-1);//记录每个字符上次出现位置的索引值
+	int len = 0;
+	int pre = -1;
+	int cur = 0;
+	for (int i = 0; i < str.length(); i++) {
+		pre = max(pre, map[str[i]]);//最近的重复字符所在索引值
+		cur = i - pre;//长度
+		len = max(len, cur);//更新最长长度
+		map[str[i]] = i;//当前字符是离下一次相同字符最近的一个
+	}
+}
+```
+
+### 21.6 编辑字符串的最小代价
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/102.png)
+
+```c++
+int minCost1(string str1, string str2, int ic, int dc, int rc) {
+	if (str1.length()==0 || str2.length() == 0) {
+		return 0;
+	}
+	int row = str1.length() + 1;
+	int col = str2.length() + 1;
+	vector<vector<int>>dp = vector<vector<int>>(row, vector<int>(col));
+	for (int i = 1; i < row; i++) {
+		dp[i][0] = dc * i;
+	}
+	for (int j = 1; j < col; j++) {
+		dp[0][j] = ic * j;
+	}
+	for (int i = 1; i < row; i++) {
+		for (int j = 1; j < col; j++) {
+			if (str1[i - 1] == str2[j - 1]) {//最后一个字符相同就不用管
+				dp[i][j] = dp[i - 1][j - 1];
+			}
+			else {
+                //str1(0,i-2)=>str2(0,j-2)，然后修改str1最后一个字符
+				dp[i][j] = dp[i - 1][j - 1] + rc;
+			}
+            //str1(0,j-2)=>str2(0,i-1)，然后str1插入一个字符
+			dp[i][j] = min(dp[i][j], dp[i][j - 1] + ic);
+            //str1(0,i-2)=>str2(0,j-1)，然后str1删去一个字符
+			dp[i][j] = min(dp[i][j], dp[i - 1][j] + dc);
+		}
+	}
+	return dp[row - 1][col - 1];
+}
+```
+
+### 21.7 删去多余字符
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/103.png)
+
+```c++
+方法：贪心
+string removeChar(string str) {
+	if (str.length() < 2)return str;
+	vector<int>map(256);
+	for (int i = 0; i < str.length(); i++) {
+		map[str[i]]++;
+	}
+	int minASCIndex = 0;
+	for (int i = 0; i < str.length(); i++) {
+		if (--map[str[i]] == 0)break;
+		else {
+			minASCIndex = str[minASCIndex] > str[i] ? i : minASCIndex;
+		}
+	}
+	string tmp = str.substr(minASCIndex + 1);
+	replace(tmp.begin(), tmp.end(), str[minASCIndex], '\0');
+	return string(1, str[minASCIndex]) + removeChar(tmp);
+}
+```
+
