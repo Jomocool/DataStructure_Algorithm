@@ -5495,3 +5495,59 @@ string removeChar(string str) {
 }
 ```
 
+## 22.中级提升班9
+
+### 22.1 子序列序号
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/104.png)
+
+```c++
+思路：
+    1.函数f(N)：在{a,b,c……z}中，长度为N的子序列有多少个
+    2.函数g(int i,int len)：以第i号字符开头，长度为len的子序列有多少个
+    
+int g(int i, int len) {
+	if (len == 1)return 1;
+	int sum = 0;
+	for (int j = i + 1; j <= 26; j++) {
+		sum += g(j, len - 1);
+	}
+	return sum;
+}
+
+int f(int len) {
+	int sum = 0;
+	for (int i = 1; i <= 26; i++) {
+		sum += g(i, len);
+	}
+	return sum;
+}
+
+int kth(string str) {
+	int sum = 0;
+	int len = str.length();
+	//先把所有长度为len-1的子序列算上
+	for (int i = 1; i < len; i++) {
+		sum += f(i);
+	}
+	int first = str[0] - 'a' + 1;//首字符序号
+	//在同样的长度下，算上字典序比首字符小的子序列
+	for (int i = 1; i < first; i++) {
+		sum += g(i, len);
+	}
+	int pre = first;
+	for (int i = 1; i < len; i++) {
+		int cur = str[i] - 'a' + 1;//当前字符序号，以当前字符为首字符
+		/*
+		由于是升序，所以后面的字符序号肯定要大于前面的字符，因此最低序号也要从pre+1开始
+        算上比当前字符序号小，且长度为len-i(因为不断地以后一个字符为首字符)的子序列
+        */
+		for (int j = pre+1; j < cur; j++) {
+			sum += g(j, len - i);
+		}
+		pre = cur;
+	}
+	return sum + 1;
+}
+```
+
