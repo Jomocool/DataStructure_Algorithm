@@ -5551,3 +5551,331 @@ int kth(string str) {
 }
 ```
 
+## 23.高级进阶班1
+
+### 23.1 相邻两数最大差值
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/105.png)
+
+```c++
+思路：题目对时间有要求，那肯定就是牺牲空间换时间了
+    1.准备n=arr.size()+1个容器，由于只有n-1个数，所以必定会出现一个空桶
+    2.遍历数组找到最小值minVal和最大值maxVal
+      2.1 minVal==maxVal：0
+      2.2 minVal!=maxVal：将最小值和最大值区间的数等分成n份
+    3.遍历数组，把每个数放入到相应范围的桶中
+    4.相邻数的分布情况有两种：
+      4.1相同桶
+      4.2不同桶，且两桶都不为空
+    5.每个桶只记录进过该桶的最大值和最小值，因为只有这两个值有用
+    6.空桶的意义：空桶是为了找到一个频繁解，杀死了在同一个桶中的可能性。是消除一批答案。
+      如果没有空桶，那么就要考虑相同桶内的相邻数了，这样流程的效率大大降低。
+    
+//判断num应进入哪个桶
+int bucket(long num, long len, long min, long max) {
+	return (int)((num - min) * len / (max - min));
+}
+
+int maxGap(vector<int>& nums) {
+	if (nums.size() == 0)return 0;
+	int len = nums.size();
+	int minVal = INT_MAX;
+	int maxVal = INT_MIN;
+	for (int i = 0; i < len; i++) {
+		minVal = min(minVal, nums[i]);
+		maxVal = max(maxVal, nums[i]);
+	}
+	if (minVal == maxVal)return 0;
+	vector<int>hasNum(len + 1);//hasNum[i]：i号桶是否有数进来过数
+	vector<int>maxs(len + 1);//maxs[i]：i号桶的最大值
+	vector<int>mins(len + 1);//mins[i]：i号桶的最小值
+	int bid = 0;//桶号
+	for (int i = 0; i < len; i++) {
+		bid = bucket(nums[i], len, minVal, maxVal);
+		mins[bid] = hasNum[i] ? min(mins[bid], nums[i]) : nums[i];
+		maxs[bid] = hasNum[i] ? max(maxs[bid], nums[i]) : nums[i];
+		hasNum[bid] = true;
+	}
+	int res = 0;
+	int lastMax = maxs[0];//上一个非空桶的最大值
+	int i = 1;
+	for (; i <= len; i++) {
+		if (hasNum[i]) {
+			res = max(res, mins[i] - lastMax);
+			lastMax = maxs[i];
+		}
+	}
+	return res;
+}
+```
+
+### 23.2 最大异或和为0子数组数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/106.png)
+
+```c++
+int mostEor(vector<int>& arr) {
+	int eor = 0;//记录当前异或和
+	vector<int>dp(arr.size());//dp[i]：arr[0……i]在最优划分的情况下，异或和为0最多的部分是多少个
+	//key：从0出发的某个前缀异或和
+	//value：该前缀异或和最晚出现的位置(index)
+	map<int, int>m;
+	m[0] = -1;
+	for (int i = 0; i < arr.size(); i++) {
+		eor ^= arr[i];//eor是arr[0……i]的异或和
+		if (m.count(eor)) {//上一次，该异或和出现的位置
+			//pre：pre+1到i是最优划分的最后一个部分
+			int pre = m[eor];//eor最后一次出现得位置
+			dp[i] = pre == -1 ? 1 : dp[pre] + 1;
+		}
+		if (i > 0) {//可能最后一部分涵盖了更多解，得不偿失
+			dp[i] = max(dp[i - 1], dp[i]);
+		}
+        //更新eor最晚出现的位置
+		m[eor] = i;
+	}
+	return dp[dp.size() - 1];
+}
+```
+
+### 23.3 拼出m面值
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/107.png)
+
+```c++
+思路：
+    m=x+y,x(0->m),y(m->0),在每种情况下，计算只用n1拼成x方法数a，n2拼成y方法数b，总方法数a*b，
+    累加起来就是最终结果。
+
+//纪念币递归转动态规划版
+int process1(vector<int>& arr, int money,int preMoney,int index) {
+	if (preMoney > money)return 0;
+	if (preMoney == money)return 1;
+	int res = 0;
+	for (int i = index; i < arr.size(); i++) {
+		res += process1(arr, money, preMoney,index+1);//不取当前硬币
+		res += process1(arr, money, preMoney + arr[i],index+1);//取当前硬币
+	}
+	return res;
+}
+
+vector<vector<int>>getDpOne(vector<int>& arr, int money) {
+	if (arr.size() == 0)return {};
+	//dp[i][j]：只用i行之前的钱凑到j的方法数
+	vector<vector<int>>dp(arr.size(), vector<int>(money + 1));
+	//先处理边界情况
+	for (int i = 0; i < arr.size(); i++) {
+		dp[i][0] = 1;
+	}
+	if (arr[0] < money) {
+		dp[0][arr[0]] = 1;
+	}
+	for (int i = 1; i < arr.size(); i++) {
+		for (int j = 1; j <= money; j++) {
+			dp[i][j] = dp[i - 1][j];
+			dp[i][j] += arr[i] <= j ? dp[i-1][j - arr[i]] : 0;//由于每种只有一张，所以只能从i-1行取值，而不能从第i行
+		}
+	}
+	return dp;
+}
+
+//普通币递归转动态规划版
+int process2(vector<int>& arr, int money,int preMoney, int index) {
+	if (preMoney > money)return 0;
+	if (preMoney == money)return 1;
+	int res = 0;
+	for (int i = index; i < arr.size(); i++) {
+		for (int j = 0; arr[i] * j <= money; j++) {
+			res += (arr, money, preMoney + arr[i] * j, index + 1);
+		}
+	}
+	return res;
+}
+
+vector<vector<int>>getDpArb(vector<int>arr, int money) {
+	if (arr.size() == 0)return {};
+	vector<vector<int>>dp(arr.size(), vector<int>(money + 1));
+	//处理边界情况
+	for (int i = 0; i < arr.size(); i++) {
+		dp[i][0] = 1;
+	}
+	for (int j = 1; arr[0] * j <= money; j++) {
+		dp[0][arr[0] * j] = 1;
+	}
+	for (int i = 1; i < arr.size(); i++) {
+		for (int j = 1; j <= money; j++) {
+			dp[i][j] = dp[i - 1][j];//不取当前面值的货币
+			dp[i][j] = j >= arr[i] ? dp[i][j - arr[i]] : 0;//由于每种可以取任意张，因此从当前行取值即可，斜率优化，利用前面格子的信息，避免了枚举行为
+		}
+	}
+	return dp;
+}
+
+int moneyWays(vector<int>&arbitrary, vector<int>&onlyone, int money) {
+	if (money < 0)return 0;
+	if (arbitrary.size() == 0 || onlyone.size() == 0) {
+		return money == 0 ? 1 : 0;
+	}
+	vector<vector<int>>dparb = getDpArb(arbitrary, money);
+	vector<vector<int>>dpone = getDpOne(onlyone, money);
+	int ways = 0;
+	for (int i = 0; i <= money; i++) {
+		ways += dparb[arbitrary.size() - 1][i] + dpone[onlyone.size() - 1][money - i];
+	}
+	return ways;
+}
+```
+
+### 23.4  两个有序数组中第k小数
+
+```c++
+方法一：双指针，谁小谁动
+    
+方法二：二分法
+在A中二分找到中间数mid，mid前面有x个数，mid放到B中前面有y个数，让x+y和k比较，如果在A中无法找到恰好第k小的数，那就在B中二分，最终时间复杂度是： O(logn*logm)
+    
+最优解算法原型：等长有序上中位数有传递性
+找到A、B的上中位数
+1. A、B数组长度一样且都是偶数：找A、B的中点值(索引为((size/2)-1的值)midA、midB
+  1.1 midA==midB：则中位数是midA
+  1.2 midA>midB：砍半后再去递归找子问题的上中位数
+2. A、B数组长度一样且都是奇数：找A、B的中点值(索引为((size/2)的值)midA、midB
+  2.1 midA==midB：则中位数是midA
+  2.2 midA>midB：先手动判断midB是不是上中位数（和midA的前一个数比较），再递归。不然数组长度不一样了
+    
+方法三：（最优解）
+1. k<=shortArr.size()：两数组各取前k个数求上中位数即可
+    
+2. shortArr.size()<k<=longArr.size()：
+   2.1淘汰：
+      longArr：前（k-shortArr.size()-1）个数(过小)和后（longArr.size()-k）个数(过大，不影响找k小)
+   2.2两数组剩余元素个数
+      shortArr：shortArr.size()
+      longArr：shortArr.size()+1
+      淘汰过小元素数量：k-shortArr.size()-1
+   2.3在剩余元素中找上中位数
+      手动判断看是否能淘汰掉longArr中剩余元素中的第一个，
+     （淘汰过小元素数量：k-shortArr.size()-1+1），然后在剩余元素中找上中位数。
+     （找第shortArr.size()小的数）
+
+3. longArr.size()<k<=longArr.size()+shortArr.size()：
+   3.1判断两数组中哪些数不可能是第k小的数：在理想情况下都不可能的话那无论怎么样都不可能了
+      shortArr：前（k-longArr.size()-1）个数
+      longArr：前（k-shortArr.size()-1）个数
+      淘汰元素数量：2k-(longArr.size()+shortArr.size()+2)
+   3.2两数组剩余元素的个数相等
+      shortArr：shortArr.size()+longArr.size()-k+1
+      longArr：longArr.size()+shortArr.size()-k+1
+   3.3在剩余元素中找上中位数
+      找第（longArr.size()+shortArr.size()-k+2）小的数，由于比两等长剩余数组的大小多1，无法直接找
+      上中位数，因此要多加两次手动判断淘汰掉两个数组中各一个元素，总共淘汰两个元素。
+                           
+//e1-s1=e2-s2
+int getUpMedian(vector<int>&a1, int s1, int e1, vector<int>& a2, int s2, int e2) {
+	int mid1 = 0;
+	int mid2 = 0;
+	int offset = 0;
+	while (s1 < e1) {
+		mid1 = s1 + ((e1 - s1) >> 1);
+		mid2 = s2 + ((e2 - s2) >> 1);
+		//长度为偶数：1
+		//长度为奇数：0
+		offset = ((e1 - s1 + 1) & 1) ^ 1;
+		if (a1[mid1] > a2[mid2]) {
+			e1 = mid1;//淘汰过大的
+			//arr[mid2]在最理想情况下，也无法成为上中位数
+			s2 = mid2 + offset;//淘汰过小的
+		}
+		else if(a1[mid1]<a2[mid2]) {//处理方式是上中情况的对称
+			s1 = mid1 + offset;
+			e2 = mid2;
+		}
+		else {
+			return a1[mid1];
+		}
+	}
+	return min(a1[s1], a2[s2]);
+}
+
+int findKthNum(vector<int>& arr1, vector<int>& arr2, int kth) {
+	vector<int>longs = arr1.size() >= arr2.size() ? arr1 : arr2;
+	vector<int>shorts = arr1.size() < arr2.size() ? arr1 : arr2;
+	int l = longs.size();
+	int s = shorts.size();
+	if (kth <= s) {//第一种情况
+		return getUpMedian(shorts, 0, kth - 1, longs, 0, kth - 1);
+	}
+	if (kth > l) {//第三种情况
+		if (shorts[kth - l - 1] >= longs[l - 1]) {
+			return shorts[kth - l - 1];
+		}
+		if (longs[kth - s - 1] >= shorts[s - 1]) {
+			return longs[kth - s - 1];
+		}
+		return getUpMedian(shorts, kth - l, s - 1, longs, kth - s, l - 1);
+	}
+	if (longs[kth - s - 1] >= shorts[s - 1]) {//第三种情况
+		return longs[kth - s - 1];
+	}
+	return getUpMedian(shorts, 0, s - 1, longs, kth - s, kth - 1);
+}
+```
+
+### 23.5 约瑟夫环
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/108.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/109.png)
+
+```c++
+约瑟夫环：
+class Node {
+public:
+	int val;
+	Node* next;
+	Node(int val) {
+		this->val = val;
+		next = NULL;
+	}
+};
+
+//现在一共有i个结点，数到m就杀死结点，最终会活下来的节点，返回它在有i个结点时的编号
+//老：最终活着的在当前杀结点时的编号，即getLive(int i, int m)
+//新：最终活着的在下一次杀结点时的编号，即getLive(int i-1, int m)
+int getLive(int i, int m) {
+	if (i == 1)return 1;
+	return (getLive(i - 1, m) + m - 1) % i + 1;//老=(新+m-1)%i+1
+}
+
+Node* josephusKill(Node* head, int m) {
+	if (head == NULL || head->next == NULL || m < 1)return head;
+	Node* cur = head->next;
+	int len = 1;//链表长度
+	while (cur != head) {
+		len++;
+		cur = cur->next;
+	}
+	int live = getLive(len, m);
+	while (--live!=0) {
+		head = head->next;
+	}
+	head->next = head;
+	return head;
+}
+
+面试问题：
+唯一的区别：m不作为固定变量
+int nextIndex(int size, int index) {
+	return index == size - 1 ? 0 : index;
+}
+
+int no(int i, vector<int>& arr, int index) {
+	if (i == 1)return 1;
+	return (no(i - 1, arr, nextIndex(arr.size(), index)) + arr[index] - 1) % i + 1;
+}
+
+int live(int n, vector<int>& arr) {
+	return no(n, arr, 0);
+}
+```
+
