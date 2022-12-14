@@ -4731,15 +4731,12 @@ public:
 	}
 };
 
-class JobComparator {
-public:
-	bool compare(Job o1, Job o2) {
+bool compare(Job o1, Job o2) {
 		return o1.hard != o2.hard ? o2.hard - o1.hard : o1.money - o2.money;
 	}
-};
 
 vector<int>getMoneys(vector<Job>job,vector<int>ability){
-	sort(job.begin(), job.end(), JobComparator());
+	sort(job.begin(), job.end(), compare);
 	//难度为key的工作，最优工资是value
 	map<int, int>map;
 	map[job[0].hard] = job[0].money;
