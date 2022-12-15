@@ -5876,3 +5876,219 @@ int live(int n, vector<int>& arr) {
 }
 ```
 
+## 24.高级进阶班2
+
+### 24.1 建筑轮廓线
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/110.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/111.png)
+
+```c++
+思路：
+看最大高度的变化
+1.把每座大楼看作两个对象：[2,6,8]=>[2,add,8],[6,del,8]，方便每座大楼临接处高度的比较
+2.以特定的方式排序这些对象
+
+//用于描述高度变化
+class Node {
+public:
+	int x;//x轴上的值
+	bool isAdd;//true为加入，false为删除
+	int h;//高度
+
+	Node()
+		:x(0),isAdd(false),h(0){}
+
+	Node(int x, bool isAdd, int h) {
+		this->x = x;
+		this->isAdd = isAdd;
+		this->h = h;
+	}
+};
+
+bool compare(Node o1, Node o2) {
+	if (o1.x != o2.x) {
+		return o1.x < o2.x;
+	}
+	if (o1.isAdd != o2.isAdd) {//把add放在del之前是为了防止出现缝状大楼导致无高度可删
+		return o1.isAdd ? true : false;
+	}
+	return true;
+}
+
+vector<vector<int>>buildingOutline(vector<vector<int>>& matrix) {
+	vector<Node>nodes(matrix.size() * 2);
+	//每一个大楼轮廓数组，产生两个描述高度变化的对象
+	for (int i = 0; i < matrix.size(); i++) {
+		nodes[i * 2] = Node(matrix[i][0], true, matrix[i][2]);
+		nodes[i * 2+1] = Node(matrix[i][1], false, matrix[i][2]);
+	}
+	//把描述高度变化的对象数组按照特定的策略排序
+	sort(nodes.begin(), nodes.end(), compare);
+
+	map<int, int>mapHeightTimes;
+	map<int, int>mapXHeight;
+
+	for (int i = 0; i < nodes.size(); i++) {
+		if (nodes[i].isAdd) {//如果当前是加入操作
+			if (mapHeightTimes.count(nodes[i].h) == 0) {//第一次
+				mapHeightTimes[nodes[i].h] = 1;
+			}
+			else {//不是第一次出现，词频加1即可
+				mapHeightTimes[nodes[i].h]++;
+			}
+		}
+		else {//当前是删除操作
+			if (mapHeightTimes[nodes[i].h] == 1) {//词频已经是1
+				mapHeightTimes.erase(nodes[i].h);
+			}
+			else {//词频大于1，直接减1即可
+				mapHeightTimes[nodes[i].h]--;
+			}
+		}
+		//根据mapHeightTimes中的最大高度，设置mapXHeight表
+		if (mapHeightTimes.empty()) {//为空，说明最大高度是0
+			mapXHeight[nodes[i].x] = 0;
+		}
+		else {//由于map是有序表，最后一个key便是当前的最大高度
+			mapXHeight[nodes[i].x] = (--mapHeightTimes.end())->first;
+		}
+	}
+	vector<vector<int>>res;
+	//一个新轮廓线开始的位置
+	int start = 0;
+	//之前的最大高度
+	int preHeight = 0;
+	//根据mapXHeight生成res数组
+	for (auto p : mapXHeight) {
+		//当前位置
+		int curX = p.first;
+		//当前的最大高度
+		int curMaxHeight = p.second;
+		if (preHeight != curMaxHeight) {
+			if (preHeight != 0) {//保证从第一栋楼开始
+				res.push_back({ start,curX,preHeight });
+			}
+			start = curX;
+			preHeight = curMaxHeight;
+		}
+	}
+	return res;
+}
+```
+
+### 24.2 和为k的最长子数组长度
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/112.png)
+
+```c++
+一联（只有正数）
+方法：移动窗口
+int getMaxLength1(vector<int>& arr, int k) {
+	if (arr.size() == 0 || k <= 0)return 0;
+	int left = 0;
+	int right = 0;
+	//[left,right]
+	//left==right+1表示窗口不包含数
+	int sum = arr[0];
+	int len = 0;
+	while (right < arr.size()) {
+		if (sum == k) {
+			len = max(len, right - left + 1);
+			sum -= arr[left++];
+		}
+		else if (sum < k) {
+			right++;
+			if (right == arr.size())break;
+			sum += arr[right];
+		}
+		else {
+			sum -= arr[left++];
+		}
+	}
+	return len;
+}
+
+二联（有0有正有负）
+方法：利用map记录前缀和右边界
+int getMaxLength2(vector<int> arr, int k) {
+	if (arr.size() == 0)return 0;
+	//key：前缀和，value：右边界
+	map<int, int>preSumIndex;//记录前缀和右边界
+	preSumIndex[0] = -1;//考虑到k=sum(arr)
+	int sum = 0;
+	int res = 0;
+	for (int i = 0; i < arr.size(); i++) {
+		sum += arr[i];
+		if (sum == k)return i + 1;
+		if (preSumIndex.count(sum - k) != 0)res = max(res, i - preSumIndex[sum - k]);
+		if (preSumIndex.count(sum) == 0)preSumIndex[sum] = i;
+	}
+	return res;
+}
+
+三联（有0有正有负且小于等于k）
+minSum[i]：从i出发的子数组，最小sum
+minSumend[i]：从i出发的子数组，取得最小sum的右边界
+int getMaxLength3(vector<int>& arr, int k) {
+	if (arr.size() == 0)return 0;
+
+	vector<int>minSums(arr.size());
+	vector<int>minSumEnds(arr.size());
+	minSums[arr.size() - 1] = arr[arr.size() - 1];
+	minSumEnds[arr.size() - 1] = arr.size() - 1;
+
+	for (int i = arr.size() - 2; i >= 0; i--) {
+		if (minSums[i + 1] <= 0) {
+			minSums[i] = arr[i] + minSums[i + 1];
+			minSumEnds[i] = minSumEnds[i + 1];
+		}
+		else {
+			minSums[i] = arr[i];
+			minSumEnds[i] = i;
+		}
+	}
+
+	int end = 0;
+	int sum = 0;
+	int res = 0;
+	//i是窗口的最左位置，end是窗口的最右位置的下一个位置（终止位置）
+	for (int i = 0; i < arr.size(); i++) {
+		/*
+		whilie循环结束之后：
+		如果以i开头的情况下，
+		累加和	<=k的最长子数组是arr[i..end-1]，看看这个子数组长度还能不能更新res
+		*/
+		while (end<arr.size()&&sum+minSums[end]<=k) {
+			sum += minSums[end];
+			end = minSumEnds[end] + 1;
+		}
+		res = max(res, end - i);
+		if (end > i) {//窗口里还有数
+			sum -= arr[i];
+		}
+		else {//窗口里没数了
+			end = i + 1;
+		}
+	}
+	return res;
+}
+```
+
+### 24.3 Nim
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/113.png)
+
+```c++
+谁最先让对方面对全零的状态谁就是赢家，每次可以通过取铜板让所有硬币的异或和从不为0的状态变成0，每步操作都是如此，这样就可以在最后把全0的状态留给对方。
+
+string Nim(vector<int>&arr){
+    int eor=0;
+    for(int num:arr){
+        eor^=num;
+    }
+    return eor==0?"后手赢":"先手赢";
+}
+```
+
