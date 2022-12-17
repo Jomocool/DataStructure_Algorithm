@@ -1493,3 +1493,419 @@ public:
 
 **第十五天总结：**递归传参可以考虑用全局变量，提高效率。
 
+
+## 第十六天：排序（简单）
+
+### 剑指 Offer 45. 把数组排成最小的数
+
+```c++
+class Solution {
+public:
+    string minNumber(vector<int>& nums) {
+        vector<string>strs;
+        for(int i=0;i<nums.size();i++){
+            strs.push_back(to_string(nums[i]));
+        }
+        quickSort(strs,0,strs.size()-1);
+        string res;
+        for(auto&str:strs){
+            res.append(str);
+        }
+        return res;
+    }
+
+    //快排
+    void quickSort(vector<string>&strs,int l,int r){
+        if(l>=r)return;
+        int i=l,j=r;
+        while(i<j){
+            /*
+            以strs[l]为基准元素，从后向前找到一个小的（应放前面），
+            从前向后找到一个大的（应放后面），二者交换就到了各自应该在的位置
+            */
+            while(strs[j]+strs[l]>=strs[l]+strs[j]&&i<j)j--;
+            while(strs[i]+strs[l]<=strs[l]+strs[i]&&i<j)i++;
+            swap(strs[i],strs[j]);
+        }
+        //出循环后，i=j。
+        swap(strs[i],strs[l]);//更改基准值，不然str[l]一直都是同一个值
+        quickSort(strs,l,i-1);
+        quickSort(strs,i+1,r);
+    }
+};
+```
+
+### 剑指 Offer 61. 扑克牌中的顺子
+
+```c++
+class Solution {
+public:
+    bool isStraight(vector<int>& nums) {
+        //记录大小王个数
+        int joker=0;
+        //排序
+        sort(nums.begin(),nums.end());
+        for(int i=0;i<4;i++){
+            if(nums[i]==0)joker++;
+            else if(nums[i]==nums[i+1])return false;
+        }
+        //nums[4]是MAX，nums[joker]是第一张不是大小王的牌，即MIN
+        return nums[4]-nums[joker]<5;
+    }
+};
+```
+
+**第十六天总结：**快速排序并不一定是固定的模板，可以灵活改变一些条件，灵活运用。
+
+​							顺子题：一开始我的想法是判断总差值是否为4，但实际上可以通过大小王来弥补，不
+
+​											一定要用差值法，也可以用填补法，只要有足够的大小王就可以弥补。
+
+
+
+## 第十七天：排序（中等）
+
+### 剑指 Offer 40. 最小的k个数
+
+```c++
+方法一：快速排序
+class Solution {
+public:
+    vector<int> getLeastNumbers(vector<int>& arr, int k) {
+        quickSort(arr,0,arr.size()-1);
+        vector<int>res;
+        for(int i=0;i<k;i++){
+            res.push_back(arr[i]);
+        }
+        return res;
+    }
+
+    //快排
+    void quickSort(vector<int>&arr,int left,int right){
+        if(left>=right)return;
+        int i=left,j=right;
+        while(i<j){
+            while(arr[j]>=arr[left]&&i<j)j--;
+            while(arr[i]<=arr[left]&&i<j)i++;
+            swap(arr[i],arr[j]);
+        }
+        //更改哨兵值，要让数组左边是小于等于原哨兵值arr[left]的元素，数组右边是大于等于原哨兵值得元素
+        swap(arr[i],arr[left]);
+        quickSort(arr,left,i-1);
+        quickSort(arr,i+1,right);
+    }
+};
+
+方法二：基于快速排序的数组划分
+    思路：因为题目只要求返回最小的k个数，且对这k个数的顺序不做要求，因此只需划分为最小的k个数和其他数字两部
+    	 分。所以，在每次哨兵划分完之后，判段基准值arr[i]在数组中的索引是否等于k。
+class Solution {
+public:
+    vector<int> getLeastNumbers(vector<int>& arr, int k) {
+        if(k>=arr.size())return arr;
+        return quickSort(arr,0,arr.size()-1,k);
+    }
+
+    //快排
+    vector<int> quickSort(vector<int>&arr,int left,int right,int k){
+        int i=left,j=right;
+        while(i<j){
+            while(arr[j]>=arr[left]&&i<j)j--;
+            while(arr[i]<=arr[left]&&i<j)i++;
+            swap(arr[i],arr[j]);
+        }
+        //更改哨兵值
+        swap(arr[i],arr[left]);
+        if(i>k)quickSort(arr,left,i-1,k);
+        if(i<k)quickSort(arr,i+1,right,k);
+        vector<int>res;
+        res.assign(arr.begin(),arr.begin()+k);
+        return res;
+    }
+};
+```
+
+### 剑指 Offer 41. 数据流中的中位数
+
+```c++
+class MedianFinder {
+    priority_queue<int,vector<int>,less<int>>queMin;
+    priority_queue<int,vector<int>,greater<int>>queMax;
+public:
+    /** initialize your data structure here. */
+    MedianFinder() {} 
+    
+    void addNum(int num) {
+        if(queMin.size()==0||num<=queMin.top()){
+            queMin.push(num);
+            if(queMax.size()+1<queMin.size()){
+                queMax.push(queMin.top());
+                queMin.pop();
+            }
+        }else{
+            queMax.push(num);
+            if(queMax.size()>queMin.size()){
+                queMin.push(queMax.top());
+                queMax.pop();
+            }
+        }
+    }
+    
+    double findMedian() {
+        return queMin.size()>queMax.size()?queMin.top():(queMax.top()+queMin.top())/2.0;
+    }
+};
+```
+
+
+
+## 第十八天：搜索与回溯算法（中等）
+
+### 剑指 Offer 55 - I. 二叉树的深度
+
+```c++
+class Solution {
+public:
+    int maxDepth(TreeNode* root) {
+        if(root==NULL)return 0;
+        //能到当前步骤，说明该层是确实存在的，因此+1
+        return max(maxDepth(root->left),maxDepth(root->right))+1;
+    }
+};
+```
+
+### 剑指 Offer 55 - II. 平衡二叉树
+
+```c++
+ //向左右子节点要信息
+class Info{
+public:
+    int height;
+    bool isB;
+
+    Info(int height,bool isB){
+        this->height=height;
+        this->isB=isB;
+    }
+};
+
+class Solution {
+public:
+    bool isBalanced(TreeNode* root) {
+        Info res=process(root);
+        return res.isB;
+    }
+
+    Info process(TreeNode*x){
+        if(x==NULL){//base case
+            return Info(0,true);
+        }
+        Info leftInfo=process(x->left);
+        Info rightInfo=process(x->right);
+        int height=max(leftInfo.height,rightInfo.height)+1;
+        //左右子树都平衡且左右子树高度差不超过1的情况下，以该节点为根的树才平衡
+        bool isB=leftInfo.isB&&rightInfo.isB&&abs(leftInfo.height-rightInfo.height)<=1;
+        return Info(height,isB);
+    }
+};
+```
+
+
+
+## 第十九天：搜索与回溯算法（中等）
+
+### 剑指 Offer 64. 求1+2+…+n
+
+```c++
+方法一：短路法
+class Solution {
+public:
+    int sumNums(int n) {
+        int sum=n;
+        sum&&(sum+=sumNums(n-1));
+        return sum;
+    }
+};
+
+方法二：
+class Solution {
+public:
+    int sumNums(int n) {
+        char arr[n][n+1];
+        return sizeof(arr)>>1;
+    }
+};
+```
+
+### 剑指 Offer 68 - I. 二叉搜索树的最近公共祖先
+
+```c++
+class Solution {
+public:
+    void process(TreeNode*root,map<TreeNode*,TreeNode*>&fatherMap){
+        if(root==NULL)return;
+        fatherMap[root->left]=root;
+        fatherMap[root->right]=root;
+        process(root->left,fatherMap);
+        process(root->right,fatherMap);
+    }
+
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if(p==NULL||q==NULL)return NULL;
+
+        map<TreeNode*,TreeNode*>fatherMap;
+        fatherMap[root]=NULL;
+        process(root,fatherMap);
+
+        set<TreeNode*>set1;
+        TreeNode*cur=p;
+        while(cur!=NULL){
+            set1.insert(cur);
+            cur=fatherMap[cur];
+        }
+
+        TreeNode*res=q;
+        while(set1.find(res)==set1.end()){
+            res=fatherMap[res];
+        }
+        return res;
+    }
+};
+```
+
+### 剑指 Offer 68 - II. 二叉搜索树的最近公共祖先
+
+```c++
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if(root==NULL||root==p||root==q)return root;
+        TreeNode*left=lowestCommonAncestor(root->left,p,q);
+        TreeNode*right=lowestCommonAncestor(root->right,p,q);
+        //当left和right第一次分别等于o1、o2时，此时的root就是二者最近的公共祖先
+        if(left!=NULL&&right!=NULL)return root;
+        return left!=NULL?left:right;//如果二者有一个不为空，那么就返回那个不为空的
+    }
+};
+```
+
+
+
+## 第二十天 分治算法（中等）
+
+### 剑指 Offer 07. 重建二叉树
+
+![image text](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/Jz_Offer-img/5.png)
+
+```c++
+class Solution {
+public:
+    map<int,int>dic;//用于映射中序遍历元素对应的索引
+    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+        if(preorder.size()==0||inorder.size()==0)return NULL;
+        for(int i=0;i<inorder.size();i++){
+            dic[inorder[i]]=i;
+        }
+        return f(preorder,0,preorder.size()-1,inorder,0,inorder.size()-1);
+    }
+
+    /*
+    l1：前序数组子数组的左边界，而前序遍历的第一个元素即为根节点
+    r1：前序数组子数组的右边界
+    l2：中序数组子数组的左边界
+    r2：中序数组子数组的右边界
+    */
+    TreeNode*f(vector<int>&preorder,int l1,int r1,vector<int>&inorder,int l2,int r2){
+        if(l1>r1&&l2>r2)return NULL;
+
+        //创建根节点
+        TreeNode*root=new TreeNode(preorder[l1]);
+        //处理其左右子树
+        int i=dic[preorder[l1]];//找到根节点在中序遍历数组中的位置，以区分左右子树
+        root->left=f(preorder,l1+1,l1+(i-l2),inorder,l2,i-1);
+        root->right=f(preorder,l1+(i-l2)+1,r1,inorder,i+1,r2);
+        return root;
+    }
+};
+```
+
+### 剑指 Offer 16. 数值的整数次方
+
+```c++
+利用进制的进制快速幂计算
+class Solution {
+public:
+    double myPow(double x, int n) {
+        double res=1.0;
+        long y=n;//2^32无法用int类型保存
+        if(n<0){
+            y=-y;
+            x=1.0/x;
+        }
+        while(y>0){
+            if(y%2==1)res*=x;
+            //假设n的二进制位全都是1的话
+            //x^n=(x^1)*(x^2)*(x^4)*(x^8)*...*(x^(2^m))
+            //所以x的进制基础从1开始，而不是0
+            x*=x;
+            y>>=1;
+        }
+        return res;
+    }
+};
+```
+
+### 剑指 Offer 33. 二叉搜索树的后序遍历序列
+
+```c++
+方法一：
+class Solution {
+public:
+    bool verifyPostorder(vector<int>& postorder) {
+        if(postorder.size()==0)return true;
+        return f(postorder,0,postorder.size()-1);
+    }
+
+    bool f(vector<int>&postorder,int i,int j){
+        if(i>=j)return true;
+        int root=postorder[j];
+        int p=i;
+        //获取第一个比大于或等于root元素的位置，也是左右子树的分割位置
+        while(postorder[p]<root)p++;
+        //看p~j-1位置中是否有小于root的元素，有的话就不符合
+        for(int k=p;k<j;k++){
+            if(postorder[k]<root)return false;
+        }
+        return f(postorder,i,p-1)&&f(postorder,p,j-1);
+    }
+};
+
+方法二：单调栈
+正着看：左右根
+倒着看：根右左
+1.挨着的两个数如果arr[i]<arr[i+1]，那么arr[i+1]一定是arr[i]的右子节点
+2.如果arr[i]>arr[i+1]，那么arr[i+1]一定是arr[0]……arr[i]中某个节点的左子节点，并且这个值是大于arr[i+1]中最小的。因为在右子树中，根节点和右子节点总是在左子节点前面，因此arr[i]<arr[i+1]，当第一次出现arr[i]>arr[i+1]时，必定是从右子树跳到左子树的交界处。且arr[i+1]的前面所有值只包含了其根节点和该根节点的右子树所有值，显然根节点是这些值中最小的。
+class Solution {
+public:
+    bool verifyPostorder(vector<int>& postorder) {
+        if(postorder.size()==0)return true;
+        stack<int>stk;
+        int parent=INT_MAX;
+        for(int i=postorder.size()-1;i>=0;i--){
+            int cur=postorder[i];
+            //当出现倒序时，说明从右子树跳到左子树了，找到当前值得父节点
+            while(!stk.empty()&&stk.top()>cur){
+                parent=stk.top();
+                stk.pop();
+                //弹出栈的节点不用管了，因为每一个只有栈底的节点才是当前值父节点，其他值只是父的右子树
+                //而后续遍历道的节点的父节点不可能是父节点的右子树上的节点
+            }
+            //如果是升序直接入栈，不进while循环
+            if(cur>=parent)return false;
+            stk.push(cur);
+        }
+        return true;
+    }
+};
+```
+
