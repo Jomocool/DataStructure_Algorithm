@@ -6092,3 +6092,449 @@ string Nim(vector<int>&arr){
 }
 ```
 
+## 25.高级进阶班3
+
+### 25.1 字符串与整数互换
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/114.png)
+
+```c++
+k伪进制：每个位上的数是1~k，可以用来表示任何一个不为0的正数
+
+//将n转成相应的字符串
+string getString(string chs, int n) {
+	if (chs.length() == 0 || n < 1)return "";
+
+	int base = chs.length();//进制取决于给定字符串的长度
+	int len = 0;//由n转成的字符串所需长度
+	int cur = 1;//当前位
+	while (n >= cur) {
+		len++;
+		n -= cur;
+		cur *= base;
+	}
+
+	string res(len,'\0');//目标字符串
+	int index = 0;
+	int nCur = 0;
+	do {
+		cur /= base;
+		nCur = n / cur;
+		//由于索引是从0开始，但元素是从1开始，意味着元素比索引永远大1，我们要取元素(nCur+1)，其索引值就为nCur
+		res[index++] = chs[nCur];
+		n %= cur;
+	} while (index < res.length());
+	return res;
+}
+
+//将字符串str转成对应的数
+int getNum(string chs, string str) {
+	if (str.length() == 0)return 0;
+	
+	int base = chs.length();
+	int cur = 1;
+	int res = 0;
+	for (int i = str.length() - 1; i >= 0; i--) {
+		for (int j = 0; j < chs.length(); j++) {//找到str[i]在chs中的索引
+			if (chs[j] == str[i]) {
+				res += (j + 1) * cur;
+				break;
+			}
+		}
+		cur *= base;
+	}
+	return res;
+}
+```
+
+### 25.2 二叉树最大路径和
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/120.png)
+
+```c++
+class Node {
+public:
+	int value;
+	Node* left;
+	Node* right;
+
+	Node(int val) {
+		this->value = val;
+		this->left = NULL;
+		this->right = NULL;
+	}
+};
+
+class ReturnType {
+public:
+	int maxPathSumAll;
+	int maxPathSumHead;
+	int maxValue;
+
+	ReturnType(int all, int fromHead, int maxVal) {
+		this->maxPathSumAll = all;
+		this->maxPathSumHead = fromHead;
+		this->maxValue = maxVal;
+	}
+};
+
+ReturnType process(Node* x) {
+	if (x == NULL)return ReturnType(0, 0, INT_MIN);
+	//向左边要信息
+	ReturnType leftData = process(x->left);
+	//向右边要信息
+	ReturnType rightData = process(x->right);
+	//传递最大值
+	int maxValue = max(max(leftData.maxValue, rightData.maxValue),x->value);
+	//传递从根部的最大路径和
+	int maxPathSumHead = max(leftData.maxPathSumHead, rightData.maxPathSumHead) + x->value;
+	//可能路径和还没有x自身的值大
+	maxPathSumHead = max(x->value, maxPathSumHead);
+	//由于maxPathSumAll本质上也是一个fromHead的值，因此maxPathSumHead必不可少
+	//传递maxPathAll，同时还要和从本结点出发的最大路径和作比较
+	int maxPathSumAll = max(max(leftData.maxPathSumAll, rightData.maxPathSumAll), maxPathSumAll);
+	return ReturnType(maxPathSumAll, maxPathSumHead, maxValue);
+}
+
+int maxPathSum(Node* head) {
+	if (head == NULL)return 0;
+	ReturnType allData = process(head);
+	//最大值如果都小于0的话，说明全部值都小于0，直接返回最大值即可
+	return allData.maxValue < 0 ? allData.maxValue : allData.maxPathSumAll;
+}
+```
+
+### 25.3 贪吃蛇的最大长度
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/115.png)
+
+```c++
+递归：
+class Info {
+public:
+	int no;
+	int yes;
+
+	Info(int no, int yes) {
+		this->no = no;
+		this->yes = yes;
+	}
+};
+
+/*
+从最左侧出发（具体位置不关心），当前到达（row，col）
+在这个旅程中，
+no：一次能力也不用，能到达的最大路径和（如果是负数，表示没有答案）
+yes：使用了一次能力，能到达的最大路径和（如果是负数，表示没有答案）
+*/
+Info f(vector<vector<int>>& matrix, int row, int col) {
+	if (col == 0) {//base case：从最左列上
+		return Info(matrix[row][col], -matrix[row][col]);
+	}
+	//没有在最左列
+	int preNo = -1;//之前的旅程中，一次能力也没用，能达到的最大路径和
+	int preYes = -1;//之前的旅程中，已经用过一次能力了，能达到的最大路径和
+	
+	//p1
+	if (row > 0) {
+		Info leftUp = f(matrix, row - 1, col - 1);
+		if (leftUp.no >= 0)preNo = leftUp.no;
+		if (leftUp.yes >= 0)preYes = leftUp.yes;
+	}
+
+	//p2
+	Info left = f(matrix, row, col - 1);
+	if (left.no >= 0)preNo = max(preNo, left.no);
+	if (left.yes >= 0)preYes = max(preYes, left.yes);
+
+	//p3
+	if (row < matrix.size() - 1) {
+		Info leftDown = f(matrix, row + 1, col - 1);
+		if (leftDown.no >= 0)preNo = max(preNo, leftDown.no);
+		if (leftDown.yes >= 0)preYes = max(preYes, leftDown.yes);
+	}
+
+	//更新自己的no和yes
+	int no = -1;
+	int yes = -1;
+
+	if (preNo >= 0) {
+		no = preNo + matrix[row][col];//之前的旅程没用超能力，现在也不用
+		yes = preNo + (-matrix[row][col]);//之前的旅程没用超能力，但是现在用
+	}
+	if (preYes >= 0) {
+		yes = max(yes, preYes+matrix[row][col]);//之前的旅程用过超能力，现在不用
+	}
+
+	return Info(no, yes);
+}
+
+int maxPathSum(vector<vector<int>>& matrix) {
+	if (matrix.size() == 0 || matrix[0].size() == 0)return 0;
+	int res = INT_MIN;
+	for (int i = 0; i < matrix.size(); i++) {
+		for (int j = 0; j < matrix[0].size(); j++) {
+			Info cur = f(matrix, i, j);
+			res = max(res, max(cur.no, cur.yes));
+		}
+	}
+	return res;
+}
+
+动态规划：
+在递归return的地方多加一步写缓存操作
+class Info {
+public:
+	int no;
+	int yes;
+
+	Info(int no, int yes) {
+		this->no = no;
+		this->yes = yes;
+	}
+};
+
+/*
+从最左侧出发（具体位置不关心），当前到达（row，col）
+在这个旅程中，
+no：一次能力也不用，能到达的最大路径和（如果是负数，表示没有答案）
+yes：使用了一次能力，能到达的最大路径和（如果是负数，表示没有答案）
+*/
+Info* f(vector<vector<int>>& matrix, int row, int col,vector<vector<Info*>>&dp) {
+	if (dp[row][col] != NULL) {
+		return dp[row][col];
+	}
+	if (col == 0) {//base case：从最左列上
+		dp[row][col] = new Info(matrix[row][col], -matrix[row][col]);
+		return dp[row][col];
+	}
+	//没有在最左列
+	int preNo = -1;//之前的旅程中，一次能力也没用，能达到的最大路径和
+	int preYes = -1;//之前的旅程中，已经用过一次能力了，能达到的最大路径和
+	
+	//p1
+	if (row > 0) {
+		Info* leftUp = f(matrix, row - 1, col - 1, dp);
+		if (leftUp->no >= 0)preNo = leftUp->no;
+		if (leftUp->yes >= 0)preYes = leftUp->yes;
+	}
+
+	//p2
+	Info* left = f(matrix, row, col - 1, dp);
+	if (left->no >= 0)preNo = max(preNo, left->no);
+	if (left->yes >= 0)preYes = max(preYes, left->yes);
+
+	//p3
+	if (row < matrix.size() - 1) {
+		Info* leftDown = f(matrix, row + 1, col - 1, dp);
+		if (leftDown->no >= 0)preNo = max(preNo, leftDown->no);
+		if (leftDown->yes >= 0)preYes = max(preYes, leftDown->yes);
+	}
+
+	//更新自己的no和yes
+	int no = -1;
+	int yes = -1;
+
+	if (preNo >= 0) {
+		no = preNo + matrix[row][col];//之前的旅程没用超能力，现在也不用
+		yes = preNo + (-matrix[row][col]);//之前的旅程没用超能力，但是现在用
+	}
+	if (preYes >= 0) {
+		yes = max(yes, preYes+matrix[row][col]);//之前的旅程用过超能力，现在不用
+	}
+
+	dp[row][col] = new Info(no, yes);
+	return dp[row][col];
+}
+
+int maxPathSum(vector<vector<int>>& matrix) {
+	if (matrix.size() == 0 || matrix[0].size() == 0)return 0;
+	vector<vector<Info*>>dp(matrix.size(), vector<Info*>(matrix[0].size(), NULL));
+	int res = INT_MIN;
+	for (int i = 0; i < matrix.size(); i++) {
+		for (int j = 0; j < matrix[0].size(); j++) {
+			dp[i][j] = f(matrix, i, j, dp);
+			res = max(res, max(dp[i][j]->no, dp[i][j]->yes));
+		}
+	}
+	return res;
+}
+```
+
+### 25.4 字符串公式计算
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/116.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/117.png)
+
+```c++
+void addNum(stack<string>& stk, int num) {
+	if (!stk.empty()) {
+		int cur = 0;
+		string top = stk.top();
+		stk.pop();
+		if (top == "+" || top == "-") {
+			stk.push(top);
+		}
+		else {//如果是乘除，先结合后再放入
+			cur = stoi(stk.top());
+			stk.pop();
+			num = top == "*" ? (cur * num) : (cur / num);
+		}
+	}
+	stk.push(to_string(num));
+}
+
+//只剩加减号后做最后的运算
+int getNum(stack<string>& stk) {
+	int res = 0;
+	bool add = true;
+	string cur;
+	int num = 0;
+	while (!stk.empty()) {
+		cur = stk.top();
+		stk.pop();
+		if (cur == "+") {
+			add = true;
+		}
+		else if (cur == "-") {
+			add = false;
+		}
+		else {
+			num = stoi(cur);
+			res += add ? num : (-num);
+		}
+	}
+	return res;
+}
+
+//从str[i...]往下算，遇到字符串终止位置或者右括号就停止
+//返回两个值，长度为2的数组
+//[0]：负责这一段结果的值
+//[1]：负责的这一段计算到了哪个位置
+vector<int>value(string str, int i) {
+	stack<string>stk;
+	int num = 0;
+	vector<int>b;
+	while (i < str.length() && str[i] != ')'); {
+		if (str[i] >= '0' && str[i] <= '9') {
+			num = num * 10 + (str[i++] - '0');
+		}
+		else if (str[i] != '(') {//遇到的是运算符号
+			addNum(stk, num);
+			stk.push(string(1, str[i++]));
+			num = 0;
+		}
+		else {//遇到左括号了
+			b = value(str, i + 1);
+			num = b[0];
+			i = b[1] + 1;
+		}
+	}
+	addNum(stk, num);
+	return { getNum(stk),i };
+}
+
+int getValue(string str) {
+	return value(str, 0)[0];
+}
+```
+
+### 25.5 最长公共子串
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/118.png)
+
+```c++
+string lcst(string str1, string str2) {
+	if (str1.length() == 0 || str2.length() == 0)return "";
+	int row = 0;//斜线开始位置的行
+	int col = str2.length() - 1;//斜线开始位置的列
+	int maxLen = 0;//全局最大值
+	int end = 0;
+	while (row < str1.length()) {
+		int i = row;
+		int j = col;
+		int len = 0;
+		while (i < str1.length() && j < str2.length()) {
+			if (str1[i] != str2[j]) {
+				len = 0;
+			}
+			else {
+				len++;
+			}
+			if (len > maxLen) {
+				end = i;
+				maxLen = len;
+			}
+			i++;
+			j++;
+		}
+		if (col > 0) {
+			col--;
+		}
+		else {
+			row++;
+		}
+	}
+	return str1.substr(end - maxLen + 1, maxLen);
+}
+```
+
+### 25.6 最长公共子序列
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/119.png)
+
+```c++
+最长公共子序列可能性（结尾）
+1.不i不j：dp[i-1][j-1]
+2.以i不j：dp[i][j-1]
+3.不i以j：dp[i-1][j]
+4.以i以j，即str1[i]==str2[j]：dp[i-1][j-1]+1
+取四种情况的最大值
+
+vector<vector<int>>getdp(string str1, string str2) {
+	vector<vector<int>>dp = vector<vector<int>>(str1.length(), vector<int>(str2.length()));
+	dp[0][0] = str1[0] == str2[0] ? 1 : 0;
+	for (int i = 1; i < str1.length(); i++) {
+		dp[i][0] = max(dp[i - 1][0], str1[i] == str2[0] ? 1 : 0);
+	}
+	for (int j = 1; j < str2.length(); j++) {
+		dp[0][j] = max(dp[0][j - 1], str1[0] == str2[j] ? 1 : 0);
+	}
+	for (int i = 1; i < str1.length(); i++) {
+		for (int j = 1; j < str2.length(); j++) {
+			dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
+			if (str1[i] == str2[j]) {
+				//由于第4种情况中已经包含dp[i-1][j-1]，所以前面不用多加了
+				dp[i][j] = max(dp[i][j], dp[i - 1][j - 1] + 1);
+			}
+		}
+	}
+	return dp;
+}
+
+string lcse(string str1, string str2) {
+	if (str1.length() == 0 || str2.length() == 0)return "";
+	vector<vector<int>>dp = getdp(str1, str2);
+	int m = str1.length() - 1;
+	int n = str2.length() - 1;
+	string res(dp[m][n], '\0');
+	int index = res.length() - 1;
+	while (index >= 0) {
+		if (n > 0 && dp[m][n] == dp[m][n - 1]) {//不以当前n结尾
+			n--;
+		}
+		else if (m > 0 && dp[m][n] == dp[m - 1][n]) {//不以当前m结尾
+			m--;
+		}
+		else {
+			res[index--] = str1[m];
+			m--;
+			n--;
+		}
+	}
+	return res;
+}
+
+```
+
