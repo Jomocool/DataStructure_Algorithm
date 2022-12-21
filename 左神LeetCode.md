@@ -6794,3 +6794,342 @@ int ways(string str) {
 }
 ```
 
+## 27.高级进阶班5
+
+### 27.1 无序数组中第k小的数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/129.png)
+
+```c++
+BFPRT：
+1. 有讲究地选一个数x
+2. partition：(<x,==x,>x)
+3. 判断所选x是否在范围内
+	1.
+    (1)将无序数组分组，每组都排好序
+    (2)把每组的中位数放入marr中
+    (3)再找出marr中的上中位数，就是我们需要的x
+    在arr中，至少有（3N/10）>=x，至多有（7N/10）<x
+    
+void swap(vector<int>& arr, int index1, int index2) {
+	int tmp = arr[index1];
+	arr[index1] = arr[index2];
+	arr[index2] = tmp;
+}
+
+void insertionSort(vector<int>& arr, int begin, int end) {
+	for (int i = begin + 1; i != end + 1; i++) {
+		for (int j = i; j != begin; j--) {
+			if (arr[j - 1] > arr[j]) {//实际排序还是[begin..end]
+				swap(arr, j - 1, j);
+			}
+			else {
+				break;
+			}
+		}
+	}
+}
+
+int getMedian(vector<int>& arr, int begin, int end) {
+	insertionSort(arr, begin, end);
+	int sum = end + begin;
+	int mid = (sum / 2) + (sum % 2);//上中位数
+	return arr[mid];
+}
+
+int medianOfMedians(vector<int>&arr, int begin, int end) {
+	int num = begin - end - 1;
+	int offset = num % 5 == 0 ? 0 : 1;
+	vector<int>mArr(num % 5 + offset);
+	for (int i = 0; i < mArr.size(); i++) {
+		int beginI = begin + i * 5;
+		int endI = beginI + 4;
+		mArr[i] = getMedian(arr, beginI, min(end, endI));
+	}
+	return select(mArr, 0, mArr.size() - 1, mArr.size() / 2);
+}
+
+vector<int>partition(vector<int>& arr, int begin, int end, int pivotValue) {
+	int small = begin - 1;
+	int cur = begin;
+	int big = end + 1;
+	while (cur != end) {
+		if (arr[cur] < pivotValue) {
+			swap(arr, ++small, cur++);
+		}
+		else if (arr[cur] > pivotValue) {
+			swap(arr, cur, --big);
+		}
+		else {
+			cur++;
+		}
+	}
+	vector<int>range(2);
+	range[0] = small + 1;
+	range[1] = big - 1;
+	return range;
+}
+
+//在arr[begin...end]范围上，如果排序的话，返回i位置的数
+//i一定在begin和end之间
+int select(vector<int>&arr, int begin, int end, int i) {
+	if (begin == end) {
+		return arr[begin];
+	}
+	//分组+组内排序+组成newarr+选出newarr的上中位数pivot
+	int pivot = medianOfMedians(arr, begin, end);
+	//根据pivot做划分值<p ==p >p，返回等于区域的左边界和右边界
+	//pivotRange[0]等于区域的左边界
+	//pivotRange[1]等于区域的右边界
+	vector<int>pivotRange = partition(arr, begin, end, pivot);
+	if (i >= pivotRange[0] && i <= pivotRange[1]) {
+		return arr[i];
+	}
+	else if (i < pivotRange[0]) {
+		return select(arr, begin, pivotRange[0] - 1, i);
+	}
+	else {
+		return select(arr, pivotRange[1] + 1, end, i);
+	}
+}
+
+vector<int>copyArr(vector<int>arr){
+    vector<int>res(arr.size());
+    for(int i=0;i<arr.size();i++){
+        res[i]=arr[i];
+    }
+    return res;
+}
+
+int getMinKthByBFPRT(vector<int>&arr,int K){
+    vector<int>copyArr = copyArr(arr);
+    return select(copyArr,0,copyArr.size()-1,K-1);
+}
+```
+
+### 27.2 正数n的裂开方法数
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/130.png)
+
+```c++
+/*
+pre：上一次裂开值
+rest：还剩多少值需要去裂开，且要求第一部分裂出来的值不能比pre小
+*/
+int process(int pre, int rest) {
+	if (rest == 0)return 1;
+	if (pre > rest)return 0;
+	int ways = 0;
+	for (int i = pre; i <= rest; i++) {
+		ways += process(i, rest - i);
+	}
+	return ways;
+}
+
+int ways(int n) {
+	return process(1, n);
+}
+
+//递归转动态规划：
+//从递归可以看出，dp表格的每个格子依赖左下方的格子，
+//所以为了保证每个格子的左下方有值，应该从左往右，从下到上
+int ways(int n) {
+	if (n < 1)return 0;
+	vector<vector<int>>dp(n + 1, vector<int>(n + 1));
+	for (int i = 1; i < dp.size(); i++) {
+		dp[i][0] = 1;
+	}
+	for (int pre = n; pre > 0; pre--) {
+		for (int rest = pre; rest <= n; rest++) {
+			dp[pre][rest] = dp[pre][rest - pre] + dp[pre + 1][rest];
+		}
+	}
+	return dp[1][n];
+}
+```
+
+### 27.3 二叉树满足条件的最大拓扑结构
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/131.png)
+
+```c++
+class Node {
+public:
+	int value;
+	Node* left;
+	Node* right;
+
+	Node(int data) {
+		this->value = data;
+	}
+};
+
+class Record {
+public:
+	int l;
+	int r;
+
+	Record(int left, int right) {
+		this->l = left;
+		this->r = right;
+	}
+};
+
+int modifyMap(Node* n, int v, map<Node*, Record>& m, bool s) {
+	if (n == NULL || m.count(n) == 0)return 0;
+	Record r = m[n];
+	if ((s && n->value > v) || (!s && n->value < v)) {
+		m.erase(n);
+		return r.l + r.r + 1;
+	}
+	else {
+		int minus = modifyMap(s ? n->right : n->left, v, m, s);
+		if (s) {
+			r.r-=minus;
+		}
+		else {
+			r.l -= minus;
+		}
+		m[n] = r;
+		return minus;
+	}
+}
+
+int posOrder(Node* h, map<Node*, Record>& map) {
+	if (h == NULL)return 0;
+	int ls = posOrder(h->left, map);
+	int rs = posOrder(h->right, map);
+	modifyMap(h->left, h->value, map, true);
+	modifyMap(h->right, h->value, map, false);
+
+	Record lr(0, 0);
+	Record rr(0, 0);
+	int lbst = 0;
+	int rbst = 0;
+	if (map.count(h->left) != 0) {
+		lr = map[h->left];
+		lbst = lr.l + lr.r + 1;
+	}
+	if (map.count(h->right) != 0) {
+		lr = map[h->right];
+		rbst = rr.l + rr.r + 1;
+	}
+	map[h] = Record(lbst, rbst);
+	return max(lbst + rbst + 1, max(ls, rs));
+}
+```
+
+### 27.4 完美洗牌1
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/132.png)
+
+```c++
+思路：
+    1.特殊偶数N=3^k-1，小循环出发点就是(3^k-1)
+    2.任意偶数N：
+      2.1算法原型：
+    	 如何让（abcde,甲乙）逗号左右两部分互换？
+    	 让两部分各自逆序（edcba，乙甲），整体逆序（甲乙，abcde）
+      2.2利用上述算法原型把N拆成特殊的(3^k-1)块
+
+//数组长度为len，调整的位置是i，返回调整后的位置
+//下标从1开始
+int modifyIndex(int i, int len) {
+	return (2 * i) % (len + 1);//这里可以取len，所以取模(len+1)
+}
+
+//从start位置开始
+//出发位置依次为1,3,8...
+void cycles(vector<int>& arr, int start, int len, int k) {
+	//找到每一个出发位置trigger
+	//每一个trigg都进行下标连续推
+	//出发位置从1开始算，而数组下标从0开始
+	for (int i = 0, trigger = 1; i < k; i++, trigger *= 3) {
+		int preValue = arr[start + trigger - 1];
+		int cur = modifyIndex(trigger, len);
+		while (cur != trigger) {
+			int tmp = arr[start + cur - 1];
+			arr[start + cur - 1] = preValue;
+			preValue = tmp;
+			cur = modifyIndex(cur, len);
+		}
+		//由于cur==trigger就退出while循环，所以trigger位还没来得及和preValue交换
+		arr[cur + start - 1] = preValue;
+	}
+}
+
+void reverse(vector<int>& arr, int L, int R) {
+	while (L < R) {
+		int tmp = arr[L];
+		arr[L++] = arr[R];
+		arr[R--] = tmp;
+	}
+}
+
+void rotate(vector<int>& arr, int L, int M, int R) {
+	reverse(arr, L, M);
+	reverse(arr, M + 1, R);
+	reverse(arr, L, R);
+}
+
+//在arr[L...R]上做完美洗牌调整
+void shuffle(vector<int>& arr, int L, int R) {
+	while(R-L+1>0){//切成一块一块的解决，每一块长度满足3^k-1
+		int len = R - L + 1;
+		int base = 3;
+		int k = 1;
+		//计算小于等于len并且是离len最近的，满足3^k-1的数
+		while (base <= (len + 1) / 3) {
+			base *= 3;
+			k++;
+		}
+		//当前需要解决长度为base-1的块
+		int half = (base - 1) / 2;
+		int mid = (L + R) / 2;
+		//要旋转的左部分为[L+half...mid]，右部分为[mid+1...mid+half]
+		//在这里，下标从0开始
+		rotate(arr, L + half, mid, mid + half);
+		cycles(arr, L, base - 1, k);
+		//解决了前base-1部分，继续处理后面的
+		L += base - 1;
+	}
+}
+
+void shuffle(vector<int>& arr) {
+	if (arr.size() > 1 && (arr.size() & 1) == 0) {
+		return shuffle(arr, 0, arr.size() - 1);
+	}
+}
+```
+
+### 27.5 完美洗牌2
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/133.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/134.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/135.png)
+
+```c++
+思路：
+    1. 堆排序（只要堆排序的空间复杂度是O(1)）
+    2. N是偶数
+    3. N是奇数
+    
+void wiggleSort(vector<int>&arr){
+    if(arr.size()==0)return;
+    //可以自己实现一个堆排序，或者使用C++中的priority_queue，按从小到大排
+    heapSort(arr);
+    if((arr.size()&1)==1){
+        shuffle(arr,1,arr.size()-1);
+    }else{
+        shuffle(arr,0,arr.size()-1);
+        for(int i=0;i<arr.size();i+=2){
+            int tmp=arr[i];
+            arr[i]=arr[i+1];
+            arr[i+1]=tmp;
+        }
+    }
+}
+```
+
