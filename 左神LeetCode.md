@@ -7133,3 +7133,287 @@ void wiggleSort(vector<int>&arr){
 }
 ```
 
+## 28.高级进阶班6
+
+### 28.1 匹配字符串
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/136.png)
+
+```c++
+思路：
+    1. 递归函数bool f(string str,string exp,int si,int ei)
+    2. bool f(string str,string exp,int si,int ei)：str[si...]和exp[ei...]是否能匹配
+      关注ei+1位置上的符号，因为存在'*'，可以改变其前面的字符
+      2.1 exp[ei+1]!='*'：exp[ei]==str[si]||exp[ei]=='.'
+      2.2 exp[ei+1]=='*'：看*换算成几个e[ei]合适
+
+bool isValid(string s, string e) {
+	for (int i = 0; i < s.length(); i++) {
+		if (s[i] == '*' || s[i] == '.') {
+			return false;
+		}
+	}
+	for (int i = 0; i < e.length(); i++) {
+		if (e[i] == '*' && (i == 0 || e[i - 1] == '*')) {
+			return false;
+		}
+	}
+	return true;
+}
+
+//s[si...]能否被e[ei...]配出来
+//必须保证ei压中的不是'*'
+bool process(string s, string e, int si, int ei) {
+	if (ei == e.length()) {//e已经走完，只有s也走完了才能匹配
+		return si == s.length();
+	}
+	//可能性1，ei+1位置，不是'*'
+	if (ei + 1 == e.length() || e[ei + 1] != '*') {//str[si]必须和exp[ei]配出来，并且后续也能匹配
+		return si != s.length() && (e[ei] == s[si] || e[ei] == '.') && process(s, e, si + 1, ei + 1);
+	}
+	//可能性2，ei+1位置，是'*'
+	while (si != s.length() && (s[si] == e[ei]) || e[ei] == '.') {
+		if (process(s, e, si, ei + 2)) {
+			return true;
+		}
+		si++;
+	}
+	//如果s[si] != e[ei]，直接跳过while循环，0个e[ei]
+	return process(s, e, si, ei + 2);
+}
+
+vector<vector<bool>>initDPMap(string s, string e) {
+	int slen = s.length();
+	int elen = e.length();
+	vector<vector<bool>>dp(slen + 1, vector<bool>(elen + 1, false));
+	dp[slen][elen] = true;
+	for (int j = elen - 2; j > -1; j -= 2) {
+		if (e[j] != '*' && e[j + 1] == '*') {
+			dp[slen][j] = true;
+		}
+		else {
+			break;
+		}
+	}
+	if (slen > 0 && elen > 0) {
+		if ((e[elen - 1] = '.' || s[slen - 1] == e[elen - 1])) {
+			dp[slen - 1][elen - 1] = true;
+		}
+	}
+	return dp;
+}
+
+//递归改动态规划，由于递归过程中exp不会压到*，
+//因此二维表中的格子也不考虑当前位是*的情况，因为用不到
+//dp[si][ei]：str[si...]能否和exp[ei...]匹配
+bool isMatchDp(string s, string e) {
+	if (!isValid(s, e)) {
+		return false;
+	}
+	vector<vector<bool>>dp = initDPMap(s, e);
+	for (int i = s.length() - 1; i > -1; i--) {
+		for (int j = e.length() - 2; j > -1; j--) {
+			if (e[j + 1] != '*') {
+				dp[i][j] = (s[i] == e[j] || e[j] == '.') && dp[i + 1][j + 1];
+			}
+			else {
+				int si = i;
+				while (si != s.length() && (s[si] == e[j] || e[j] == '.')) {
+					if (dp[si][j + 2]) {
+						dp[i][j] = true;
+						break;
+					}
+					si++;
+				}
+				if (dp[i][j] != true) {
+					dp[i][j] = dp[si][j + 2];
+				}
+			}
+		}
+	}
+	return dp[0][0];
+}
+```
+
+### 28.2 最大异或和子数组
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/137.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/138.png)
+
+```c++
+   arr[0...i]=arr[0...(start-1)]^arr[start...i]
+<=>arr[start...i]=arr[0...i]^arr[0...(start-1)]
+
+class Node {
+public:
+	vector<Node*>nexts;
+	Node() {
+		nexts = vector<Node*>(2);
+	}
+};
+
+//把所有前缀异或和加入到NumTrie中，并按照前缀树组织
+class NumTrie {
+public:
+	Node* head=NULL;
+
+	void add(int num) {
+		Node* cur = head;
+		for (int move = 31; move >= 0; move--) {//move：向右移位多少
+			int path = ((num >> move) & 1);
+			cur->nexts[path] = cur->nexts[path] == NULL ? new Node() : cur->nexts[path];
+			cur = cur->nexts[path];
+		}
+	}
+
+	//sum最希望遇到的路径，最大的异或和结果返回
+	int maxXor(int sum) {
+		Node* cur = head;
+		int res = 0;//最后的结果（sum^最优选择）所得到的值
+		for (int move = 31; move >= 0; move--) {
+			//当前位如果是0，path就是整数0
+			//当前位如果是1，path就是整数1
+			int path = (sum >> move) & 1;//sum第move位置上的状态提取出来
+			//sum该位的状态，最期待的路
+			int best = move == 31 ? path : (path ^ 1);
+			//best：最期待的路 -> 实际走的路
+			best = cur->nexts[best] != NULL ? best : (best ^ 1);
+			//path sum第move位的状态，best是根据path实际走的路
+			res |= (path ^ best) << move;
+			cur = cur->nexts[best];
+		}
+		return res;
+	}
+};
+
+int maxXorSubarray(vector<int>arr) {
+	if (arr.size() == 0) {
+		return 0;
+	}
+	int maxXor = INT_MIN;
+	int sum = 0;//一个数都没有的时候，异或和为0
+	NumTrie numTrie;
+	numTrie.add(0);
+	for (int i = 0; i < arr.size(); i++) {
+		sum ^= arr[i];//[0...i]异或和
+		//前缀树numTrie装着所有：一个数也没有、0~0、0~1、0~2、0~i-1的异或和
+		maxXor = max(maxXor, numTrie.maxXor(sum));
+		numTrie.add(sum);
+	}
+	return maxXor;
+}
+```
+
+### 28.3 打气球得分
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/139.png)
+
+```c++
+//打爆arr[L..R]范围上的	所有气球，返回最大分数
+//假设arr[L-1]和arr[R+1]一定没有被打爆
+//尝试的方式：每一个位置的气球都是最后被打爆
+int process(vector<int>& arr, int L, int R) {
+	if (L == R) {//只剩一个气球，直接打爆
+		return arr[L - 1] * arr[L] * arr[R + 1];
+	}
+	//比较最后打爆arr[L]和最后打爆arr[R]两个方案
+	int maxIntegral = max(arr[L - 1] * arr[L] * arr[R + 1] + process(arr, L + 1, R), 
+						  arr[L - 1] * arr[R] * arr[R + 1] + process(arr, L, R - 1));
+	//尝试中间位置的气球最后被打爆的每一种方案
+	for (int i = L + 1; i < R; i++) {
+		maxIntegral = max(maxIntegral, arr[L - 1] * arr[i] * arr[R + 1] + process(arr, L, i - 1) + process(arr, i + 1, R));
+	}
+	return maxIntegral;
+}
+
+int maxIntegral(vector<int>& arr) {
+	if (arr.size() == 0) {
+		return 0;
+	}
+	if (arr.size() == 1) {
+		return arr[0];
+	}
+	int N = arr.size();
+	vector<int>help(N + 2);
+	help[0] = 1;
+	help[N + 1] = 1;
+	for (int i = 0; i < N; i++) {
+		help[i + 1] = arr[i];
+	}
+	return process(help, 1, N);
+}
+
+//递归改动态规划
+int maxIntegralDp(vector<int>& arr) {
+	if (arr.size() == 0) {
+		return 0;
+	}
+	if (arr.size() == 1) {
+		return arr[0];
+	}
+	int N = arr.size();
+	vector<int>help(N + 2);
+	help[0] = 1;
+	help[N + 1] = 1;
+	for (int i = 0; i < N; i++) {
+		help[i + 1] = arr[i];
+	}
+	vector<vector<int>>dp(N + 2, vector<int>(N + 2));
+	for (int i = 1; i <= N; i++) {
+		dp[i][i] = help[i - 1] * help[i] * help[i + 1];
+	}
+	for (int L = N; L >= 1; L--) {
+		for (int R = L + 1; R <= N; R++) {
+			// 求解dp[L][R]，表示help[L..R]上打爆所有气球的最大分数
+			// 最后打爆help[L]的方案
+			int finalL = help[L - 1] * help[L] * help[R + 1] + dp[L + 1][R];
+			// 最后打爆help[R]的方案
+			int finalR = help[L - 1] * help[R] * help[R + 1] + dp[L][R - 1];
+			// 最后打爆help[L]的方案，和最后打爆help[R]的方案，先比较一下
+			dp[L][R] = max(finalL, finalR);
+			// 尝试中间位置的气球最后被打爆的每一种方案
+			for (int i = L + 1; i < R; i++) {
+				dp[L][R] = max(dp[L][R], help[L - 1] * help[i]
+					* help[R + 1] + dp[L][i - 1] + dp[i + 1][R]);
+			}
+		}
+	}
+	return dp[1][N];
+}
+```
+
+### 28.4 判断汉诺塔轨迹是最优解第几步
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/140.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/141.png)
+
+```c++
+//目标：把0~i的圆盘，从from全部挪到to上
+//返回：根据arr中的状态arr[0...i]，它是最优解第几步
+int process(vector<int>& arr, int i, int from, int other, int to) {
+	if (i == -1) {
+		return 0;
+	}
+	if (arr[i] != from && arr[i] != to) {//i圆盘没有到other的轨迹
+		return -1;
+	}
+	if (arr[i] == from) {//第一大步没走完
+		return process(arr, i - 1, from, to, other);
+	}
+	else {//arr[i]==to
+		int rest = process(arr, i - 1, other, from, to);//第三大步完成程度
+		if (rest == -1)return -1;
+		return (1 << i) + rest;
+	}
+}
+
+int step(vector<int>& arr) {
+	if (arr.size() == 0) {
+		return -1;
+	}
+	return process(arr, arr.size() - 1, 1, 2, 3);
+}
+```
+
