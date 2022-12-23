@@ -7417,3 +7417,449 @@ int step(vector<int>& arr) {
 }
 ```
 
+## 29.高级进阶班7
+
+### 29.1 互为旋变串
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/142.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/143.png)
+
+**第一种情况：**a1未和a2~a5交换，a1对应b1
+
+**第二种情况：**a1和a2~a5交换，a1对应b5
+
+```c++
+//判断字符串s1和s2的长度还有各字符词频是否相同
+bool sameTypeSameNumber(string s1, string s2) {
+	if (s1.length() != s2.length()) {
+		return false;
+	}
+	vector<int>times(256);
+	for (int i = 0; i < s1.length(); i++) {
+		times[s1[i]]++;
+	}
+	for (int i = 0; i < s2.length(); i++) {
+		if (--times[s2[i]] < 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+//判断str1(L1,L1+size)和str2(L2,L2+size)是否为旋变串
+//长度一定相等
+bool process(string str1, string str2, int L1, int L2, int size) {
+	if(size==1){//base case
+		return str1[L1] == str2[L2];//长度等于1时，两字符相等即互为旋变串
+	}
+
+	for (int leftPart = 1; leftPart < size; leftPart++) {
+		//str1：左1右1
+		//str2：左2右2
+		if (
+			process(str1, str2, L1, L2, leftPart)//左1对左2(a1<=>b1)
+			&&
+			process(str1, str2, L1 + leftPart, L2 + leftPart, size - leftPart)//右1对右2(a2~a5<=>b2~b5)
+			||
+			process(str1, str2, L1, L2 + size - leftPart, leftPart)//左1对右2(a1<=>b5)
+			&&
+			process(str1, str2, L1 + leftPart, L2, size - leftPart)//右2对左1(a2~a5<=>b1~b4)
+		   )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool isScramble(string s1, string s2) {
+	if (s1.length() == 0 || s2.length() == 0) {
+		return s1.length() == s2.length();
+	}
+	if (s1 == s2) {
+		return true;
+	}
+	if (!sameTypeSameNumber(s1, s2)) {
+		return false;
+	}
+	int N = s1.length();
+	return process(s1, s2, 0, 0, N);
+}
+
+//递归改动态规划，位置依赖：看第三围参数，leftPart总是比size小
+//三位表就是一个正方体，边长为字符串长度
+//注意base case是size==1，因此size没有第0层
+//保证str1和str2是等长同类型的
+bool dpCheck(string str1, string str2) {
+	int N = str1.length();
+	vector<vector<vector<bool>>>dp(N, vector<vector<bool>>(N, vector<bool>(N + 1)));
+	//先把第一层填了，base case
+	for (int L1 = 0; L1 < N; L1++) {
+		for (int L2 = 0; L2 < N; L2++) {
+			dp[L1][L2][1] = str1[L1] == str2[L2];
+		}
+	}
+	//按层来填，因此size在for循环最外层
+	for (int size = 2; size <= N; size++) {
+		for (int L1 = 0; L1 <= N - size; L1++) {//注意出发点加上长度的位置不能超过字符串总长度
+			for (int L2 = 0; L2 <= N - size; L2++) {
+				for (int leftPart = 1; leftPart < size; leftPart++) {
+					if (
+						dp[L1][L2][leftPart]
+						&&
+						dp[L1 + leftPart][L2 + leftPart][size - leftPart]
+						||
+						dp[L1][L2 + leftPart][leftPart]
+						&&
+						dp[L1 + leftPart][L2][size - leftPart]
+						) 
+					{
+						dp[L1][L2][size] = true;//该层该位置有满足条件的情况
+						break;
+					}
+				}
+			}
+		}
+	}
+	return dp[0][0][N];
+}
+```
+
+### 29.2 str1子串中含有str2所有字符的最小子串长度
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/144.png)
+
+```c++
+int minLen(string str1, string str2) {
+	if (str1.length() == 0 || str2.length() == 0) {
+		return 0;
+	}
+	vector<int>needs(256);
+	for (int i = 0; i < str2.length(); i++) {
+		needs[str2[i]]++;
+	}
+
+	//移动窗口扫描str1子串
+	int left = 0;
+	int right = 0;
+	int match = str2.length();
+	int minLen = INT_MAX;
+	while (right < str1.length()) {
+		needs[str1[right]]--;
+		if (needs[str1[right]] >= 0) {//欠的是从正数减1的话才是有效的偿还
+			match--;
+		}
+		if (match == 0) {
+			while (needs[str1[left]] < 0) {//在以right结尾的情况下，右移left，看是否能缩减子串长度
+				needs[str1[left++]]++;//既然窗口不包含str1[left]了，那么又多欠一个该字符了
+			}
+			minLen = min(minLen, right - left + 1);
+			//退出while循环时，needs[str1[left]]==0，计算完长度后，右移left进行下次循环
+			needs[str1[left++]]++;
+			match++;//从非负数加1，match才能有效的加1
+		}
+		right++;
+	}
+	return minLen;
+}
+```
+
+### 29.3 LFU缓存
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/145.png)
+
+```c++
+//节点的数据结构
+class Node {
+public:
+	int key;
+	int value;
+	int times;//该节点发生get和set的次数总和
+	Node* up;//节点之间是双向链表所以有上一个节点
+	Node* down;//节点之间是双线链表所以有下一个节点
+
+	Node(int key, int value, int times) {
+		this->key = key;
+		this->value = value;
+		this->times = times;
+		this->up = NULL;
+		this->down = NULL;
+	}
+};
+
+//桶结构
+class NodeList {
+public:
+	Node* head;//桶的头节点
+	Node* tail;//桶的尾节点
+	NodeList* last;//桶之间是双向链表所以有前一个桶
+	NodeList* next;//桶之间是双向链表所以有后一个桶
+
+	NodeList(Node* node) {
+		this->head = node;
+		this->tail = node;
+	}
+
+	//把一个新的节点加入到这个桶，新的节点放在顶端变成新的头部
+	void addNodeFromHead(Node* newHead) {
+		newHead->down = head;
+		head->up = newHead;
+		head = newHead;
+	}
+
+	//判断这个桶是不是空的
+	bool isEmpty() {
+		return head == NULL;
+	}
+
+	//删除node节点并保证node的上下环境重新链接
+	void deleteNode(Node* node) {
+		if (head == NULL) {
+			head = NULL;
+			tail = NULL;
+		}
+		else {
+			if (node == head) {
+				head = node->down;
+			}
+			else if (node == tail) {
+				tail = tail->up;
+				tail->down = NULL;
+			}
+			else {
+				node->up->down = node->down;
+				node->down->up = node->up;
+			}
+		}
+		node->up = NULL;
+		node->down = NULL;
+	}
+};
+
+//总缓存结构
+class LFUCache {
+public:
+	int capacity;//缓存大小限制k
+	int size;//缓存目前有多少个节点
+	map<int, Node*>records;//表示key由哪个节点代表
+	map<Node*, NodeList*>heads;//表示节点在哪个桶里
+	NodeList* headList;//整个结构中最左的桶
+
+	LFUCache(int K) {
+		capacity = K;
+		size = 0;
+		headList = NULL;
+	}
+
+	/*
+	removeNodeList：刚刚减少了一个节点的桶
+	这个函数的功能是：判断刚刚减少了一个节点的桶是不是已经空了
+	1）如果不空，什么也不做
+	2）如果空了，并且removeNodeList是整个缓存结构最左的桶（headList）
+	   删掉这个桶的同时也要让removeNodeLIst的下一个桶变成最左的桶
+	3）如果空了，但removeNodeList不是整个缓存结构最左的桶（headList）
+	   把这个桶删除，并保证上一个的桶和下一个的桶还是双向链表的连接方式
+	*/
+	bool modifyHeadList(NodeList* removeNodeList) {
+		if (removeNodeList->isEmpty()) {
+			if (headList == removeNodeList) {
+				headList = removeNodeList->next;
+				if (headList != NULL) {
+					headList->last == NULL;
+				}
+			}
+			else {
+				removeNodeList->last->next = removeNodeList->next;
+				if (removeNodeList->next != NULL) {
+					removeNodeList->next->last = removeNodeList->last;
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/*
+	函数的功能：
+	node节点次数+1了，但该节点原来在oldNodeList里
+	把node从oldNodeList删掉，然后放到次数+1的桶里
+	整个保证既要保证节点之间的双向链表关系，同时也要保证桶之间的双向链表关系
+	*/
+	void move(Node* node, NodeList* oldNodeList) {
+		//preList表示次数+1的桶前一个桶是哪一个
+		//如果oldNodeList删掉node之后还有节点，oldNodeList就是次数+1的桶的前一个桶
+		//如果oldNodeList删掉node之后空了，oldNodeList是需要删除的，所以次数+1的桶的前一个桶，是oldNodeList的前一个
+		NodeList* preList = modifyHeadList(oldNodeList) ? oldNodeList->last : oldNodeList;
+		//nextList表示次数+1的桶的后一个桶是哪一个
+		NodeList* nextList = oldNodeList->next;
+		if (nextList == NULL) {
+			NodeList* newList = new NodeList(node);
+			if (preList != NULL) {
+				preList->next = newList;
+			}
+			newList->last = preList;
+			if (headList == NULL) {
+				headList = newList;
+			}
+			heads[node] = newList;
+		}
+		else {
+			if (nextList->head->times == node->times) {
+				nextList->addNodeFromHead(node);
+				heads[node] = nextList;
+			}
+			else {
+				NodeList* newList = new NodeList(node);
+				if (preList != NULL) {
+					preList->next = newList;
+				}
+				newList->last = preList;
+				newList->next = nextList;
+				nextList->last = newList;
+				if (nextList==headList) {
+					headList = newList;
+				}
+				heads[node] = newList;
+			}
+		}
+	}
+
+	void set(int key, int value) {
+		if (records.count(key) != 0) {
+			Node* node = records[key];
+			node->value = value;
+			node->times++;
+			NodeList* curNodeList = heads[node];
+		}
+		else {
+			if (size == capacity) {
+				Node* node = headList->tail;
+				headList->deleteNode(node);
+				modifyHeadList(headList);
+				records.erase(node->key);
+				heads.erase(node);
+				size--;
+			}
+			Node* node = new Node(key, value, 1);
+			if (headList == NULL) {
+				headList = new NodeList(node);
+			}
+			else {
+				if (headList->head->times == node->times) {
+					headList->addNodeFromHead(node);
+				}
+				else {
+					NodeList* newList = new NodeList(node);
+					newList->next = headList;
+					headList->last = newList;
+					headList = newList;
+				}
+			}
+			records[key] = node;
+			heads[node] = headList;
+			size++;
+		}
+	}
+
+	int get(int key) {
+		if (records.count(key) == 0) {
+			_Throw_range_error("无效key");
+		}
+		Node* node = records[key];
+		node->times++;
+		NodeList* curNodeList = heads[node];
+		move(node, curNodeList);
+		return node->value;
+	}
+};
+```
+
+### 29.4 良好出发点
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/146.png)
+
+```c++
+思路：
+    纯能数组=oil-dis，oil-=dis，用完再复原，问题转变成在纯能数组中找一个出发点，过程中累加和不能小于0
+    
+
+int changeDisArrayGetInit(vector<int>& dis, vector<int>& oil) {
+	int init = -1;
+	for (int i = 0; i < dis.size(); i++) {
+		dis[i] = oil[i] - dis[i];
+		if (dis[i] >= 0) {
+			init = i;
+		}
+	}
+	return init;
+}
+
+int lastIndex(int index, int size) {
+	return index == 0 ? (size - 1) : index - 1;
+}
+
+int nextIndex(int index, int size) {
+	return index == size - 1 ? 0 : index + 1;
+}
+
+//已知start的next方向上有一个良好出发点
+//start如果可以达到这个良好出发点，	那么从start出发一定可以转一圈
+void connectGood(vector<int>& dis, int start, int init, vector<bool>& res) {
+	int need = 0;
+	while (start != init) {
+		if (dis[start] < need) {
+			need -= dis[start];
+		}
+		else {
+			res[start] = true;
+			need = 0;
+		}
+		start = lastIndex(start, dis.size());
+	}
+}
+
+vector<bool>enlargeArea(vector<int>& dis, int init) {
+	vector<bool>res(dis.size());
+	int start = init;
+	int end = nextIndex(init, dis.size());
+	int need = 0;
+	int rest = 0;
+	do {
+		//当前来到的start已经在连通区域中， 可以确定后续的开始点一定无法转完一圈
+		if (start != init && start == lastIndex(end, dis.size())) {
+			break;
+		}
+		//当前的start不在连通区域中，就扩充连通区域
+		if (dis[start] < need) {
+			need -= dis[start];
+		}
+		else {
+			rest += dis[start] - need;
+			need = 0;
+			while (rest >= 0 && end != start) {
+				rest += dis[end];
+				end = nextIndex(end, dis.size());
+			}
+			//如果连通区域已经覆盖整个环，当前的start是良好出发点，进入2阶段
+			if (rest >= 0) {
+				res[start] = true;
+				connectGood(dis, lastIndex(start, dis.size()), init, res);
+				break;
+			}
+		}
+		start = lastIndex(start, dis.size());
+	} while (start != init);
+	return res;
+}
+
+vector<bool>stations(vector<int>& dis, vector<int>& oil) {
+	if (dis.size() != oil.size() || dis.size() < 2) {
+		return {};
+	}
+	int init = changeDisArrayGetInit(dis, oil);
+	return init == -1 ? vector<bool>(dis.size(), false) : enlargeArea(dis, init);
+}
+```
+
