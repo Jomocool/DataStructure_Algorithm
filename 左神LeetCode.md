@@ -7863,3 +7863,303 @@ vector<bool>stations(vector<int>& dis, vector<int>& oil) {
 }
 ```
 
+## 30.高级进阶班8
+
+### 30.1 交换错误节点使搜索二叉树复原
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/147.png)
+
+```c++
+思路：
+    1. e1、e2中，谁是整棵树树头
+    2. e1、e2是否相邻？如果相邻，谁是父？
+    3. e1、e2都有父节点，那么他们分别是其父节点的左子节点还是右子节点？
+    
+class Node {
+public:
+	int value;
+	Node* left;
+	Node* right;
+
+	Node(int value) {
+		this->value = value;
+		this->left = NULL;
+		this->right = NULL;
+	}
+};
+
+vector<Node*>getTwoErrNodes(Node* head) {
+	vector<Node*>errs(2);
+	if (head == NULL) {
+		return errs;
+	}
+	stack<Node*>stk;
+	Node* pre = NULL;
+	//中序遍历
+	while (!stk.empty() || head != NULL) {
+		if (head != NULL) {
+			stk.push(head);
+			head = head->left;
+		}
+		else {
+			head = stk.top();
+			stk.pop();
+			if (pre != NULL && pre->value > head->value) {
+				errs[0] = errs[0] == NULL ? pre : errs[0];
+				errs[1] = head;
+			}
+			pre = head;
+			head = head->right;
+		}
+	}
+	return errs;
+}
+
+vector<Node*>getTwoErrParents(Node* head, Node* e1, Node* e2) {
+	vector<Node*>parents(2);
+	if (head == NULL) {
+		return parents;
+	}
+	stack<Node*>stk;
+	while (!stk.empty() || head != NULL) {
+		if (head != NULL) {
+			stk.push(head);
+			head = head->left;
+		}
+		else {
+			head = stk.top();
+			if (head->left == e1 || head->right == e1) {
+				parents[0] = head;
+			}
+			if (head->left == e2 || head->right == e2) {
+				parents[1] = head;
+			}
+			head = head->right;
+		}
+	}
+	return parents;
+}
+
+Node* recoverTree(Node* head) {
+	vector<Node*>errs = getTwoErrNodes(head);
+	vector<Node*>parents = getTwoErrParents(head, errs[0], errs[1]);
+	Node* e1 = errs[0];
+	Node* e1P = parents[0];
+	Node* e1L = e1->left;
+	Node* e1R = e1->right;
+	Node* e2 = errs[1];
+	Node* e2P = parents[1];
+	Node* e2L = e2->left;
+	Node* e2R = e2->right;
+	if (e1 == head) {
+		if (e1 == e2P) {
+			e1->left = e2L;
+			e1->right = e2R;
+			e2->right = e1;
+			e2->left = e1L;
+		}
+		else if (e2P->left == e2) {
+			e2P->left = e1;
+			e2->left = e1L;
+			e2->right = e1R;
+			e1->left = e2L;
+			e1->right = e2R;
+		}
+		else {
+			e2P->right = e1;
+			e2->left = e1L;
+			e2->right = e1R;
+			e1->left = e2L;
+			e1->right = e2R;
+		}
+		head = e2;
+	}
+	else if (e2 == head) {
+		if (e2 == e1P) {
+			e2->left = e1L;
+			e2->right = e1R;
+			e1->left = e2;
+			e1->right = e2R;
+		}
+		else if (e1P->left == e1) {
+			e1P->left = e2;
+			e1->left = e2L;
+			e1->right = e2R;
+			e2->left = e1L;
+			e2->right = e1R;
+		}
+		else {
+			e1P->right = e2;
+			e1->left = e2L;
+			e1->right = e2R;
+			e2->left = e1L;
+			e2->right = e1R;
+		}
+		head = e1;
+	}
+	else {
+		if (e1 == e2P) {
+			if (e1P->left == e1) { // 锟斤拷锟斤拷锟
+				e1P->left = e2;
+				e1->left = e2L;
+				e1->right = e2R;
+				e2->left = e1L;
+				e2->right = e1;
+			}
+			else { // 锟斤拷锟斤拷锟
+				e1P->right = e2;
+				e1->left = e2L;
+				e1->right = e2R;
+				e2->left = e1L;
+				e2->right = e1;
+			}
+		}
+		else if (e2 == e1P) {
+			if (e2P->left == e2) { // 锟斤拷锟斤拷锟
+				e2P->left = e1;
+				e2->left = e1L;
+				e2->right = e1R;
+				e1->left = e2;
+				e1->right = e2R;
+			}
+			else {
+				e2P->right = e1;
+				e2->left = e1L;
+				e2->right = e1R;
+				e1->left = e2;
+				e1->right = e2R;
+			}
+		}
+		else {
+			if (e1P->left == e1) {
+				if (e2P->left == e2) {
+					e1->left = e2L;
+					e1->right = e2R;
+					e2->left = e1L;
+					e2->right = e1R;
+					e1P->left = e2;
+					e2P->left = e1;
+				}
+				else {
+					e1->left = e2L;
+					e1->right = e2R;
+					e2->left = e1L;
+					e2->right = e1R;
+					e1P->left = e2;
+					e2P->right = e1;
+				}
+			}
+			else {
+				if (e2P->left == e2){
+					e1->left = e2L;
+					e1->right = e2R;
+					e2->left = e1L;
+					e2->right = e1R;
+					e1P->right = e2;
+					e2P->left = e1;
+				}
+				else {
+					e1->left = e2L;
+					e1->right = e2R;
+					e2->left = e1L;
+					e2->right = e1R;
+					e1P->right = e2;
+					e2P->right = e1;
+				}
+			}
+		}
+	}
+	return head;
+}
+```
+
+### 30.2 平面内重叠矩形数量最多的地方
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/148.png)
+
+**线段重叠问题：**
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/149.png)
+
+```c++
+class Rectangle {
+public:
+	int up;
+	int down;
+	int left;
+	int right;
+
+	Rectangle(int up, int down, int left, int right) {
+		this->up = up;
+		this->down = down;
+		this->left = left;
+		this->right = right;
+	}
+};
+
+bool compareDown(Rectangle o1, Rectangle o2) {
+	return o1.down < o2.down;
+}
+
+bool compareLeft(Rectangle o1, Rectangle o2) {
+	return o1.left < o2.left;
+}
+
+bool compareRight(Rectangle o1,Rectangle o2){
+	return o1.right < o2.right;
+}
+
+void removeLowerOnCurDown(set<Rectangle>& set, int curDown) {
+	list<Rectangle>removes;
+	for (Rectangle rec : set) {
+		if (rec.up <= curDown) {
+			removes.push_back(rec);
+		}
+	}
+	for (Rectangle rec : removes) {
+		set.erase(rec);
+	}
+}
+
+void removeLeftOnCurLeft(set<Rectangle>& rightOrdered, int curLeft) {
+	list<Rectangle>removes;
+	for (Rectangle rec : rightOrdered) {
+		if (rec.right > curLeft) {
+			break;
+		}
+		removes.push_back(rec);
+	}
+	for (Rectangle rec : removes) {
+		rightOrdered.erase(rec);
+	}
+}
+
+int maxCover(vector<Rectangle>& recs) {
+	if (recs.size() == 0) {
+		return 0;
+	}
+	sort(recs.begin(), recs.end(), compareDown);
+	set<Rectangle>leftOrdered;
+	int ans = 0;
+	for (int i = 0; i < recs.size(); i++) {
+		int curDown = recs[i].down;
+		int index = i;
+		while (recs[index].down == curDown) {
+			leftOrdered.insert(recs[index]);
+			index++;
+		}
+		i = index;
+		//上边沿还没有当前矩形下边沿大的矩形通通弹出
+		removeLowerOnCurDown(leftOrdered, curDown);
+		set<Rectangle>rightOrdered;
+		for (Rectangle rec : leftOrdered) {
+			//右边沿还不够当前矩形左边沿的矩形通通弹出
+			removeLeftOnCurLeft(rightOrdered, rec.left);
+			rightOrdered.insert(rec);
+			ans = max(ans, (int)rightOrdered.size());
+		}
+	}
+	return ans;
+}
+```
+
