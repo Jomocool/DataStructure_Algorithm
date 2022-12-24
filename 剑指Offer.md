@@ -1909,3 +1909,172 @@ public:
 };
 ```
 
+## 第二十一天：位运算（简单）
+
+### 剑指 Offer 15. 二进制中1的个数
+
+```c++
+class Solution {
+public:
+    int hammingWeight(uint32_t n) {
+        int count=0;
+        while(n>0){
+            if(n%2==1)count++;
+            n>>=1;
+        }
+        return count;
+    }
+};
+```
+
+### 剑指 Offer 65. 不用加减乘除做加法
+
+```c++
+class Solution {
+public:
+    int add(int a, int b) {
+        int sum=0;
+        while(b!=0){
+            sum=a^b;//a和b的无进位相加
+            b=(unsigned)(a&b)<<1;//LeetCode负数不支持左移
+            a=sum;
+        }
+        return sum;
+    }
+};
+```
+
+
+
+## 第二十二天：位运算（中等）
+
+### 剑指 Offer 56 - I. 数组中数字出现的次数
+
+```c++
+class Solution {
+public:
+    vector<int> singleNumbers(vector<int>& nums) {
+        //假设单独出现的两个数分别为x和y
+        int eor=0;//整个数组的异或和
+        for(int i=0;i<nums.size();i++){
+            eor^=nums[i];
+        }
+
+        //此时eor=x^y，找到x和y第一个不相同的位
+        int m=1;
+        while((m&eor)==0){
+            m<<=1;
+        }
+
+        //遍历数组，将数组分成两部分
+        //nums1[i]&m==0
+        //nums2[i]&m==1
+        //x和y必然分开出现在以上两数组中，所以再找数组中一个单独出现的数即可
+        int x=0;
+        int y=0;
+        for(int i=0;i<nums.size();i++){
+            if((nums[i]&m)==0){
+                x^=nums[i];
+            }else{
+                y^=nums[i];
+            }
+        }
+        return {x,y};
+    }
+};
+```
+
+### 剑指 Offer 56 - II. 数组中数字出现的次数
+
+```c++
+class Solution {
+public:
+    int singleNumber(vector<int>& nums) {
+        //记录数组中所有数各数位1的个数
+        int arr[32]={};//由于int类型只有32位，所以数组大小为32即可
+        for(int i=0;i<nums.size();i++){
+            for(int move=0;move<32;move++){
+                if(((nums[i]>>move)&1)==1){
+                    arr[move]++;
+                }
+            }
+        }
+
+        int single=0;
+        for(int i=0;i<32;i++){
+            //由于除了要找的数外其他数都有3个，那每个位上1的个数必然是3n或3n+1
+            single+=(arr[i]%3)<<i;
+        }
+        return single;
+    }
+};
+```
+
+
+
+## 第二十三天：数学（简单）
+
+### 剑指 Offer 39. 数组中出现次数超过一半的数字
+
+```c++
+摩尔投票法：将nums[i]看作支持的号码牌，sum则是票数
+1.当sum=0时，选举下一个数当众数，遍历数组
+2.如果当前数和众数相等，则众数票数增加，sum++
+3.如果不等，众数票数就减少，sum--
+4.当sum减少到0时，说明支持者不够多，那意味着它不是众数，重新选举下一个数为众数
+
+class Solution {
+public:
+    int majorityElement(vector<int>& nums) {
+        if(nums.size()<=2){
+            return nums[0];
+        }
+
+        //先假定众数是nums[0]，众数票数sum=1
+        int x=nums[0];
+        int sum=1;
+        for(int i=1;i<nums.size();i++){
+            if(sum==0){//说明要重新选举众数了
+                x=nums[i];
+                sum=1;
+            }else{
+                if(nums[i]==x){//和众数一样，向众数投票
+                    sum++;
+                }else{//不一样则抵消
+                    sum--;
+                }
+            }
+        }
+        return x;
+    }
+};
+```
+
+### 剑指 Offer 66. 构建乘积数组
+
+```c++
+正反遍历数组：
+class Solution {
+public:
+    vector<int> constructArr(vector<int>& a) {
+        //由于b[i]抛弃的是a[i]，因此我们可以通过正反遍历a数组达到只缺a[i]的效果
+        vector<int>b(a.size());
+        //遍历前初始化成1
+        int mul=1;
+        for(int i=0;i<a.size();i++){
+            b[i]=mul;
+            mul*=a[i];
+        }
+
+        //遍历前重新初始化成1
+        mul=1;
+        for(int i=a.size()-1;i>=0;i--){
+            b[i]*=mul;
+            mul*=a[i];
+        }
+
+        return b;
+    }
+};
+```
+
