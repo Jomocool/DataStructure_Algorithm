@@ -2078,3 +2078,198 @@ public:
 };
 ```
 
+## 第二十四天：数学（中等）
+
+### 剑指 Offer 14- I. 剪绳子
+
+![image text](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/Jz_Offer-img/6.png)
+
+```c++
+思路：
+尽可能将绳子等分成长度为3的各段（证明在上），最后如果剩余绳子长度为mod
+1. mod==0，无需处理
+2. mod==1，和最后一段3合并，因为4>3*1
+3. mod==2，不用和最后一段3合并，因为2*3>5
+class Solution {
+public:
+    int cuttingRope(int n) {
+        if(n<=2){
+            return 1;
+        }
+        if(n==3){
+            return 2;
+        }
+
+        int cuts=n/3;
+        int mod=n%3;
+        if(mod==0){
+            return pow(3,cuts);
+        }
+        else if(mod==1){
+            return pow(3,cuts-1)*4;
+        }
+        else{
+            return pow(3,cuts)*2;
+        }
+    }
+
+    int pow(int a,int n){
+        int res=1;
+        long tmp=a;//注意要用long，不然会溢出
+        while(n>0){
+            if(n%2==1){
+                res*=tmp;
+            }
+            n>>=1;
+            tmp*=tmp;
+        }
+        return res;
+    }
+};
+```
+
+### 剑指 Offer 57 - II. 和为s的连续正数序列
+
+```c++
+滑动窗口：
+class Solution {
+public:
+    vector<vector<int>> findContinuousSequence(int target) {
+        vector<vector<int>>res;
+        int L=1;
+        int R=1;
+        int sum=1;
+        while(L<=target/2){
+            if(sum<target){
+                //右边界先移动再加
+                R++;
+                sum+=R;
+            }else if(sum>target){
+                //左边界先减再移动
+                sum-=L;
+                L++;
+            }else{
+                vector<int>tmp;
+                for(int i=L;i<=R;i++){
+                    tmp.push_back(i);
+                }
+                res.push_back(tmp);
+                //加快进程
+                sum-=L;
+                L++;
+                R++;
+                sum+=R;
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 剑指 Offer 62. 圆圈中最后剩下的数字
+
+|  0   | ...  |
+| :--: | :--: |
+|  n   | n-1  |
+|  1   |      |
+|  2   |      |
+| ...  |      |
+| k-2  | n-2  |
+| k-1  |  __  |
+|  k   |  0   |
+| k+1  |  1   |
+| ...  | ...  |
+
+```c++
+关键点：找出删除某个数字后，其他数字编号变化前后的映射
+公式：new=(old+k)%n
+    
+class Solution {
+public:
+    int lastRemaining(int n, int m) {
+        if(n==1)return 0;
+        return (lastRemaining(n-1,m)+m)%n;//old=(new+k)%n
+    }
+};
+```
+
+
+
+## 第二十五天：模拟（中等）
+
+### 剑指 Offer 29. 顺时针打印矩阵
+
+```c++
+思路：
+    以对角线两个格子为基准点，顺时针打印，然后两格子沿对角线向内缩。
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        if(matrix.size()==0)return {};
+        int left=0;
+        int up=0;
+        int right=matrix[0].size()-1;
+        int down=matrix.size()-1;
+        vector<int>res;
+        while(left<=right&&up<=down){
+            int curLeft=left;
+            int curUp=up;
+            int curRight=right;
+            int curDown=down;
+            if(curUp==curDown){//同一行
+                for(int j=curLeft;j<=curRight;j++){
+                    res.push_back(matrix[curUp][j]);
+                }
+            }else if(curLeft==curRight){//同一列
+                for(int i=curUp;i<=curDown;i++){
+                    res.push_back(matrix[i][curLeft]);
+                }
+            }else{
+                int curR=curUp;
+                int curC=curLeft;
+                //while循环条件用不等可以让代码更整洁
+                while(curC!=curRight){
+                    res.push_back(matrix[curUp][curC++]);
+                }
+                while(curR!=curDown){
+                    res.push_back(matrix[curR++][curRight]);
+                }
+                while(curC!=curLeft){
+                    res.push_back(matrix[curDown][curC--]);
+                }
+                while(curR!=curUp){
+                    res.push_back(matrix[curR--][curLeft]);
+                }
+            }
+            left++;
+            up++;
+            right--;
+            down--;
+        }
+        return res;
+    }
+};
+```
+
+### 剑指 Offer 31. 栈的压入、弹出序列
+
+```c++
+模拟：
+class Solution {
+public:
+    bool validateStackSequences(vector<int>& pushed, vector<int>& popped) {
+        stack<int>stk;
+        int i=0;
+        int j=0;
+        while(i<pushed.size()){
+            stk.push(pushed[i++]);//压栈操作一定在弹出栈之前
+            while(!stk.empty()&&stk.top()==popped[j]){
+                stk.pop();
+                j++;
+            }
+        }
+        return stk.empty();
+    }
+};
+```
+
