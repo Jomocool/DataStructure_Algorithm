@@ -2273,3 +2273,205 @@ public:
 };
 ```
 
+## 第二十六天：字符串（中等）
+
+### 剑指 Offer 20. 表示数值的字符串
+
+```c++
+思路：
+1.所有字符
+  1.1 空格：只出现在字符前面和后面
+  1.2 小数点
+  1.3 E/e
+  1.4 普通字符
+  1.5 +-
+    
+class Solution {
+public:
+    bool isNumber(string s) {
+        if(s.length())
+        //把空格去掉
+        s=delSpace(s);
+        //判断剩余字符串长度
+        if(s.length()==0)return false;
+
+        bool is_num=false;//是否出现过数
+        bool is_dot=false;//是否出现过小数点
+        bool is_e_or_E=false;//是否出现过e或E
+
+        //空格已经消除了，现在只剩其余4种字符
+        for(int i=0;i<s.size();i++){
+            if(s[i]>='0'&&s[i]<='9'){//数字
+                is_num=true;
+            }else if(s[i]=='.'){//小数点
+                //小数点不能重复出现，并且小数点和e或E不能同时出现
+                if(is_dot||is_e_or_E){//已经出现过小数点或(E/e)
+                    return false;
+                }
+                is_dot=true;
+            }else if(s[i]=='e'||s[i]=='E'){//E/e
+                //前面必须有数字，且不能有重复的E/e
+                if(!is_num||is_e_or_E){
+                    return false;
+                }
+                //由于E/e后面必须还有数，所以重置一下
+                is_num=false;
+                is_e_or_E=true;
+            }else if(s[i]=='+'||s[i]=='-'){//+-
+                //+-只能出现在首位，或者E/e后面
+                if(i!=0&&s[i-1]!='E'&&s[i-1]!='e'){
+                    return false;
+                }
+            }else{//出现其他不应该出现的字符，必然不合格
+                return false;
+            }
+        }
+        //如果有小数点，最后可以不以数字结尾，那么is_num也就不会被重置
+        //如果有E/e，最后必须以数字结尾，而is_num会被重置
+        //所以直接返回is_num可以很好地反应最终字符串是不是数值
+        return is_num;
+    }
+
+    string delSpace(string s){
+        int left=0;
+        int right=s.length()-1;
+        string res;
+        while(s[left]==' '&&left<right){
+            left++;
+        }
+        while(s[right]==' '&&right>left){
+            right--;
+        }
+        for(int i=left;i<=right;i++){
+            res.push_back(s[i]);
+        }
+        return res;
+    }
+};
+```
+
+### 面试题67. 把字符串转换成整数
+
+```c++
+class Solution {
+public:
+    int strToInt(string str) {
+        if(str.length()==0)return 0;
+
+        //找到第一个非空字符
+        int index=0;
+        while(str[index]==' '){
+            index++;
+        }
+        //数字范围
+        int left=0;
+        int right=str.size()-1;
+        while(left<str.size()&&(str[left]<'0'||str[left]>'9')&&str[left]!='-'&&str[left]!='+'){
+            left++;
+        }
+        while(right>=0&&(str[right]<'0'||str[right]>'9')){
+            right--;
+        }
+
+        if(left!=index){//说明第一个非空字符既不是符号也不是数字
+            return 0;
+        }
+
+        //判断符号
+        int sign=1;
+        if(str[left]=='-'){
+            sign=-1;
+            left++;
+        }else if(str[left]=='+'){
+            left++;
+        }
+        int res=0;
+        for(int i=left;i<=right;i++){
+            if(str[i]<'0'||str[i]>'9'){
+                break;
+            }
+            if(//INT_MIN%10注意要取相反数，因为INT_MIN%10<0
+                (res<INT_MIN/10||(res==INT_MIN/10&&(str[i]-'0')>=-(INT_MIN%10)))
+                ||
+                (res>INT_MAX/10||(res==INT_MAX/10)&&(str[i]-'0')>=INT_MAX%10)
+            ){
+                return sign==1?INT_MAX:INT_MIN;
+            }
+            res=res*10+(sign*(str[i]-'0'));
+        }
+        return res;
+    }
+};
+```
+
+
+
+## 第二十七天：栈与队列（困难）
+
+### 剑指 Offer 59 - I. 滑动窗口的最大值
+
+```c++
+class Solution {
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        deque<int>deque;
+        vector<int>res(nums.size()-k+1);
+        int index=0;
+        for(int i=0;i<nums.size();i++){
+            //如果队尾索引所在值小于当前值，就出队，因为不可能是最大值了，保证从头到尾是降序
+            //保证最大值的索引在队头
+            while(!deque.empty()&&nums[deque.back()]<=nums[i]){
+                deque.pop_back();
+            }
+            //放入索引有两个好处，既可以考虑到窗口移动，也可以考虑到值大小
+            deque.push_back(i);
+            if(deque.back()-deque.front()>=k){//超出窗口范围了
+                deque.pop_front();
+            }
+            if(i>=k-1){
+                res[index++]=nums[deque.front()];
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 面试题59 - II. 队列的最大值
+
+```c++
+class MaxQueue {
+public:
+    queue<int>queue;
+    deque<int>dequeMax;
+    MaxQueue() {}
+    
+    int max_value() {
+        if(queue.empty())return -1;
+        return dequeMax.front();
+    }
+    
+    void push_back(int value) {
+        queue.push(value);
+        
+        //由于value比dequeMax中的元素更晚入队，所以会比他们更晚出队，且值更大
+        //所以dequeMax原先更小的值必不可能成为最大值了
+        //相等的值不用出队，不然可能会出现queue和dequeMax信息不对称
+        while(!dequeMax.empty()&&dequeMax.back()<value){
+            dequeMax.pop_back();
+        }
+        dequeMax.push_back(value);
+    }
+    
+    int pop_front() {
+        if(queue.empty())return -1;
+        int front=queue.front();
+        queue.pop();
+        if(dequeMax.front()==front){
+            dequeMax.pop_front();
+        }
+        return front;
+    }
+};
+```
+
