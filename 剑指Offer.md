@@ -2475,3 +2475,196 @@ public:
 };
 ```
 
+## 第二十八天：搜索与回溯算法（困难）
+
+### 剑指 Offer 37. 序列化二叉树
+
+```c++
+class Codec {
+public:
+    void rserialize(TreeNode*root,string&str){
+        if(root==NULL){//遇到空指针，就添加None,(不要忘记逗号)
+            str+="None,";
+        }else{//遇到数字，就添加数字对应的字符串(同样也不要忘记逗号)
+            str+=to_string(root->val)+",";
+            rserialize(root->left,str);
+            rserialize(root->right,str);
+        }
+    }
+
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+        string ret;
+        rserialize(root,ret);
+        return ret;
+    }
+
+    TreeNode*rdeserialize(list<string>&dataArray){
+        if(dataArray.front()=="None"){//如果第一个就是空指针，那么整棵树就是一棵空树
+            dataArray.erase(dataArray.begin());
+            return NULL;
+        }
+
+        //先创建当前节点
+        TreeNode*root=new TreeNode(stoi(dataArray.front()));
+        dataArray.erase(dataArray.begin());
+        root->left=rdeserialize(dataArray);//创建左子树的过程中，相应的节点会被删掉。
+        root->right=rdeserialize(dataArray);
+        return root;
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        list<string>dataArray;
+        string str;
+        for(auto&ch:data){//逗号做分隔符
+            if(ch==','){
+                dataArray.push_back(str);
+                str.clear();
+            }else{//当前字符不是逗号，那就和之前的字符一起拼接
+                str.push_back(ch);
+            }
+        }
+        return rdeserialize(dataArray);
+    }
+};
+```
+
+### 剑指 Offer 38. 字符串的排列
+
+```c++
+思路：
+    1.对字符串进行排序
+    2.剪枝
+    3.全排列
+class Solution {
+public:
+    string path;//临时路径
+    vector<string>res;//结果集
+    vector<bool>visited;//判断字符是否已经被访问过
+
+    vector<string> permutation(string s) {
+        visited=vector<bool>(s.length());//默认都为false
+        sort(s.begin(),s.end());//排序字符串
+        dfs(s,0);
+        return res;
+    }
+
+    //全排列
+    //k：已经访问了k个字符
+    void dfs(string s,int k){
+        if(k==s.length()){
+            res.push_back(path);
+            return;
+        }
+
+        //进行N叉树搜索
+        for(int i=0;i<s.length();i++){
+            //剪枝
+            if(i>0&&s[i-1]==s[i]&&!visited[i-1]){//i-1肯定比i先访问到
+                continue;//同层相同字符不重复考虑
+            }
+
+            if(!visited[i]){
+                visited[i]=true;//先标记为已访问，这样在下面层就不会重复添加了
+                path.push_back(s[i]);//加入到路径之中
+                dfs(s,k+1);//下一层
+                //回溯过程防止和下一个路径冲突
+                path.erase(path.end()-1);
+                visited[i]=false;
+            }
+        }
+    }
+};
+```
+
+
+
+## 第二十九天：动态规划（困难）
+
+### 剑指 Offer 19. 正则表达式匹配
+
+```c++
+class Solution {
+public:
+    bool isMatch(string s, string p) {
+        int m=s.length()+1;
+        int n=p.length()+1;
+        //dp[i][j]：s[...i-1]能否和p[...j-1]匹配
+        vector<vector<bool>>dp(m,vector<bool>(n));
+        dp[0][0]=true;
+
+        //当p没有字符，p无法和s[1...]匹配，所以dp[i(i>0)][0]默认false
+        //只有a*b*c*这种结构才能保证消除完
+        for(int j=2;j<n;j++){
+            dp[0][j]=dp[0][j-2]&&p[j-1]=='*';
+        }
+        
+        for(int i=1;i<m;i++){
+            for(int j=1;j<n;j++){
+                dp[i][j]=p[j-1]=='*'?
+                    dp[i][j-2]||dp[i-1][j]&&(s[i-1]==p[j-2]||p[j-2]=='.')://消除/复制p[j-2]
+                	//如果能匹配，p[j-1]==s[i-1]，但p[j-1]是‘*’，取决于p[j-2]
+                	//取dp[i-1][j]是为涵盖更多可能性，在不越界的情况下但凡有一种可能性成立，整体就成立
+                    dp[i-1][j-1]&&(p[j-1]=='.'||s[i-1]==p[j-1]);
+            }
+        }
+        return dp[m-1][n-1];
+    }
+};
+```
+
+### 剑指 Offer 49. 丑数
+
+```c++
+class Solution {
+public:
+    int nthUglyNumber(int n) {
+        //较大的丑数是由较小的丑数乘2、3或5得来的，且取最小的
+        int a=1,b=1,c=1;
+        vector<int>dp(n+1);
+        dp[1]=1;
+        for(int i=2;i<=n;i++){
+            dp[i]=min(dp[a]*2,min(dp[b]*3,dp[c]*5));
+            //被取过的不能再取了
+            if(dp[i]==dp[a]*2)a++;
+            if(dp[i]==dp[b]*3)b++;
+            if(dp[i]==dp[c]*5)c++;
+        }
+        return dp[n];
+    }
+};
+```
+
+### 剑指 Offer 60. n个骰子的点数
+
+```c++
+class Solution {
+public:
+    vector<double> dicesProbability(int n) {
+        //dp[i][j]：i个骰子，点数和为j的情况总数
+        vector<vector<int>>dp(n+1,vector<int>(6*n+1));
+        for(int j=1;j<=6;j++){
+            dp[1][j]=1;
+        }
+        for(int i=2;i<=n;i++){
+            for(int j=i;j<=i*6;j++){
+                //第i个骰子摇到1/2/3/4/5/6
+                for(int k=1;k<=6;k++){
+                    if(j<k)break;
+                    dp[i][j]+=dp[i-1][j-k];
+                }
+            }
+        }
+
+        vector<double>res(5*n+1);//点数和是n~6n
+        int index=0;
+        double sum=pow(6,n);//总情况是6…^n
+        for(int i=n;i<=6*n;i++){
+            res[index++]=dp[n][i]/sum;
+        }
+        return res;
+    }
+};
+```
+
