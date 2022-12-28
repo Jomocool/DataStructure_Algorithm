@@ -2668,3 +2668,220 @@ public:
 };
 ```
 
+## 第三十天：分治算法（困难）
+
+### 剑指 Offer 17. 打印从1到最大的n位数
+
+```c++
+方法一：暴力法
+class Solution {
+public:
+    vector<int> printNumbers(int n) {
+        int maxNum=1;
+        for(int i=1;i<=n;i++){
+            maxNum*=10;
+        }
+        maxNum-=1;//最大数=10^n-1
+        vector<int>res;
+        for(int i=1;i<=maxNum;i++){
+            res.push_back(i);
+        }
+        return res;
+    }
+};
+
+方法二：大数全排列法
+class Solution {
+public:
+    vector<int>res;
+    string cur;
+    char Num[10]={'0','1','2','3','4','5','6','7','8','9'};
+
+    //处理长度为len的第x位（从高位开始）
+    void dfs(int x,int len){
+        if(x==len){
+            res.push_back(stoi(cur));
+            return;
+        }
+        int start=x==0?1:0;//最高位不能从0开始
+        for(int i=start;i<10;i++){
+            cur.push_back(Num[i]);
+            dfs(x+1,len);
+            cur.pop_back();//删除当前位
+        }
+    }
+
+    vector<int> printNumbers(int n) {
+        for(int i=1;i<=n;i++){//记录长度从1~n的所有数
+            dfs(0,i);
+        }
+        return res;
+    }
+};
+```
+
+### 剑指 Offer 51. 数组中的逆序对
+
+```c++
+class Solution {
+public:
+    int reversePairs(vector<int>& nums) {
+        if(nums.size()<=1){
+            return 0;
+        }
+
+        //由于是引用，为防止破坏原数组的顺序，新建一个复制数组
+        vector<int>copy=nums;
+        return mergeSort(nums,0,nums.size()-1);
+    }
+
+    int mergeSort(vector<int>&copy,int L,int R){
+        if(L>=R){
+            return 0;
+        }
+
+        int mid=L+((R-L)>>1);
+        int x1=mergeSort(copy,L,mid);
+        int x2=mergeSort(copy,mid+1,R);
+        int x3=merge(copy,L,mid,mid+1,R);
+
+        return x1+x2+x3;
+    }
+
+    int merge(vector<int>&copy,int l1,int r1,int l2,int r2){
+        vector<int>tmp(r2-l1+1);
+        int i=l1;
+        int j=l2;
+        int k=0;
+        int count=0;
+        while(i<=r1&&j<=r2){
+            if(copy[j]<copy[i]){
+                //因为有序，copy[j]<copy[i]，那copy[j]必定也小于copy[i...r1]
+                count+=l2-i;
+                tmp[k++]=copy[j++];
+            }else{
+                tmp[k++]=copy[i++];
+            }
+        }
+        while(i<=r1)tmp[k++]=copy[i++];
+        while(j<=r2)tmp[k++]=copy[j++];
+
+        for(int m=0;m<k;m++){
+            copy[l1+m]=tmp[m];
+        }
+
+        return count;
+    }
+};
+```
+
+
+
+## 第三十一天：数学（困难）
+
+### 剑指 Offer 14- II. 剪绳子 II
+
+```c++
+(x1+x2)%p=(x1%p+x2%p)%p
+(x1*x2)%p=(x1%p*x2%p)%p(x1,x2<p)
+
+class Solution {
+public:
+    int cuttingRope(int n) {
+        if(n<=2)return 1;
+        if(n==3)return 2;
+
+        int cuts=n/3;//能切成cuts段长度为3的小绳子
+        int mod=n%3;//剩下绳子长度
+        int p=1000000007;
+        
+        //因为有乘号，所以算完之后最后要再取一次模，防止溢出
+        if(mod==0){
+            return (int)(myPow(3,cuts)%p);
+        }
+        else if(mod==1){
+            return (int)(myPow(3,cuts-1)*4%p);
+        }
+        else{
+            return (int)(myPow(3,cuts)*2%p);
+        }
+    }
+
+    long myPow(int a,int n){
+        long res=1;
+        int p=1000000007;
+        for(int i=1;i<=n;i++){
+            res=(res*a)%p;
+        }
+        return res;
+    }
+};
+```
+
+### 剑指 Offer 43. 1～n 整数中 1 出现的次数
+
+```c++
+个位1：1个（1）
+十位1：10个（10~19）
+百位1：100个（100~199）
+千位1：1000个（1000~1999）
+n=24124：
+特殊情况：cur==0||cur==1（这两种情况是不满10^n个的）
+百位1：cur==1，n有241个100，但第241个100百位是0，所以不算；剩下240个中，百位都是从0~9，只有十分之一百位
+上是1，因此算24个，现在百位上就有（24*100）个1了，再看低位24，可以凑成100~124总共(24+1)个。
+
+class Solution {
+public:
+    int countDigitOne(int n) {
+        int count=0;
+        long digit=1;
+        int high=n/10;
+        int low=0;
+        int cur=n%10;
+        while(high!=0||cur!=0){
+            if(cur==0)count+=high*digit;
+            else if(cur==1)count+=high*digit+low+1;
+            else count+=(high+1)*digit;
+            low+=cur*digit;
+            cur=high%10;
+            high/=10;
+            digit*=10;
+        }
+        return count;
+    }
+};
+```
+
+### 剑指 Offer 44. 数字序列中某一位的数字
+
+| 位数 |   范围    | 数字个数 | 字符个数 |
+| :--: | :-------: | :------: | :------: |
+|  1   |    1~9    |    9     |   9*1    |
+|  2   |   10~99   |    90    |   90*2   |
+|  3   |  100~999  |   900    |  900*3   |
+|  4   | 1000~9999 |   9000   |  9000*4  |
+
+```c++
+class Solution {
+public:
+    int findNthDigit(int n) {
+        if(n==0)return 0;
+        
+        long bit=1;//个位十位还是百位
+        int i=1;//位数
+        long count=9;//字符数
+        while(count<n){
+            n-=(int)count;
+            bit*=10;
+            i++;
+            count=bit*i*9;
+        }
+
+        //确定是哪一个数
+        long num=bit+(n-1)/i;//因为bit已经是第一个数了
+        int index=(n-1)%i+1;//确定是第几位数
+        return (int)(num/pow(10,i-index))%10;
+    }
+};
+```
+
