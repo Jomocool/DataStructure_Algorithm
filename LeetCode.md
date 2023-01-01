@@ -410,3 +410,264 @@ public:
 };
 ```
 
+## 三、哈希表
+
+### 1. LeetCode242. 有效的字母异位词
+
+```c++
+class Solution {
+public:
+    bool isAnagram(string s, string t) {
+        vector<int>record(26);//26个字母
+        for(int i=0;i<s.length();i++){//记录字符串s中各字母词频
+            record[s[i]-'a']++;
+        }
+
+        for(int i=0;i<t.length();i++){//把相应字符词频减1
+            record[t[i]-'a']--;
+        }
+
+        for(int i=0;i<record.size();i++){
+            if(record[i]!=0){//如果有不为0的元素，说明字符串s、t的词频不等
+                return false;
+            }
+        }
+        
+        return true;
+    }
+};
+```
+
+### 2. LeetCode349. 两个数组的交集
+
+```c++
+class Solution {
+public:
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+        set<int>record(nums1.begin(),nums1.end());//记录nums1出现过的数
+        set<int>recordRes;//给结果集降重
+        for(int num:nums2){
+            if(record.count(num)!=0){
+                recordRes.insert(num);//set自带降重，因为不会添加重复元素
+            }
+        }
+        return vector<int>(recordRes.begin(),recordRes.end());
+    }
+};
+```
+
+### 	3. LeetCode202. 快乐数
+
+```c++
+题目出现“无限循环”字眼，说明有重复出现的值，所以利用set记录出现过的sum，保证不会陷入死循环。
+class Solution {
+public:
+    //计算各位平方和
+    int getSum(int n){
+        int sum=0;
+        while(n>0){
+            sum+=(n%10)*(n%10);
+            n/=10;
+        }
+        return sum;
+    }
+
+    bool isHappy(int n) {
+        set<int>record;//记录sum
+        while(true){
+            int sum=getSum(n);
+            if(sum==1)return true;
+            if(record.count(sum)!=0){//说明曾经出现过
+                return false;
+            }else{
+                record.insert(sum);
+            }
+            n=sum;
+        }
+    }
+};
+```
+
+### 4. LeetCode1. 两数之和
+
+```c++
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        //key：target-nums[value]
+        //value：索引
+        map<int,int>record;
+        vector<int>res;
+        for(int i=0;i<nums.size();i++){
+            if(record.count(nums[i])!=0){
+                res={i,record[nums[i]]};
+                break;
+            }else{
+                record[target-nums[i]]=i;
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 5. LeetCode454.四数相加II
+
+```c++
+class Solution {
+public:
+    int fourSumCount(vector<int>& nums1, vector<int>& nums2, vector<int>& nums3, vector<int>& nums4) {
+        //key：num1+num2
+        //value：key的次数
+        map<int,int>record;
+        int count=0;
+
+        //记录num1+num2的次数
+        for(int num1:nums1){
+            for(int num2:nums2){
+                record[num1+num2]++;
+            }
+        }
+
+        //判断num3+num4是否等于-(num1+num2)，如果相等，四元组个数增加
+        for(int num3:nums3){
+            for(int num4:nums4){
+                    count+=record[-(num3+num4)];
+            }
+        }
+
+        return count;
+    }
+};
+```
+
+### 6. LeetCode383. 赎金信
+
+```c++
+class Solution {
+public:
+    bool canConstruct(string ransomNote, string magazine) {
+        //记录magazine各字符的频率，只有26个字母
+        vector<int>record(26);
+        for(int i=0;i<magazine.size();i++){
+            record[magazine[i]-'a']++;
+        }
+
+        for(int i=0;i<ransomNote.size();i++){
+            if((--record[ransomNote[i]-'a'])<0){//magazine的字符不够用了
+                return false;
+            }
+        }
+        
+        return true;
+    }
+};
+```
+
+### 7. LeetCode15.三数之和
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        //因为最终是返回元素值而不是下标，所以可以排序
+        sort(nums.begin(),nums.end());
+        vector<vector<int>>res;//结果集
+
+        //找到a+b+c=0
+        //找到nums[i...]组成的三元组
+        for(int i=0;i<nums.size();i++){
+            if(nums[i]>0){//由于是升序数组，当前值大于0，后面的值肯定都大于0
+                break;
+            }
+
+            //第一元素去重
+            //1.一定是nums[i]和nums[i-1]比较
+            //2.而不是nums[i+1]和nums[i]比较
+            //3.因为如果相等，nums[i-1]一定比nums[i]先进入结果集，必定重复
+            //4.nums[i+1]只是重复元素，并不一定构成重复结果集
+
+            //1.i>0一定优先判断，不然会取到nums[-1]然后进行判断
+            if(i>0&&nums[i]==nums[i-1]){
+                continue;
+            }
+
+            //定义左右边界，在[left,right]间寻找能和nums[i]匹配的两个数
+            int left=i+1;
+            int right=nums.size()-1;
+
+            while(left<right){
+                if(nums[i]+nums[left]+nums[right]>0){//偏大
+                    right--;
+                }else if(nums[i]+nums[left]+nums[right]<0){//偏小
+                    left++;
+                }else{
+                    res.push_back({nums[i],nums[left],nums[right]});
+                    while(left<right&&nums[left]==nums[left+1])left++;//第二元素去重
+                    while(right>left&&nums[right]==nums[right-1])right--;//第三元素去重
+                    //出循环后，仍然是相同元素，再向内收缩
+                    left++;
+                    right--;
+                }
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 8. LeetCode18.四数之和
+
+```c++
+思路：
+整体思路和三数之和大同小异，关键在于以下三点：
+1.剪枝：最小的值都一直大于target，但必须保证nums[i]>=0
+2.去重：当前元素不能和上一个结果集的同位置元素相同
+3.防溢出：四数相加后可能会溢出，所以提前把一个数转为long，然后再和其他数相加，这样就都为long了
+class Solution {
+public:
+    vector<vector<int>> fourSum(vector<int>& nums, int target) {
+        vector<vector<int>>res;
+        sort(nums.begin(),nums.end());
+        for(int i=0;i<nums.size()-1;i++){//[i,j]、[left,right]各两个元素
+            //剪枝
+            //注意两个负数相加和会更小
+            if(nums[i]>target&&nums[i]>=0){
+                break;
+            }
+            //对nums[i]去重
+            if(i>0&&nums[i]==nums[i-1]){
+                continue;
+            }
+            for(int j=i+1;j<nums.size();j++){
+                //剪枝
+                if(nums[i]+nums[j]>target&&nums[i]+nums[j]>=0){
+                    break;
+                }
+                //对nums[j]去重
+                if(j>i+1&&nums[j]==nums[j-1]){
+                    continue;
+                }
+                int left=j+1;
+                int right=nums.size()-1;
+                while(left<right){//相加后可能会溢出，先转为long再相加，相加后再转中途会溢出
+                    if((long)nums[i]+nums[j]+nums[left]+nums[right]>target){
+                        right--;
+                    }else if((long)nums[i]+nums[j]+nums[left]+nums[right]<target){
+                        left++;
+                    }else{
+                        res.push_back({nums[i],nums[j],nums[left],nums[right]});
+                        //去重
+                        while(left<right&&nums[left]==nums[left+1])left++;
+                        while(right>left&&nums[right]==nums[right-1])right--;
+                        left++;
+                        right--;
+                    }
+                }
+            }
+        }
+        return res;
+    }
+};
+```
+
