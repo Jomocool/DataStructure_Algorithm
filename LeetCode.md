@@ -671,3 +671,257 @@ public:
 };
 ```
 
+## 四、链表
+
+### 1. LeetCode344. 反转字符串
+
+```c++
+class Solution {
+public:
+    void reverseString(vector<char>& s) {
+        if(s.size()==1){
+            return;
+        }
+
+        for(int i=0,j=s.size()-1;i<j;i++,j--){
+            swap(s[i],s[j]);
+        }
+    }
+};
+```
+
+### 2. LeetCode541. 反转字符串 II
+
+```c++
+class Solution {
+public:
+    string reverseStr(string s, int k) {
+        if(s.length()==1){
+            return s;
+        }
+
+
+        for(int i=0;i<s.length();i+=k*2){//每2k个字符进行处理，i每次往后移动2k
+            if(i>(int)s.length()-k){//由于s.length()为64位无符号整数，和k做运算时要先转为int
+                reverse(s.begin()+i,s.end());
+                break;
+            }else{
+                reverse(s.begin()+i,s.begin()+i+k);
+            }
+        }
+        return s;
+    }
+};
+```
+
+### 3. LeetCode剑指 Offer 05. 替换空格
+
+```c++
+双指针：前后指针法
+1.不用申请新字符串，节省额外空间
+2.从后向前扩充字符串，不用每次填写后向后移动后面所有元素
+class Solution {
+public:
+    string replaceSpace(string s) {
+        if(s.length()==0)return s;
+
+        int sOldSize=s.size();//原长度
+        
+        int countSpace=0;//记录空格数
+        for(int i=0;i<s.length();i++){
+            if(s[i]==' ')countSpace++;
+        }
+
+        s.resize(s.length()+2*countSpace);//在原字符串基础上进行扩充
+        int sNewSize=s.size();
+        for(int i=sOldSize-1,j=sNewSize-1;i<j;i--,j--){//当i==j时，说明前面的字符串没有空格了
+            if(s[i]!=' '){
+                s[j]=s[i];
+            }else{
+                s[j]='0';
+                s[j-1]='2';
+                s[j-2]='%';
+                j-=2;
+            }
+        }
+        return s;
+    }
+};
+```
+
+### 4. LeetCode151. 反转字符串中的单词
+
+```c++
+思路：
+1.移除多余空格
+2.反转整个字符串
+3.反转每个单词
+class Solution {
+public:
+    string reverseWords(string s) {
+        //1.移除多余空格
+        removeExtraSpaces(s);
+
+        //2.反转整个字符串
+        reverse(s,0,s.length()-1);
+
+        //3.反转每个单词
+        int start=0;
+        for(int i=0;i<=s.length();i++){
+            if(i==s.length()||s[i]==' '){//最后一个单词后没有空格
+                reverse(s,start,i-1);//s[i-1]是前一个单词的最后一个字符
+                start=i+1;//开始位更新为下一个单词的开头
+            }
+        }
+        return s;
+    }
+
+    //移除字符串s多余空格
+    void removeExtraSpaces(string&s){
+        int slow=0;
+        for(int fast=0;fast<s.length();fast++){//将快指针不为空格的字符填到慢指针
+            if(s[fast]!=' '){
+                if(slow!=0)s[slow++]=' ';
+                while(fast<s.length()&&s[fast]!=' '){
+                    s[slow++]=s[fast++];
+                }
+            }
+        }
+        s.resize(slow);//slow的大小和移除多余空格后的字符串长度相等
+    }
+
+    void reverse(string&s,int start,int end){
+        for(int i=start,j=end;i<j;i++,j--){
+            swap(s[i],s[j]);
+        }
+    }
+};
+```
+
+### 5. LeetCode剑指 Offer 58 - II. 左旋转字符串
+
+```c++
+class Solution {
+public:
+    string reverseLeftWords(string s, int n) {
+        int sOldSize=s.length();
+        s+=s;//所有左旋转子串都是拼接字符串的子串，且第一位和n相等
+        return s.substr(n,sOldSize);
+    }
+};
+```
+
+### 6. LeetCode28. 找出字符串中第一个匹配项的下标
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/3.png)
+
+```c++
+前缀：指不包含最后一个字符的所有以第一个字符开头的连续子串。
+后缀：指不包含第一个字符的所有以最后一个字符结尾的连续子串。
+class Solution {
+public:
+    int strStr(string haystack, string needle) {
+        int i1=0;//haystack中比对的下标
+        int i2=0;//needle中比对的下标
+        vector<int>next=getNext(needle);
+
+        while(i1<haystack.length()&&i2<needle.length()){
+            if(haystack[i1]==needle[i2]){
+                i1++;
+                i2++;
+            }else if(i2==0){//没有前缀了就让i1后移
+                i1++;
+            }else{
+                //换作前缀部分去和当前大的haystack[i1]比较
+                //因为next数组记录的是前缀长度的特性，所以一定是i2往前跳而不是i1往后跳
+                //相当于把needle相应前缀拉到当前取比对
+                i2=next[i2];
+            }
+        }
+        //结束循环后，除非i2比对到最后一个字符且相等
+        //否则就是i1都比对到最后字符也没有找到相应子串
+        return i2==needle.length()?i1-i2:-1;
+    }
+
+    //获取字符串str的next数组
+    vector<int>getNext(string str){
+        if(str.length()==1)return{-1,0};
+
+        vector<int>next(str.length());//next[i]：str(0,i)最长公共前后缀长度，不包含str[i]
+        //默认值
+        next[0]=-1;
+        next[1]=0;
+        int i=2;//0、1已确定，从2开始
+        int cn=0;//cn是next[2-1]的值，也恰好是要对比的索引
+        while(i<str.length()){
+            if(str[i-1]==str[cn]){
+                next[i++]=++cn;
+            }else if(cn>0){//回到上一个可能是最长公共前缀的最后一位
+                cn=next[cn];
+            }else{
+                next[i++]=0;
+            }
+        }
+        return next;
+    }
+};
+```
+
+### 7. LeetCode459. 重复的子字符串
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/4.png)
+
+```c++
+移动匹配：
+任何可由重复子串组成的字符串都可以分成相同的两半，所以把该字符串拼接起来后，必定会包含原字符串
+class Solution {
+public:
+    bool repeatedSubstringPattern(string s) {
+        string ss=s+s;
+        //掐头去尾，不然ss里必定包含s
+        ss.erase(ss.begin());
+        ss.erase(ss.end()-1);
+        //如果ss里有s，说明s可以被分成相同的两半，也就可以由重复子串组成了
+        if(ss.find(s)==std::string::npos)return false;
+        return true;
+    }
+};
+
+kmp：
+能由重复子串组成的字符串的最小组成单位是最长公共前后缀不包含的那一部分
+class Solution {
+public:
+    bool repeatedSubstringPattern(string s) {
+        if(s.size()==1){
+            return false;
+        }
+        //next[i]：s(0,i)最长公共前后缀长度-1，因为j从-1开始
+        vector<int>next=getNext(s);
+        int maxPreLen=next[next.size()-1];
+        int len=s.length()-maxPreLen-1;
+        if(maxPreLen!=-1&&s.length()%len==0){
+            return true;
+        }
+        return false;
+    }
+
+    vector<int>getNext(string s){
+        vector<int>next(s.length());
+        next[0]=-1;
+        int j=-1;
+        for(int i=1;i<next.size();i++){
+            while(j>=0&&s[i]!=s[j+1]){
+                j=next[j];
+            }
+            if(s[i]==s[j+1]){
+                j++;
+            }
+            next[i]=j;
+        }
+        return next;
+    }
+};
+```
+
+
+
