@@ -925,3 +925,267 @@ public:
 
 
 
+## 五、栈与队列
+
+### 1. LeetCode232. 用栈实现队列
+
+```c++
+思路：
+1.准备两个栈pushStk、popStk
+2.队列push时：直接push到pushStk
+3.队列pop时：先判断popStk是否为空
+  3.1不空：记录popStk栈顶元素、popStk做pop操作、返回栈顶元素
+  3.2空：把pushStk栈顶元素不断弹出加入到popStk中直至空(pushStk栈底元素是最先加入的，到popStk中就是栈顶元素了)
+class MyQueue {
+    stack<int>pushStk;
+    stack<int>popStk;
+public:
+    MyQueue() {}
+    
+    void push(int x) {
+        pushStk.push(x);
+    }
+    
+    int pop() {
+        if(popStk.empty()){
+            while(!pushStk.empty()){
+                popStk.push(pushStk.top());
+                pushStk.pop();
+            }
+        }
+
+        int res=popStk.top();
+        popStk.pop();
+        return res;
+    }
+    
+    int peek() {
+        if(popStk.empty()){
+            while(!pushStk.empty()){
+                popStk.push(pushStk.top());
+                pushStk.pop();
+            }
+        }
+
+        return popStk.top();
+    }
+    
+    bool empty() {
+        //两个栈都存放着元素，只有两个栈同时为空才能说明队列为空
+        return pushStk.empty()&&popStk.empty();
+    }
+};
+```
+
+### 2. LeetCode225. 用队列实现栈
+
+```c++
+class MyStack {
+public:
+    queue<int>que;
+    MyStack() {}
+    
+    void push(int x) {
+        que.push(x);
+    }
+    
+    int pop() {
+        //找到队尾元素并弹出即可
+        int size=que.size();
+        while((--size)>0){//将队头不断加入队尾，就可以让初始队尾到队头
+            que.push(que.front());
+            que.pop();            
+        }
+        int res=que.front();
+        que.pop();
+        return res;
+    }
+    
+    int top() {
+        //队尾元素是最后进来的，即栈顶元素
+        return que.back();
+    }
+    
+    bool empty() {
+        return que.empty();
+    }
+};
+```
+
+### 3. LeetCode20. 有效的括号
+
+```c++
+class Solution {
+public:
+    bool isValid(string s) {
+        //key：右括号
+        //value：与key对应的左括号
+        map<char,char>m;
+        m[')']='(';
+        m[']']='[';
+        m['}']='{';
+        stack<char>record;//放入当前遍历过的左括号
+        for(int i=0;i<s.length();i++){
+            if(s[i]=='('||s[i]=='['||s[i]=='{'){
+                record.push(s[i]);
+            }else{
+                //当前遇到的左括号必定多于右括号，所以record中途不可能为空，否则就是无效的
+                //或者当前遇到的右括号和最新的左括号无法匹配，也就无法闭合，同样也是无效的
+                if(record.empty()||record.top()!=m[s[i]]){
+                    return false;
+                }else{
+                    //可以匹配，消去
+                    record.pop();
+                }
+            }
+        }
+        //如果record不为空，说明有多余左括号无法匹配
+        return record.empty();
+    }
+};
+```
+
+### 4. LeetCode1047. 删除字符串中的所有相邻重复项
+
+```c++
+class Solution {
+public:
+    string removeDuplicates(string s) {
+        if(s.length()==1){
+            return s;
+        }
+
+        //record用于记录前一个无重复项的字母
+        stack<char>record;
+        for(int i=0;i<s.length();i++){
+            if(record.empty()||record.top()!=s[i]){
+                record.push(s[i]);
+            }else{
+                //有重复项，删除前一个字母，并且当前字母不入栈
+                record.pop();
+            }
+        }
+
+        //最终留在栈里的拼接成字符串
+        string res;
+        while(!record.empty()){
+            res.push_back(record.top());
+            record.pop();
+        }
+        //反转字符串
+        reverse(res.begin(),res.end());
+        return res;
+    }
+};
+```
+
+### 5. LeetCode150. 逆波兰表达式求值
+
+```c++
+class Solution {
+public:
+    int evalRPN(vector<string>& tokens) {
+        stack<int>record;//符号不会入栈，所以用int类型的栈
+        for(int i=0;i<tokens.size();i++){
+            if(tokens[i]=="+"||tokens[i]=="-"||tokens[i]=="*"||tokens[i]=="/"){
+                //取完元素后记得弹出
+                int num1=record.top();
+                record.pop();
+                int num2=record.top();
+                record.pop();
+                int newNum=0;
+                //注意是先加入栈的数对后加入栈的数作相应运算
+                if(tokens[i]=="+"){
+                    newNum=num2+num1;
+                }else if(tokens[i]=="-"){
+                    newNum=num2-num1;
+                }else if(tokens[i]=="*"){
+                    newNum=num2*num1;
+                }else{
+                    newNum=num2/num1;
+                }
+                //把结果入栈
+                record.push(newNum);
+            }else{
+                record.push(stoi(tokens[i]));
+            }
+        }
+        return record.top();
+    }
+};
+```
+
+### 6. LeetCode239. 滑动窗口最大值
+
+```c++
+代码整体结构：
+1.保证双端队列从队头到队尾所对应元素大小严格降序
+2.判断队头元素是否过期
+3.将最大值加入到结果集中，且只有当窗口形成时才能加入
+    
+队列没有必要维护窗口里的所有元素，只需要维护有可能成为窗口里最大值的元素就可以了，同时保证队列里的元素数值是由大到小的。
+class Solution {
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        //记录可能成为最大值元素的索引
+        //因为利用所以既可以知道相对位置，也可知道元素大小
+        //先进的大值必定也先出去，和队列的特性不谋而合，所以用队列
+        deque<int>dqu;
+        vector<int>res;//结果集
+        for(int i=0;i<nums.size();i++){//以i为结尾的窗口最大值
+            //队头到队尾对应元素大小严格降序，队头永远放着以i结尾的窗口的最大值的索引
+            //如果当前元素比队列中某些元素大，就删掉队列中不可能成为最大值的元素
+            while(!dqu.empty()&&nums[dqu.back()]<=nums[i]){
+                dqu.pop_back();
+            }
+            dqu.push_back(i);
+            if(dqu.back()-dqu.front()>=k){//窗口移动
+                dqu.pop_front();
+            }
+            if(i>=k-1){
+                res.push_back(nums[dqu.front()]);
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 7. LeetCode347. 前 K 个高频元素
+
+```c++
+class Solution {
+public:
+    class myComparison{//比较器
+    public:
+        bool operator()(const pair<int,int>&lhs,const pair<int,int>&rhs){
+            return lhs.second>rhs.second;
+        }
+    };
+    
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        //key：元素
+        //value：词频
+        map<int,int>record;
+        for(int num:nums){
+            record[num]++;
+        }
+
+        //小顶堆
+        priority_queue<pair<int,int>,vector<pair<int,int>>,myComparison>pri_que;
+        for(map<int,int>::iterator it=record.begin();it!=record.end();it++){
+            pri_que.push(*it);
+            if(pri_que.size()>k){
+                pri_que.pop();//把最小的弹出
+            }
+        }
+        vector<int>res(k);
+        for(int i=k-1;i>=0;i--){
+            res[i]=pri_que.top().first;
+            pri_que.pop();
+        }
+        return res;
+    }
+};
+```
+
