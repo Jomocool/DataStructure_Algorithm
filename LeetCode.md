@@ -1882,3 +1882,299 @@ public:
 };
 ```
 
+### 21. LeetCode404. 左叶子之和
+
+```c++
+思路：
+1.左叶子：是叶子节点且是其父节点的左子节点
+2.由于我们需要知道父子关系，所以不能深入到叶子节点再做判断，而是在叶子节点的上一层就需要处理了
+3.后序遍历
+
+递归：
+class Solution {
+public:
+    int sumOfLeftLeaves(TreeNode* root) {
+        //base case
+        if(root==NULL)return 0;
+        if(root->left==NULL&&root->right==NULL)return 0;
+
+        //向左右子树索要信息
+        int leftSum=sumOfLeftLeaves(root->left);
+        int rightSum=sumOfLeftLeaves(root->right);
+        //处理当前节点
+        if(root->left!=NULL&&root->left->left==NULL&&root->left->right==NULL){//中
+            leftSum=root->left->val;//左子节点是左叶子
+        }
+        return leftSum+rightSum;
+    }
+};
+
+迭代：关键点在于判断左叶子
+class Solution {
+public:
+    int sumOfLeftLeaves(TreeNode* root) {
+        stack<TreeNode*>stk;
+        int res=0;
+        stk.push(root);
+        while(!stk.empty()){
+            TreeNode*node=stk.top();
+            stk.pop();
+            if(node->left!=NULL&&node->left->left==NULL&&node->left->right==NULL){
+                res+=node->left->val;
+            }
+            if(node->right)stk.push(node->right);
+            if(node->left)stk.push(node->left);
+        }
+        return res;
+    }
+};
+```
+
+### 22.LeetCode513. 找树左下角的值
+
+```c++
+递归：由于是找左下角值，所以我们应当优先处理左子树
+很多人可能会疑惑为什么取值不是最后一层其他节点的呢？
+其实最后一层最先被遍历到的节点必定是最左边的节点，因为我们是优先处理左子树的。当遍历到最后一层其他节点时，深度depth等于maxDepth，不满足修改值的条件。
+class Solution {
+public:
+    int maxDepth=INT_MIN;
+    int res=0;
+
+    void traversal(TreeNode*node,int depth){
+        //结束条件，叶子节点
+        if(node->left==NULL&&node->right==NULL){
+            if(depth>maxDepth){
+                res=node->val;
+                maxDepth=depth;
+                return;
+            }
+        }
+        if(node->left){
+            depth++;
+            traversal(node->left,depth);
+            depth--;//回溯
+        }
+        if(node->right){
+            depth++;
+            traversal(node->right,depth);
+            depth--;//回溯
+        }
+    }
+
+    int findBottomLeftValue(TreeNode* root) {
+        traversal(root,1);
+        return res;
+    }
+};
+
+迭代：层序遍历
+class Solution {
+public:
+    int findBottomLeftValue(TreeNode* root) {
+        queue<TreeNode*>que;
+        int res=0;
+        que.push(root);
+        while(!que.empty()){
+            res=que.front()->val;
+            for(int i=que.size();i>0;i--){
+                TreeNode*node=que.front();
+                que.pop();
+                if(node->left)que.push(node->left);
+                if(node->right)que.push(node->right);
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 23.  LeetCode112. 路径总和
+
+```c++
+递归：
+class Solution {
+public:
+    bool process(TreeNode*node,int sum){
+        //base case
+        if(node->left==NULL&&node->right==NULL&&sum-node->val==0)return true;
+        if(node->left==NULL&&node->right==NULL&&sum-node->val!=0)return false;
+
+        if(node->left){
+            if(process(node->left,sum-node->val))return true;
+        }
+        if(node->right){
+            if(process(node->right,sum-node->val))return true;
+        }
+        return false;
+    }
+
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        if(root==NULL)return false;
+        return process(root,targetSum);
+    }
+};
+
+迭代：
+class Solution {
+public:
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        if(root==NULL)return false;
+        //<节点，路径和>
+        stack<pair<TreeNode*,int>>stk;
+        stk.push(pair<TreeNode*,int>(root,root->val));
+        while(!stk.empty()){
+            pair<TreeNode*,int>node=stk.top();
+            stk.pop();
+            if(!node.first->left&&!node.first->right&&node.second==targetSum)return true;
+            if(node.first->right){
+                stk.push(pair<TreeNode*,int>
+                         (node.first->right,node.second+node.first->right->val));
+            }
+            if(node.first->left){
+                stk.push(pair<TreeNode*,int>
+                         (node.first->left,node.second+node.first->left->val));
+            }
+        }
+        return false;
+    }
+};
+```
+
+### 24. LeetCode113. 路径总和 II
+
+```c++
+class Solution {
+public:
+    vector<vector<int>>res;
+
+    //vec必须是赋值拷贝，不能是引用，否则会把所有路径值都加入到同一个集合中
+    void traversal(TreeNode*node,vector<int>vec,int sum){
+        if(node->left==NULL&&node->right==NULL&&sum-node->val==0){
+            vec.push_back(node->val);
+            res.push_back(vec);
+            return;
+        }
+        if(node->left==NULL&&node->right==NULL&&sum-node->val!=0){
+            return;
+        }
+        if(node->left){
+            vec.push_back(node->val);
+            traversal(node->left,vec,sum-node->val);
+            vec.pop_back();//回溯
+        }
+        if(node->right){
+            vec.push_back(node->val);
+            traversal(node->right,vec,sum-node->val);
+            vec.pop_back();//回溯
+        }
+    }
+
+    vector<vector<int>> pathSum(TreeNode* root, int targetSum) {
+        if(root==NULL)return {};
+        traversal(root,{},targetSum);
+        return res;
+    }
+};
+```
+
+### 25. LeetCode106. 从中序与后序遍历序列构造二叉树
+
+```c++
+思路：
+中序：左中右
+后序：左右中
+1.后续数组为0，空节点
+2.后续数组的最后一个元素为节点元素
+3.寻找中序数组位置作为切割点
+4.切中序数组
+5.切后序数组
+6.递归处理左区间后区间
+class Solution {
+public:
+    map<int,int>dic;//用于映射中序遍历元素对应的索引
+
+    TreeNode*traversal(vector<int>&inorder,vector<int>&postorder,int l1,int r1,int l2,int r2){
+        if(l1>r1&&l2>r2)return NULL;
+        TreeNode*root=new TreeNode(postorder[r2]);
+        int index=dic[root->val];
+        root->left=traversal(inorder,postorder,l1,index-1,l2,l2+index-l1-1);
+        root->right=traversal(inorder,postorder,index+1,r1,l2+index-l1,r2-1);
+        return root;
+    }
+
+    TreeNode* buildTree(vector<int>& inorder, vector<int>& postorder) {
+        if(inorder.size()==0)return NULL;
+        for(int i=0;i<inorder.size();i++){
+            dic[inorder[i]]=i;
+        }
+        return traversal(inorder,postorder,0,inorder.size()-1,0,postorder.size()-1);
+    }
+};
+```
+
+### 26. LeetCode105. 从前序与中序遍历序列构造二叉树
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/6.png)
+
+```c++
+前序和后序无法确定一棵树，因为无法分割左右子树
+class Solution {
+public:
+    map<int,int>dic;//映射中序数组索引
+
+    TreeNode*traversal(vector<int>&preorder,vector<int>&inorder,int l1,int r1,int l2,int r2){
+        if(l1>r1&&l2>r2){
+            return NULL;
+        }
+        TreeNode*root=new TreeNode(preorder[l1]);
+        int index=dic[root->val];
+        root->left=traversal(preorder,inorder,l1+1,l1+1+index-1-l2,l2,index-1);
+        root->right=traversal(preorder,inorder,l1+1+index-1-l2+1,r1,index+1,r2);
+        return root;
+    }
+
+    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+        if(preorder.size()==0){
+            return NULL;
+        }
+        for(int i=0;i<inorder.size();i++){
+            dic[inorder[i]]=i;
+        }
+        return traversal(preorder,inorder,0,preorder.size()-1,0,inorder.size()-1);
+    }
+};
+```
+
+### 27. LeetCode654. 最大二叉树
+
+```c++
+本题和前两题构造二叉树有异曲同工之处，都是先创建父节点，然后分割数组进行递归
+class Solution {
+public:
+    //找到nums在l和r之间最大值的索引
+    int indexOfMax(vector<int>&nums,int l,int r){
+        int res=l;
+        while(l<=r){
+            res=nums[l]>nums[res]?l:res;
+            l++;
+        }
+        return res;
+    }
+
+    TreeNode*traversal(vector<int>&nums,int l,int r){
+        if(l>r)return NULL;
+        int index=indexOfMax(nums,l,r);
+        //以最大值为父节点值
+        TreeNode*root=new TreeNode(nums[index]);
+        root->left=traversal(nums,l,index-1);//前缀数组是左子树
+        root->right=traversal(nums,index+1,r);//后缀数组是右子树
+        return root;
+    }
+
+    TreeNode* constructMaximumBinaryTree(vector<int>& nums) {
+        return traversal(nums,0,nums.size()-1);
+    }
+};
+```
+
