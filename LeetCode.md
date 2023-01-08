@@ -1189,3 +1189,696 @@ public:
 };
 ```
 
+## 六、二叉树
+
+### 1. LeetCode144. 二叉树的前序遍历
+
+```c++
+迭代法：
+class Solution {
+public:
+    vector<int> preorderTraversal(TreeNode* root) {
+        if(root==NULL)return {};
+        stack<TreeNode*>stk;
+        vector<int>res;
+        stk.push(root);
+        while(!stk.empty()){
+            TreeNode*node=stk.top();
+            stk.pop();
+            res.push_back(node->val);
+            //要让左节点先被弹出，所以后入栈
+            if(node->right)stk.push(node->right);
+            if(node->left)stk.push(node->left);
+        }
+        return res;
+    }
+};
+```
+
+### 2. LeetCode94. 二叉树的中序遍历
+
+```c++
+迭代法：
+class Solution {
+public:
+    vector<int> inorderTraversal(TreeNode* root) {
+        stack<TreeNode*>stk;
+        vector<int>res;
+        TreeNode*cur=root;
+        while(cur!=NULL||!stk.empty()){
+            if(cur!=NULL){//指针访问节点，先到最底层
+                stk.push(cur);//将访问到的节点入栈
+                cur=cur->left;//左
+            }else{
+                cur=stk.top();//从栈里弹出的就是要处理的数据
+                stk.pop();
+                res.push_back(cur->val);//中
+                cur=cur->right;//右
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 3. LeetCode145. 二叉树的后序遍历
+
+```c++
+思路：
+前序遍历数组顺序（中左右），后序遍历数组顺序（左右中），让前序遍历数组顺序变为（中右左），再反转数组
+class Solution {
+public:
+    vector<int> postorderTraversal(TreeNode* root) {
+        if(root==NULL)return {};
+        stack<TreeNode*>stk;
+        vector<int>res;
+        stk.push(root);
+        while(!stk.empty()){
+            TreeNode*node=stk.top();
+            stk.pop();
+            res.push_back(node->val);
+            if(node->left)stk.push(node->left);
+            if(node->right)stk.push(node->right);
+        }
+        reverse(res.begin(),res.end());
+        return res;
+    }
+};
+```
+
+### 4. LeetCode102. 二叉树的层序遍历
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        if(root==NULL){
+            return {};
+        }
+        queue<TreeNode*>qu;
+        qu.push(root);
+        vector<vector<int>>res;
+        while(!qu.empty()){
+            vector<int>vec;//记录每层节点值
+            for(int i=qu.size();i>0;i--){
+                TreeNode*node=qu.front();
+                qu.pop();//注意qu的size是不断变化的
+                vec.push_back(node->val);
+                if(node->left)qu.push(node->left);
+                if(node->right)qu.push(node->right);
+            }
+            res.push_back(vec);
+        }
+        return res;
+    }
+};
+```
+
+### 5.LeetCode107. 二叉树的层序遍历 II
+
+```c++
+思路：把从上到下的层序遍历数组反转一下即可
+class Solution {
+public:
+    vector<vector<int>> levelOrderBottom(TreeNode* root) {
+        if(root==NULL){
+            return {};
+        }
+        queue<TreeNode*>qu;
+        qu.push(root);
+        vector<vector<int>>res;
+        while(!qu.empty()){
+            vector<int>vec;//记录每层节点值
+            for(int i=qu.size();i>0;i--){
+                TreeNode*node=qu.front();
+                qu.pop();//注意qu的size是不断变化的
+                vec.push_back(node->val);
+                if(node->left)qu.push(node->left);
+                if(node->right)qu.push(node->right);
+            }
+            res.push_back(vec);
+        }
+        reverse(res.begin(),res.end());
+        return res;
+    }
+};
+```
+
+### 6. LeetCode199. 二叉树的右视图
+
+```c++
+class Solution {
+public:
+    vector<int> rightSideView(TreeNode* root) {
+        vector<int>res;
+        if(root==NULL)return res;
+        queue<TreeNode*>qu;
+        qu.push(root);
+        while(!qu.empty()){
+            for(int i=qu.size();i>0;i--){
+                TreeNode*node=qu.front();
+                qu.pop();
+                if(node->left)qu.push(node->left);
+                if(node->right)qu.push(node->right);
+                if(i==1){
+                    res.push_back(node->val);//每层最后一个节点即最右节点
+                }
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 7. LeetCode637. 二叉树的层平均值
+
+```c++
+class Solution {
+public:
+    vector<double> averageOfLevels(TreeNode* root) {
+        vector<double>res;
+        if(root==NULL)return res;
+        queue<TreeNode*>qu;
+        qu.push(root);
+        while(!qu.empty()){
+            double sum=0;
+            int size=qu.size();
+            for(int i=0;i<size;i++){
+                TreeNode*node=qu.front();
+                qu.pop();
+                sum+=node->val;
+                if(node->left)qu.push(node->left);
+                if(node->right)qu.push(node->right);
+            }
+            res.push_back(sum/size);
+        }
+        return res;
+    }
+};
+```
+
+### 8. LeetCode429. N 叉树的层序遍历
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> levelOrder(Node* root) {
+        vector<vector<int>>res;
+        if(root==NULL)return res;
+        queue<Node*>qu;
+        qu.push(root);
+        while(!qu.empty()){
+            vector<int>vec;
+            for(int i=qu.size();i>0;i--){
+                Node*node=qu.front();
+                qu.pop();
+                vec.push_back(node->val);
+                for(int j=0;j<node->children.size();j++){
+                    qu.push(node->children[j]);
+                }
+            }
+            res.push_back(vec);
+        }
+        return res;
+    }
+};
+```
+
+### 9. LeetCode515. 在每个树行中找最大值
+
+```c++
+class Solution {
+public:
+    vector<int> largestValues(TreeNode* root) {
+        vector<int>res;
+        if(root==NULL)return res;
+        queue<TreeNode*>qu;
+        qu.push(root);
+        while(!qu.empty()){
+            int maxVal=INT_MIN;
+            for(int i=qu.size();i>0;i--){
+                TreeNode*node=qu.front();
+                qu.pop();
+                maxVal=max(maxVal,node->val);
+                if(node->left)qu.push(node->left);
+                if(node->right)qu.push(node->right);
+            }
+            res.push_back(maxVal);
+        }
+        return res;
+    }
+};
+```
+
+### 10. LeetCode116. 填充每个节点的下一个右侧节点指针
+
+```c++
+class Solution {
+public:
+    Node* connect(Node* root) {
+        if(root==NULL)return root;
+        queue<Node*>qu;
+        qu.push(root);
+        while(!qu.empty()){
+            int size=qu.size();
+            Node*pre=NULL;
+            Node*cur=NULL;
+            for(int i=0;i<size;i++){
+                if(i==0){
+                    cur=qu.front();
+                    qu.pop();
+                    pre=cur;
+                }else{
+                    cur=qu.front();
+                    qu.pop();
+                    pre->next=cur;
+                    pre=pre->next;
+                }
+                if(cur->left)qu.push(cur->left);
+                if(cur->right)qu.push(cur->right);
+            }
+            cur->next=NULL;
+        }
+        return root;
+    }
+};
+```
+
+### 11. LeetCode117. 填充每个节点的下一个右侧节点指针 II
+
+```c++
+class Solution {
+public:
+    Node* connect(Node* root) {
+         if(root==NULL)return root;
+        queue<Node*>qu;
+        qu.push(root);
+        while(!qu.empty()){
+            int size=qu.size();
+            Node*pre=NULL;
+            Node*cur=NULL;
+            for(int i=0;i<size;i++){
+                if(i==0){
+                    cur=qu.front();
+                    qu.pop();
+                    pre=cur;
+                }else{
+                    cur=qu.front();
+                    qu.pop();
+                    pre->next=cur;
+                    pre=pre->next;
+                }
+                if(cur->left)qu.push(cur->left);
+                if(cur->right)qu.push(cur->right);
+            }
+            cur->next=NULL;
+        }
+        return root;
+    }
+};
+```
+
+### 12. LeetCode104. 二叉树的最大深度
+
+```c++
+class Solution {
+public:
+    int maxDepth(TreeNode* root) {
+        if(root==NULL){
+            return 0;
+        }
+        int depth=max(maxDepth(root->left),maxDepth(root->right))+1;
+        return depth;
+    }
+};
+```
+
+### 13. LeetCode111. 二叉树的最小深度
+
+```c++
+注意：只有当遍历到叶子节点时，即左右子节点都为空，才能认为最小深度是1
+要明白每个节点可能遇到的情况，从而分析得出相应的策略。
+class Solution {
+public:
+    int minDepth(TreeNode* root) {
+        if(root==NULL)return 0;
+        int leftDepth=minDepth(root->left);
+        int rightDepth=minDepth(root->right);
+       
+        return root->left==NULL||root->right==NULL?
+        leftDepth+rightDepth+1:min(leftDepth,rightDepth)+1;
+    }
+};
+
+class Solution {
+    class Info{
+    public:
+        int minDepth;
+        Info(int minDepth){
+            this->minDepth=minDepth;
+        }
+    };
+
+public:
+    int minDepth(TreeNode* root) {
+        Info data=process(root);
+        return data.minDepth;
+    }
+
+    Info process(TreeNode*node){
+        if(node==NULL)return Info(0);
+        if(node->left==NULL&&node->right==NULL)return Info(1);
+        Info leftData=process(node->left);//向左子树要信息
+        Info rightData=process(node->right);//向右子树要信息
+        /*
+        处理当前信息，分析当前节点左右子树情况
+        1.左右子节点都为空，说明是叶子节点，0+0+1=1
+        2.左右子节点有一个为空，那就是不为空的子树高度+1，其中空的深度是0，不影响
+        3.都不为空，左右最小高度+1
+        */
+        if(node->left==NULL||node->right==NULL)
+            return Info(leftData.minDepth+rightData.minDepth+1);
+        
+        return Info(min(leftData.minDepth,rightData.minDepth)+1);
+    }
+};
+```
+
+### 14. LeetCode226. 翻转二叉树
+
+```c++
+思路：
+只要能遍历二叉树每个节点并交换其左右子节点即可，但是中序遍历例外。
+中序遍历顺序：左中右
+1.左子节点先交换自己的左右孩子
+2.关键：父节点交换自己的左右孩子
+3.此时的右子节点是原先的左子节点，其左右孩子被交换两次，而原先左子节点未交换其左右孩子
+class Solution {
+public:
+    TreeNode* invertTree(TreeNode* root) {
+        if(root==NULL)return root;
+        queue<TreeNode*>qu;
+        qu.push(root);
+        while(!qu.empty()){
+            for(int i=qu.size();i>0;i--){
+                TreeNode*node=qu.front();
+                qu.pop();
+                swap(node->left,node->right);
+                if(node->left)qu.push(node->left);
+                if(node->right)qu.push(node->right);
+            }
+        }
+        return root;
+    }
+};
+```
+
+### 15. LeetCode589. N 叉树的前序遍历
+
+```c++
+和二叉树的前序遍历类似，都是先处理当前节点，再按序处理子节点
+递归：
+class Solution {
+public:
+    vector<int>res;
+    void helper(Node*node){
+        if(node==NULL)return;
+        res.push_back(node->val);
+        for(int i=0;i<node->children.size();i++){
+            helper(node->children[i]);
+        }
+    }
+
+    vector<int> preorder(Node* root) {
+        helper(root);
+        return res;
+    }
+};
+
+迭代：
+class Solution {
+public:
+    vector<int> preorder(Node* root) {
+        vector<int>res;
+        if(root==NULL)return res;
+        stack<Node*>stk;
+        stk.push(root);
+        while(!stk.empty()){
+            Node*node=stk.top();
+            stk.pop();
+            res.push_back(node->val);
+            for(int i=node->children.size()-1;i>=0;i--){
+                stk.push(node->children[i]);
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 16. LeetCode590. N 叉树的后序遍历
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/5.png)
+
+```c++
+class Solution {
+public:
+    vector<int>res;
+    void helper(Node*node){
+        if(node==NULL){
+            return;
+        }
+        for(int i=0;i<node->children.size();i++){
+            helper(node->children[i]);
+        }
+        res.push_back(node->val);
+    }
+
+    vector<int> postorder(Node* root) {
+        helper(root);
+        return res;
+    }
+};
+
+迭代：
+和二叉树后序遍历相似，在前序遍历的基础上，改变子节点入栈顺序，最后反转数组。
+class Solution {
+public:
+    vector<int> postorder(Node* root) {
+        vector<int>res;
+        if(root==NULL)return res;
+        stack<Node*>stk;
+        stk.push(root);
+        while(!stk.empty()){
+            Node*node=stk.top();
+            stk.pop();
+            res.push_back(node->val);
+            for(int i=0;i<node->children.size();i++){
+                stk.push(node->children[i]);
+            }
+        }
+        reverse(res.begin(),res.end());
+        return res;
+    }
+};
+```
+
+### 17. LeetCode101. 对称二叉树
+
+```c++
+思路：
+1.本质上就是在判断每个节点的左右子树翻转后是否和原先一样
+2.以对称轴为中心轴，内侧和内侧的比较、外侧和外侧的比较
+3.确定遍历顺序：only后序(左右中)，因为我们需要左右子树的信息，才能判断是否能够翻转
+
+递归：并非传统的向左右子节点要信息，而是向两个应当匹配的节点索要信息
+class Solution {
+public:
+    bool compare(TreeNode*compareLeft,TreeNode*compareRight){
+        //base case(确保非空后才可判断值)
+        //前三种情况是判断结构，最后一种情况是判断值
+        if(compareLeft!=NULL&&compareRight==NULL)return false;
+        else if(compareLeft==NULL&&compareRight!=NULL)return false;
+        else if(compareLeft==NULL&&compareRight==NULL)return true;
+        else if(compareLeft->val!=compareRight->val)return false;
+
+        //索要内侧和外侧的信息
+        bool inside=compare(compareLeft->right,compareRight->left);
+        bool outside=compare(compareLeft->left,compareRight->right);
+
+        //只有当内侧和外侧的节点都符合要求时，整体才对称
+        return inside&&outside;
+    }
+
+    bool isSymmetric(TreeNode* root) {
+        return compare(root->left,root->right);
+    }
+};
+
+迭代：
+class Solution {
+public:
+    bool isSymmetric(TreeNode* root) {
+        queue<TreeNode*>que;
+        que.push(root->left);
+        que.push(root->right);
+        while(!que.empty()){
+            //取出的两个节点是将要匹配的
+            TreeNode*compareLeft=que.front();que.pop();
+            TreeNode*compareRight=que.front();que.pop();
+            if(!compareLeft&&!compareRight)continue;
+            else if(!compareLeft||!compareRight||compareLeft->val!=compareRight->val)return false;
+            //由于是按序取，所以也要按序存
+            que.push(compareLeft->right);
+            que.push(compareRight->left);
+            que.push(compareLeft->left);
+            que.push(compareRight->right);
+        }
+        return true;
+    }
+};
+```
+
+### 18. LeetCode222. 完全二叉树的节点个数
+
+```c++
+1.当作普通二叉树：
+class Solution {
+public:
+    int countNodes(TreeNode* root) {
+        if(root==NULL)return 0;
+        int leftNodes=countNodes(root->left);
+        int rightNodes=countNodes(root->right);
+        return leftNodes+rightNodes+1;
+    }
+};
+
+2.利用完全二叉树的特性：
+2.1如果子树是完全满二叉树，利用公式(2^h-1)直接得出节点个数
+2.2判断完全满二叉树：在完全二叉树的基础上，一直向左遍历的深度等于一直向右遍历的深度，就说明是完全满二叉树
+class Solution {
+public:
+    int countNodes(TreeNode* root) {
+        //base case
+        if(root==NULL)return 0;
+        
+        //和普通二叉树唯一的区别：多了一步判断完全满二叉树，可以少遍历中间节点
+        TreeNode*left=root->left;
+        TreeNode*right=root->right;
+        int leftDepth=0;
+        int rightDepth=0;
+        while(left){
+            left=left->left;
+            leftDepth++;
+        }
+        while(right){
+            right=right->right;
+            rightDepth++;
+        }
+        if(leftDepth==rightDepth){
+            return (2<<leftDepth)-1;
+        }
+
+        //当前节点逻辑
+        int leftNodes=countNodes(root->left);
+        int rightNodes=countNodes(root->right);
+        return leftNodes+rightNodes+1;
+    }
+};
+```
+
+### 19. LeetCode110. 平衡二叉树
+
+```c++
+class Solution {
+public:
+    class Info{
+    public:
+        bool isBalanced;
+        int height;
+        
+        Info(bool isBalanced,int height){
+            this->isBalanced=isBalanced;
+            this->height=height;
+        }
+    };
+
+    Info process(TreeNode*node){
+        if(node==NULL)return Info(true,0);
+
+        //向左右子树索要信息
+        Info leftData=process(node->left);
+        Info rightData=process(node->right);
+
+        //处理当前节点信息
+        bool isBalanced=(abs(leftData.height-rightData.height)<=1
+        &&leftData.isBalanced
+        &&rightData.isBalanced);
+
+        int height=max(leftData.height,rightData.height)+1;
+
+        return Info(isBalanced,height);
+    }
+
+    bool isBalanced(TreeNode* root) {
+        Info data=process(root);
+        return data.isBalanced;
+    }
+};
+```
+
+### 20. LeetCode257. 二叉树的所有路径
+
+```c++
+递归：
+class Solution {
+public:
+    vector<string>res;
+
+    void process(TreeNode*node,string path){
+        if(node==NULL){
+            return;
+        }
+        if(node->left==NULL&&node->right==NULL){//遍历到叶子节点才停止
+            res.push_back(path+to_string(node->val));
+            return;
+        }
+        process(node->left,path+to_string(node->val)+"->");
+        process(node->right,path+to_string(node->val)+"->");
+    }
+
+    vector<string> binaryTreePaths(TreeNode* root) {
+        process(root,"");
+        return res;
+    }
+};
+
+迭代：
+class Solution {
+public:
+    vector<string> binaryTreePaths(TreeNode* root) {
+        stack<TreeNode*>treeStk;//保存树的节点
+        stack<string>pathStk;//保留路径
+        vector<string>res;//最终路径集合
+        treeStk.push(root);
+        pathStk.push(to_string(root->val));
+        while(!treeStk.empty()){
+            TreeNode*node=treeStk.top();treeStk.pop();//取出该节点
+            string path=pathStk.top();pathStk.pop();//取出该节点对应路径
+            if(node->left==NULL&&node->right==NULL){//叶子节点
+                res.push_back(path);
+            }
+            if(node->right){//栈：右先
+                treeStk.push(node->right);
+                pathStk.push(path+"->"+to_string(node->right->val));
+            }
+            if(node->left){
+                treeStk.push(node->left);
+                pathStk.push(path+"->"+to_string(node->left->val));
+            }
+        }
+        return res;
+    }
+};
+```
+
