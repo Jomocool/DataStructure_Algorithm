@@ -2178,3 +2178,374 @@ public:
 };
 ```
 
+### 28. LeetCode617. 合并二叉树
+
+```c++
+递归：
+class Solution {
+public:
+    TreeNode*traversal(TreeNode*node1,TreeNode*node2){
+        //某一节点为空，直接把不为空的子树接到总树即可
+        if(node1==NULL||node2==NULL){
+            return node1?node1:node2;
+        }
+        TreeNode*root=new TreeNode(node1->val+node2->val);
+        root->left=traversal(node1->left,node2->left);
+        root->right=traversal(node1->right,node2->right);
+        return root;
+    }
+
+    TreeNode* mergeTrees(TreeNode* root1, TreeNode* root2) {
+        if(root1==NULL||root2==NULL){//如果有空树，返回不为空的
+            return root1?root1:root2;
+        }
+        return traversal(root1,root2);
+    }
+};
+
+迭代：队列层序遍历
+class Solution {
+public:
+    TreeNode* mergeTrees(TreeNode* root1, TreeNode* root2) {
+        if(root1==NULL||root2==NULL){
+            return root1?root1:root2;
+        }
+        queue<TreeNode*>que;
+        que.push(root1);
+        que.push(root2);
+        while(!que.empty()){
+            TreeNode*node1=que.front();que.pop();//取root1节点
+            TreeNode*node2=que.front();que.pop();//取root2节点
+            
+            node1->val+=node2->val;//node1和node2必不为空
+
+            //加入子树
+            if(node1->left&&node2->left){
+                que.push(node1->left);
+                que.push(node2->left);
+            }
+            if(node1->right&&node2->right){
+                que.push(node1->right);
+                que.push(node2->right);
+            }
+            
+            //有一个为空，接入不为空的
+            if(node1->left==NULL&&node2->left!=NULL){
+                node1->left=node2->left;
+            }
+            if(node1->right==NULL&&node2->right!=NULL){
+                node1->right=node2->right;
+            }
+        }
+        return root1;
+    }
+};
+```
+
+### 29. LeetCode700. 二叉搜索树中的搜索
+
+```c++
+递归：
+class Solution {
+public:
+    TreeNode* searchBST(TreeNode* root, int val) {
+        if(root==NULL)return NULL;
+        if(val==root->val)return root;
+        else if(val>root->val)return searchBST(root->right,val);
+        else return searchBST(root->left,val);
+    }
+};
+
+迭代：
+class Solution {
+public:
+    TreeNode* searchBST(TreeNode* root, int val) {
+        while(root!=NULL&&root->val!=val){
+            if(val>root->val)root=root->right;
+            else if(val<root->val)root=root->left;
+        }
+        return root;
+    }
+};
+```
+
+### 30. LeetCode98. 验证二叉搜索树
+
+```c++
+递归：
+1.有序数组：
+class Solution {
+public:
+    vector<int>vec;
+    void traversal(TreeNode*node){
+        if(node==NULL)return;
+        traversal(node->left);
+        vec.push_back(node->val);
+        traversal(node->right);
+    }
+    bool isValidBST(TreeNode* root) {
+        traversal(root);
+        for(int i=0;i<vec.size()-1;i++){
+            if(vec[i]>=vec[i+1])return false;
+        }
+        return true;
+    }
+};
+2.双指针
+class Solution {
+public:
+    TreeNode*pre=NULL;
+    bool isValidBST(TreeNode* root) {
+        if(root==NULL)return true;
+        bool left=isValidBST(root->left);
+        //由于中序遍历二叉搜索树，所以前一个节点的值必定小于当前节点的值
+        if(pre!=NULL&&root->val<=pre->val)return false;
+        pre=root;
+        bool right=isValidBST(root->right);
+        return left&&right;
+    }
+};
+
+迭代：
+class Solution {
+public:
+    bool isValidBST(TreeNode* root) {
+        stack<TreeNode*>stk;
+        TreeNode*cur=root;
+        TreeNode*pre=NULL;
+        while(cur!=NULL||!stk.empty()){//未遍历完或者未处理完都不可退出循环
+            if(cur!=NULL){
+                stk.push(cur);
+                cur=cur->left;//左
+            }else{
+                cur=stk.top();//中
+                stk.pop();
+                if(pre!=NULL&&pre->val>=cur->val)return false;
+                pre=cur;
+                cur=cur->right;//右
+            }
+        }
+        return true;
+    }
+};
+```
+
+### 31. LeetCode530. 二叉搜索树的最小绝对差
+
+```c++
+迭代：
+有序数组
+class Solution {
+public:
+    vector<int>vec;
+    void traversal(TreeNode*node){
+        if(node==NULL)return;
+        traversal(node->left);
+        vec.push_back(node->val);
+        traversal(node->right);
+    }
+    int getMinimumDifference(TreeNode* root) {
+        int minVal=INT_MAX;
+        traversal(root);
+        for(int i=0;i<vec.size()-1;i++){
+            minVal=min(minVal,vec[i+1]-vec[i]);
+        }
+        return minVal;
+    }
+};
+
+双指针：
+class Solution {
+public:
+    int minVal=INT_MAX;
+    TreeNode*pre=NULL;
+    void traversal(TreeNode*node){
+        if(node==NULL)return;
+        traversal(node->left);
+        if(pre!=NULL)minVal=min(minVal,node->val-pre->val);//差值最小必定相邻
+        pre=node;
+        traversal(node->right);
+    }
+    int getMinimumDifference(TreeNode* root) {
+        traversal(root);
+        return minVal;
+    }
+};
+
+迭代：
+class Solution {
+public:
+    int getMinimumDifference(TreeNode* root) {
+        stack<TreeNode*>stk;
+        TreeNode*cur=root;
+        TreeNode*pre=NULL;
+        int minVal=INT_MAX;
+        while(cur!=NULL||!stk.empty()){
+            if(cur!=NULL){
+                stk.push(cur);
+                cur=cur->left;
+            }else{
+                cur=stk.top();
+                stk.pop();
+                if(pre!=NULL)minVal=min(minVal,cur->val-pre->val);
+                pre=cur;
+                cur=cur->right;
+            }
+        }
+        return minVal;
+    }
+};
+```
+
+### 32. LeetCode501. 二叉搜索树中的众数
+
+```c++
+递归：
+普通二叉树：
+class Solution {
+public:
+    map<int,int>record;
+
+    //比较器且必须是全局函数
+    bool static cmp(const pair<int,int>&p1,const pair<int,int>&p2){
+        return p1.second>p2.second;
+    }
+
+    //统计词频
+    void traversal(TreeNode*node){
+        if(node==NULL)return;
+        record[node->val]++;
+        traversal(node->left);
+        traversal(node->right);
+    }
+
+    vector<int> findMode(TreeNode* root) {
+        traversal(root);
+        vector<pair<int,int>>vec(record.begin(),record.end());//录入数组
+        sort(vec.begin(),vec.end(),cmp);
+        vector<int>res;
+        for(int i=0;i<vec.size();i++){
+            if(vec[i].second==vec[0].second)res.push_back(vec[i].first);
+            else break;
+        }
+        return res;
+    }
+};
+
+搜索二叉树(双指针)：
+class Solution {
+public:
+    vector<int>res;
+    TreeNode*pre=NULL;
+    int maxCount=0;
+    int count=0;
+    void traversal(TreeNode*node){
+        if(node==NULL)return;
+        traversal(node->left);//左
+        if(pre==NULL)count=1;//第一个节点
+        else if(pre->val==node->val)count++;
+        else count=1;
+        //中
+        if(count==maxCount)res.push_back(node->val);
+        else if(count>maxCount){
+            maxCount=count;
+            res.clear();//之前加入结果集的众数无效，清空
+            res.push_back(node->val);
+        }
+        pre=node;
+        //右
+        traversal(node->right);
+    }
+    vector<int> findMode(TreeNode* root) {
+        traversal(root);
+        return res;
+    }
+};
+
+迭代：
+class Solution {
+public:
+    vector<int> findMode(TreeNode* root) {
+        stack<TreeNode*>stk;
+        TreeNode*cur=root;
+        TreeNode*pre=cur;
+        int maxCount=0;
+        int count=0;
+        vector<int>res;
+        while(cur!=NULL||!stk.empty()){
+            if(cur!=NULL){
+                stk.push(cur);
+                cur=cur->left;
+            }else{
+                cur=stk.top();
+                stk.pop();
+                if(pre==NULL)count=1;
+                else if(pre->val==cur->val)count++;
+                else count=1;
+
+                if(count==maxCount)res.push_back(cur->val);
+                else if(count>maxCount){
+                    maxCount=count;
+                    res.clear();
+                    res.push_back(cur->val);
+                }
+                
+                pre=cur;
+                cur=cur->right;
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 33. LeetCode236. 二叉树的最近公共祖先
+
+**优化版图解：**
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/7.png)
+
+```c++
+普通版：
+class Solution {
+public:
+    map<TreeNode*,TreeNode*>fatherMap;
+
+    //完善父节点表
+    void traversal(TreeNode*node){
+        if(node==NULL)return;
+        fatherMap[node->left]=node;
+        fatherMap[node->right]=node;
+        traversal(node->left);
+        traversal(node->right);
+    }
+
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        fatherMap[root]=root;
+        traversal(root);
+        set<TreeNode*>pAncestor;//记录p的所有祖先
+        while(fatherMap[p]!=p){//先加入自己，因为p有可能是q的祖先
+            pAncestor.insert(p);
+            p=fatherMap[p];
+        }
+        while(fatherMap[q]!=q){
+            if(pAncestor.count(q)!=0)return q;
+            q=fatherMap[q];
+        }
+        return q;
+    }
+};
+
+优化版：后序遍历最合适
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if(root==p||root==q||root==NULL)return root;
+        TreeNode*left=lowestCommonAncestor(root->left,p,q);//左
+        TreeNode*right=lowestCommonAncestor(root->right,p,q);//右
+        if(left!=NULL&&right!=NULL)return root;//中
+        return left?left:right;
+    }
+};
+```
+
