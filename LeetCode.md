@@ -2549,3 +2549,185 @@ public:
 };
 ```
 
+### 34. LeetCode235. 二叉搜索树的最近公共祖先
+
+```c++
+遍历到第一个值处于min(p->val,q->val)和max(p->val,q->val)之间的节点，必然就是p、q的最近公共祖先，且只有一个满足该条件的节点
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if(root->val>p->val&&root->val>q->val){//root值偏大
+            return lowestCommonAncestor(root->left,p,q);
+        }else if(root->val<p->val&&root->val<q->val){//root值偏小
+            return lowestCommonAncestor(root->right,p,q);
+        }else{
+            return root;
+        }
+    }
+};
+```
+
+### 35. LeetCode701. 二叉搜索树中的插入操作
+
+```c++
+class Solution {
+public:
+    TreeNode* insertIntoBST(TreeNode* root, int val) {
+        if(root==NULL)return new TreeNode(val);
+        if(val<root->val)root->left=insertIntoBST(root->left,val);//val小，往左
+        else root->right=insertIntoBST(root->right,val);//val大，往右
+        return root;
+    }
+};
+```
+
+### 36. LeetCode450. 删除二叉搜索树中的节点
+
+```c++
+思路：
+1.无对应节点
+2.叶子节点
+3.左不空，右空
+4.左空，右不空
+5.左不空，右不空
+关键：把root的左子树接到root右子树最小值节点的左下方
+class Solution {
+public:
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        //1.无对应节点
+        if(root==NULL)return NULL;
+        if(root->val==key){
+            //2.叶子节点
+            if(root->left==NULL&&root->right==NULL){
+                //释放内存
+                delete root;
+                return NULL;
+            }
+            //3.左不空，右空
+            if(root->right==NULL){
+                //直接让左子树接过来
+                TreeNode*retNode=root->left;
+                //释放内存
+                delete root;
+                return retNode;
+            }
+            //4.左空，右不空
+            if(root->left==NULL){
+                //直接让右子树接过来
+                TreeNode*retNode=root->right;
+                //释放内存
+                delete root;
+                return retNode;
+            }
+            //5.左不空，右不空
+            else{
+                TreeNode*cur=root->right;
+                while(cur->left!=NULL){
+                    cur=cur->left;
+                }
+                //把root的左子树接到cur左子树
+                cur->left=root->left;
+                TreeNode*retNode=root->right;
+                delete root;
+                return retNode; 
+            }
+        }
+        if(key<root->val)root->left=deleteNode(root->left,key);
+        if(key>root->val)root->right=deleteNode(root->right,key);
+        return root;
+    }
+};
+```
+
+### 37. LeetCode669. 修剪二叉搜索树
+
+```c++
+如果有越界的节点，第一时间不是直接删除该节点(return NULL)，而是处理其有效的子树。在回溯过程中，二叉搜索树就慢慢被修剪了
+class Solution {
+public:
+    TreeNode* trimBST(TreeNode* root, int low, int high) {
+        if(root==NULL)return NULL;
+        if(root->val<low)return trimBST(root->right,low,high);
+        if(root->val>high)return trimBST(root->left,low,high);
+        root->left=trimBST(root->left,low,high);
+        root->right=trimBST(root->right,low,high);
+        return root;
+    }
+};
+```
+
+### 38. LeetCode108. 将有序数组转换为二叉搜索树
+
+```c++
+二分法：
+保证左右子树节点个数相同，就可以平衡。
+class Solution {
+public:
+    TreeNode*traversal(vector<int>&nums,int l,int r){
+        if(l>r)return NULL;
+        int mid=l+((r-l)>>1);
+        TreeNode*root=new TreeNode(nums[mid]);
+        root->left=traversal(nums,l,mid-1);
+        root->right=traversal(nums,mid+1,r);
+        return root;
+    }
+
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+        return traversal(nums,0,nums.size()-1);
+    }
+};
+```
+
+### 39. LeetCode538. 把二叉搜索树转换为累加树
+
+```c++
+题意：把每个节点的值更新成原树中所有大于等于该值的节点值之和(包括自身)
+思路：
+后序逆序遍历：右中左（大->小），双指针遍历，并记录前面累加和
+
+递归：
+class Solution {
+public:
+    int pre=0;//记录累加和
+    void traversal(TreeNode*node){
+        if(node==NULL)return;
+        //右
+        traversal(node->right);
+        //中
+        node->val+=pre;//更新节点值
+        pre=node->val;//更新pre，注意不是加等于，因为node->val是已被更新过的
+        //左
+        traversal(node->left);
+    }
+    TreeNode* convertBST(TreeNode* root) {
+        traversal(root);
+        return root;
+    }
+};
+
+迭代：
+class Solution {
+public:
+    TreeNode* convertBST(TreeNode* root) {
+        if(root==NULL)return NULL;
+        int pre=0;//记录累加和
+        stack<TreeNode*>stk;//记录节点
+        TreeNode*cur=root;
+        while(cur!=NULL||!stk.empty()){
+            if(cur!=NULL){
+                stk.push(cur);
+                cur=cur->right;//右
+            }else{
+                //中
+                cur=stk.top();
+                stk.pop();
+                cur->val+=pre;//更新cur节点值
+                pre=cur->val;//更新pre累加和
+                cur=cur->left;//左
+            }
+        }
+        return root;
+    }
+};
+```
+
