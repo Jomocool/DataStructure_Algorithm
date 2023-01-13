@@ -2731,3 +2731,329 @@ public:
 };
 ```
 
+## 七、回溯算法
+
+**回溯算法模板：**base case(终止条件)+for循环(纵向递归+撤销操作)
+
+### 1. LeetCode77. 组合
+
+```c++
+class Solution {
+public:
+    vector<vector<int>>res;
+    vector<int>path;
+
+    void backTracking(int start,int n,int k){
+        if(path.size()==k){
+            res.push_back(path);
+        }
+        for(int i=start;i<=n-(k-path.size())+1;i++){//减枝，因为path的大小有限制
+            path.push_back(i);
+            backTracking(i+1,n,k);
+            path.pop_back();//回溯
+        }
+    }
+
+    vector<vector<int>> combine(int n, int k) {
+        backTracking(1,n,k);
+        return res;
+    }
+};
+```
+
+### 2. LeetCode216. 组合总和 III
+
+```c++
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//路径
+    int pathSum;//路径和
+
+    void backTracking(int startIndex,int k,int n){
+        if(path.size()>k||pathSum>n){//剪枝
+            return;
+        }
+        if(path.size()==k&&pathSum==n){
+            res.push_back(path);
+            return;
+        }
+        for(int i=startIndex;i<=9-(k-path.size())+1;i++){//剪枝
+            path.push_back(i);
+            pathSum+=i;
+            backTracking(i+1,k,n);
+            //回溯
+            path.pop_back();
+            pathSum-=i;
+        }
+    }
+
+    vector<vector<int>> combinationSum3(int k, int n) {
+        backTracking(1,k,n);
+        return res;
+    }
+};
+```
+
+### 3. LeetCode17. 电话号码的字母组合
+
+```c++
+思路：
+1.创建映射表vector<string>
+2.确定递归深度(终止条件)
+3.确定递归宽度(for循环)
+class Solution {
+public:
+    vector<string>res;//结果集
+    string path;//路径
+    vector<string>letterMap;//映射表
+
+    void backTracking(string digits,int startIndex){
+        if(startIndex==digits.size()){
+            res.push_back(path);
+            return;
+        }
+        int digit=digits[startIndex]-'0';
+        string letter=letterMap[digit];
+        for(int i=0;i<letter.size();i++){
+            path.push_back(letter[i]);
+            backTracking(digits,startIndex+1);
+            path.pop_back();
+        }
+    }
+
+    vector<string> letterCombinations(string digits) {
+        //初始化path
+        path.clear();
+        res.clear();
+        if(digits.size()==0)return res;
+        //完善映射表
+        letterMap={"","","abc","def","ghi","jkl","mno","pqrs","tuv","wxyz"};
+        backTracking(digits,0);
+        return res;
+    }
+};
+```
+
+### 4. LeetCode39. 组合总和
+
+```c++
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//路径
+    int pathSum=0;//路径和
+
+    void backTracking(vector<int>&candidates,int target,int startIndex){
+        if(pathSum>target){//剪枝
+            return;
+        }
+        if(pathSum==target){//收集
+            res.push_back(path);
+            return;
+        }
+        //注意count必定从1开始，如果从0开始，意味着不取当前值，但是我们有startIndex，意味着不取startIndex之前的元素，二者含义相同，会导致结果集有重复元素
+        for(int i=startIndex;i<candidates.size();i++){
+            for(int count=1;candidates[i]*count<=target;count++){//剪枝
+                for(int j=0;j<count;j++){//加入对于数量的元素
+                    path.push_back(candidates[i]);
+                    pathSum+=candidates[i];
+                }
+                backTracking(candidates,target,i+1);
+                //回溯
+                for(int j=0;j<count;j++){
+                    path.pop_back();
+                    pathSum-=candidates[i];
+                }
+            }
+        }
+    }
+
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        path.clear();
+        res.clear();
+        backTracking(candidates,target,0);
+        return res;
+    }
+};
+```
+
+### 5. LeetCode40. 组合总和 II
+
+```c++
+1.深度去重：保证同一个元素不被重复使用
+2.广度去重：保证结果集没有重复的路径集合，是对回溯之后相同的元素进行去重
+    
+误区：candidates[1,2,1,6,1]，target=8；不考虑广度去重的话，结果集会有重复路径集合([1,1,6],[1,6,1],[1,6,1])，因为第一个1遇到的情况包含了后面两个1所有的情况，因此会重复。但如果只考虑广度去重而不和深度去重做区分，则会漏掉[1,1,6]，因为[1,1]是深度上值相同的元素，是还没开始回溯的状态，是有效的。
+
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//路径
+    vector<bool>used;//记录已被使用过的元素
+
+    void backTracking(vector<int>&candidates,int target,int sum,int startIndex){
+        if(sum>target){//剪枝
+            return;
+        }
+        if(sum==target){
+            res.push_back(path);
+            return;
+        }
+        for(int i=startIndex;i<candidates.size();i++){
+            //!used[i-1]表示如果前一个元素如果没被使用过，但和当前元素相同，说明要广度去重
+            if(i>0&&candidates[i]==candidates[i-1]&&!used[i-1]){
+                continue;
+            }
+            path.push_back(candidates[i]);
+            used[i]=true;
+            backTracking(candidates,target,sum+candidates[i],i+1);
+            path.pop_back();//回溯
+            used[i]=false;
+        }
+    }
+
+    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
+        res.clear();
+        path.clear();
+        used.clear();
+        used=vector<bool>(candidates.size());//默认都未被使用过false
+        sort(candidates.begin(),candidates.end());//排序很关键
+        backTracking(candidates,target,0,0);
+        return res;
+    }
+};
+```
+
+### 6. LeetCode131. 分割回文串
+
+```c++
+关键：和数组组合思路类似，搞清楚分割线startIndex即可
+class Solution {
+public:
+    vector<vector<string>>res;//结果集
+    vector<string>path;//路径
+    vector<vector<bool>>isPalidrome;//动态规划表
+	
+    //完善
+    void computePalidrome(string&s){
+        //isPalidrome[i,j]：s(i-1,j+1)是否回文
+        isPalidrome.resize(s.size(),vector<bool>(s.size()));
+        for(int i=0;i<s.length();i++){
+            isPalidrome[i][i]=true;
+            if(i<s.length()-1&&s[i]==s[i+1])isPalidrome[i][i+1]=true;
+        }
+
+        for(int i=s.length()-3;i>=0;i--){
+            for(int j=i+2;j<s.length();j++){
+                isPalidrome[i][j]=s[i]==s[j]&&isPalidrome[i+1][j-1];
+            }
+        }
+    }
+
+    void backTracking(string&s,int startIndex){//切割线位于s[startIndex]和s[startIndex+1]之间
+        //如果startIndex==s.length()-1，还有最后一个字符要加进来
+        if(startIndex>=s.length()){
+            res.push_back(path);
+            return;
+        }
+        for(int i=startIndex;i<s.length();i++){
+            if(isPalidrome[startIndex][i]){//是回文子串才往下继续递归
+                string str=s.substr(startIndex,i-startIndex+1);
+                path.push_back(str);
+                backTracking(s,i+1);
+                path.pop_back();//回溯
+            }
+        }
+    }
+
+    vector<vector<string>> partition(string s) {
+        res.clear();
+        path.clear();
+        isPalidrome.clear();
+        computePalidrome(s);
+        backTracking(s,0);
+        return res;
+    }
+};
+```
+
+### 7. LeetCode93. 复原 IP 地址
+
+```c++
+class Solution {
+public:
+    vector<string>res;
+
+    //判断s(start,end)是否有效
+    bool isValid(string&s,int start,int end){
+        if(start>end){
+            return false;
+        }
+        if(s[start]=='0'&&start!=end){//0开头且后面还有数
+            return false;
+        }
+        int num=0;
+        for(int i=start;i<=end;i++){
+            if(s[i]<'0'||s[i]>'9'){//特殊字符
+                return false;
+            }
+            num=num*10+(s[i]-'0');
+            if(num>255){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void backTracking(string&s,int startIndex,int pointNum){
+        if(pointNum==3&&isValid(s,startIndex,s.size()-1)){
+            res.push_back(s);
+            return;
+        }
+        for(int i=startIndex;i<s.size();i++){
+            if(isValid(s,startIndex,i)){
+                s.insert(s.begin()+i+1,'.');//在相应位置加'.'
+                backTracking(s,i+2,pointNum+1);//跳过点
+                s.erase(s.begin()+i+1);//回溯
+            }else{
+                break;//不合法，那么后面的也都不合法了，直接结束本层循环
+            }
+        }
+    }
+
+    vector<string> restoreIpAddresses(string s) {
+        res.clear();
+        backTracking(s,0,0);
+        return res;
+    }
+};
+```
+
+### 8. LeetCode78. 子集
+
+```c++
+所有子集实际上就是回溯树上的所有节点加空集，递归层数就是子集大小，且有startIndex，所以不会重复
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//路径
+
+    void backTracking(vector<int>&nums,int startIndex){
+        res.push_back(path);//先加再递归，不然会漏
+        for(int i=startIndex;i<nums.size();i++){
+            path.push_back(nums[i]);
+            backTracking(nums,i+1);
+            path.pop_back();
+        }
+    }
+
+    vector<vector<int>> subsets(vector<int>& nums) {
+        res.clear();
+        path.clear();
+        backTracking(nums,0);
+        return res;
+    }
+};
+```
+
