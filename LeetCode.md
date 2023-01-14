@@ -3057,3 +3057,150 @@ public:
 };
 ```
 
+### 9. LeetCode90. 子集 II
+
+```c++
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//路径
+
+    void backTracking(vector<int>nums,int startIndex){
+        res.push_back(path);//把每个节点都加入结果集
+        for(int i=startIndex;i<nums.size();i++){
+            if(i>startIndex&&nums[i]==nums[i-1]){//广度去重，去除重复子集
+                continue;
+            }
+            path.push_back(nums[i]);
+            used[i]=true;
+            backTracking(nums,i+1);
+            used[i]=false;
+            path.pop_back();
+        }
+    }
+
+    vector<vector<int>> subsetsWithDup(vector<int>& nums) {
+        res.clear();
+        path.clear();
+        used.clear();
+        used.resize(nums.size());
+        sort(nums.begin(),nums.end());
+        backTracking(nums,0);
+        return res;
+    }
+};
+```
+
+### 10. LeetCode491. 递增子序列
+
+```c++
+关键：脑海里要有一棵回溯树
+[4,6,7,7]：{4,7(2)}和{4,7(3)}重复，所以要对当前层去重，要记录已经有过7了，则第二个7直接跳过，防止重复
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//路径
+
+    void backTracking(vector<int>&nums,int startIndex){
+        if(path.size()>=2){
+            res.push_back(path);
+        }
+        
+        //记录本层已被用过的元素
+        //要记录用过的值而不是索引，因为原数组无法先排好序
+        vector<bool>used(201);//nums元素范围[-100,100]
+        for(int i=startIndex;i<nums.size();i++){
+            if(!path.empty()&&nums[i]<path.back()||used[nums[i]+100]){
+                //不符合递增要求或者当前元素在本层已被用过
+                continue;
+            }
+            path.push_back(nums[i]);
+            used[nums[i]+100]=true;
+            backTracking(nums,i+1);
+            path.pop_back();
+        }
+    }
+
+    vector<vector<int>> findSubsequences(vector<int>& nums) {
+        res.clear();
+        path.clear();
+        backTracking(nums,0);
+        return res;
+    }
+};
+```
+
+### 11. LeetCode46. 全排列
+
+```c++
+注意每次循环要从0开始，因为是全排列，所以要考虑所有元素，以防遗漏。并且要记录已经加入path的元素，防止重复。
+class Solution {
+public:
+    vector<vector<int>>res;
+    vector<int>path;
+    vector<bool>used;
+
+    void backTracking(vector<int>&nums){
+        if(path.size()==nums.size()){
+            res.push_back(path);
+            return;
+        }
+        for(int i=0;i<nums.size();i++){
+            if(used[i])continue;
+            path.push_back(nums[i]);
+            used[i]=true;
+            backTracking(nums);
+            used[i]=false;
+            path.pop_back();
+        }
+    }
+
+    vector<vector<int>> permute(vector<int>& nums) {
+        res.clear();
+        path.clear();
+        used.clear();
+        used.resize(nums.size());
+        backTracking(nums);
+        return res;
+    }
+};
+```
+
+### 12. LeetCode47. 全排列 II
+
+```c++
+由于有重复元素，所以不仅要注意深度去重(path不许有重复使用过的元素(注意元素值相同不一定就是被重复使用了，必须是同一个索引位上的元素))，还要注意广度去重(res不能用重复的子集，以同一个元素值开头的子集会重复)
+class Solution {
+public:
+    vector<vector<int>>res;
+    vector<int>path;
+    vector<int>used;
+
+    void backTracking(vector<int>&nums){
+        if(path.size()==nums.size()){//收割叶子节点
+            res.push_back(path);
+            return;
+        }
+        for(int i=0;i<nums.size();i++){
+            //深度去重+广度去重
+            if(used[i]||(i>0&&nums[i]==nums[i-1]&&!used[i-1]))continue;
+            path.push_back(nums[i]);
+            used[i]=true;
+            backTracking(nums);
+            used[i]=false;
+            path.pop_back();
+        }
+    }
+
+    vector<vector<int>> permuteUnique(vector<int>& nums) {
+        res.clear();
+        path.clear();
+        used.clear();
+        used.resize(nums.size());
+        sort(nums.begin(),nums.end());
+        backTracking(nums);
+        return res;
+    }
+};
+```
+
