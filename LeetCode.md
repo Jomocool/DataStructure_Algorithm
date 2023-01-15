@@ -3204,3 +3204,166 @@ public:
 };
 ```
 
+### 13. LeetCode332. 重新安排行程
+
+```c++
+难点：
+1.可能会出现死循环
+2.存在多种解法，但结果要求字典序最小
+3.使用回溯法(深度优先探索)，终止条件是什么
+4.探索的过程中如何遍历一个出发机场对应的目的机场
+
+思路：
+1.创建unordered_map<string,map<string,int>>targets，map可以删除
+key1:出发机场;value1:目的机场及航班次数
+key2:目的机场;value2:航班次数
+2.理解题意后，其实我们只需要返回一个叶子节点即可。
+
+关键：利用map存储映射关系和航班次数十分重要，前者解决了字典序问题，后者解决了死循环问题，缺一不可。并且还省去了哈希表erase操作，大大降低了时间复杂度。
+class Solution {
+public:
+    vector<string>res;
+    unordered_map<string,map<string,int>>targets;
+    int ticketsNum;
+
+    bool backTracking(){
+        if(res.size()==ticketsNum+1){
+            return true;
+        }
+        //遍历当前已到达机场的目的机场
+        for(pair<const string,int>&target:targets[res[res.size()-1]]){
+            if(target.second>0){//还有航班可飞
+                res.push_back(target.first);
+                target.second--;
+                //但凡有一个叶子节点满足，直接一路返回，不用再管其他节点了
+                if(backTracking())return true;
+                res.pop_back();
+                target.second++;
+            }
+        }
+        return false;
+    }
+
+    vector<string> findItinerary(vector<vector<string>>& tickets) {
+        res.clear();
+        targets.clear();
+        //tickets.size()：有几条路线，路线+1就是机场数
+        ticketsNum=tickets.size();
+        for(vector<string>&vec:tickets){
+            //出发机场对应的目的机场的可到达航班次数+1
+            targets[vec[0]][vec[1]]++;
+        }
+        //从"JFK"开始
+        res.push_back("JFK");
+        backTracking();
+        return res;
+    }
+};
+```
+
+### 14. LeetCode51. N 皇后
+
+```c++
+总体就是在每一行的每一列中找到一个合适的位置放置皇后，然后继续向下递归。
+class Solution {
+public:
+    vector<vector<string>>res;
+    vector<string>chessboard;
+
+    bool isValid(int row,int col,int n){
+        //同一行肯定不会有皇后，所以不判断
+
+        //判断同一列
+        for(int i=0;i<n;i++){
+            if(chessboard[i][col]=='Q')return false;
+        }
+        //因为只要上面几行有皇后，所以只需向上遍历
+        //45度角
+        for(int i=row-1,j=col+1;i>=0&&j<n;i--,j++){
+            if(chessboard[i][j]=='Q')return false;
+        }
+        //135度角
+        for(int i=row-1,j=col-1;i>=0&&j>=0;i--,j--){
+            if(chessboard[i][j]=='Q')return false;
+        }
+        return true;
+    }
+
+    void backTracking(int row,int n){
+        if(row==n){
+            res.push_back(chessboard);
+            return;
+        }
+        for(int col=0;col<n;col++){
+            if(isValid(row,col,n)){//在[row][col]的位置上如果能放皇后
+                chessboard[row][col]='Q';
+                backTracking(row+1,n);
+                chessboard[row][col]='.';
+            }
+        }
+    }
+
+    vector<vector<string>> solveNQueens(int n) {
+        res.clear();
+        chessboard.clear();
+        chessboard.resize(n,string(n,'.'));
+        backTracking(0,n);
+        return res;
+    }
+};
+```
+
+### 15. LeetCode37. 解数独
+
+```c++
+class Solution {
+public:
+    bool isValid(int row, int col,char val,vector<vector<char>>&board){
+        //同行
+        for(int j=0;j<board[0].size();j++){
+            if(board[row][j]==val)return false;
+        }
+
+        //同列
+        for(int i=0;i<board.size();i++){
+            if(board[i][col]==val)return false;
+        }
+
+        //九宫格
+        int startRow=(row/3)*3;
+        int startCol=(col/3)*3;
+        for(int i=startRow;i<startRow+3;i++){
+            for(int j=startCol;j<startCol+3;j++){
+                if(board[i][j]==val)return false;
+            }
+        }
+        return true;
+    }
+
+    bool backTracking(vector<vector<char>>&board){
+        //需要填满所有格子，因此二维遍历
+        for(int i=0;i<board.size();i++){
+            for(int j=0;j<board[0].size();j++){
+                if(board[i][j]!='.')continue;
+                for(char k='1';k<='9';k++){
+                    if(isValid(i,j,k,board)){
+                        board[i][j]=k;
+                        if(backTracking(board))return true;
+                        board[i][j]='.';
+                    }
+                }
+                //‘1’到'9'都无效，说明前面填得不对
+                return false;
+            }
+        }
+        //遍历完且没有返回false，说明该位置合适
+        //最后一个格子不用填数字，且前面填完的都合法，所以就在最后返回true，以防漏掉
+        return true;
+    }
+
+    void solveSudoku(vector<vector<char>>& board) {
+        backTracking(board);
+    }
+};
+```
+
