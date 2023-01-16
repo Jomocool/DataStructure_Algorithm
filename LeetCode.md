@@ -3367,3 +3367,76 @@ public:
 };
 ```
 
+## 八、贪心算法
+
+### 1. LeetCode455. 分发饼干
+
+```c++
+局部最优：把最大的饼干喂给能满足且胃口最大的孩子
+class Solution {
+public:
+    int findContentChildren(vector<int>& g, vector<int>& s) {
+        sort(g.begin(),g.end());
+        sort(s.begin(),s.end());
+        int i=g.size()-1;
+        int j=s.size()-1;
+        int res=0;
+        while(i>=0&&j>=0){
+            if(s[j]>=g[i]){//能满足当前的孩子
+                res++;
+                i--;
+                j--;
+            }else{//当前孩子胃口太大，即使是最大的饼干也无法满足胃口，只能换下一个孩子
+                i--;
+            }
+        }
+        //退出循环
+        //1.i<0，最大的饼干已经无法满足剩余所有孩子的胃口
+        //2.j<0，所有饼干都已经给出去了
+        return res;
+    }
+};
+```
+
+### 2. LeetCode376. 摆动序列
+
+```c++
+贪心算法：从第一个元素开始，把所有元素都考虑到了，必然是最大长度。
+class Solution {
+public:
+    int wiggleMaxLength(vector<int>& nums) {
+        if(nums.size()<=1)return nums.size();
+        int curDif=0;//当前一对差值
+        int preDif=0;//前一对差值
+        int res=1;//默认序列最右有一个峰值
+        for(int i=0;i<nums.size()-1;i++){
+            curDif=nums[i+1]-nums[i];
+            //等于0，是因为初始preDif和curDif都是0。
+            if((preDif<=0&&curDif>0)||(preDif>=0&&curDif<0)){
+                res++;
+                preDif=curDif;
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 3. LeetCode53. 最大子数组和
+
+```c++
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int cur=0;
+        int res=INT_MIN;
+        for(int i=0;i<nums.size();i++){
+            //如果前面的连续子数组和<=0，则抛弃，因为拖后腿
+            cur=cur<=0?nums[i]:cur+=nums[i];
+            res=max(res,cur);
+        }
+        return res;
+    }
+};
+```
+
