@@ -3440,3 +3440,103 @@ public:
 };
 ```
 
+### 4. LeetCode122. 买卖股票的最佳时机 II
+
+```c++
+思路：
+假设在第一天买入，第四天卖出，发现可以拆分成以每两天为单位的，从而找到局部最优达到整体最优
+prices[3]-prices[0]=(prices[3]-prices[2])+(prices[2]-prices[1])+(prices[1]-prices[0]);
+以每两天为一个利润单位，而不是0~3天整体，因为中间可能有负值。
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int res=0;
+        for(int i=0;i<prices.size()-1;i++){
+            //只选正的
+            res+=max(prices[i+1]-prices[i],0);
+        }
+        return res;
+    }
+};
+```
+
+### 5. LeetCode55. 跳跃游戏
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/8.png)
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/9.png)
+
+```c++
+思路：
+每一个值代表在当前位置能够跳跃的最大长度，所以只需要判断每次都跳跃最大长度（局部最优）能否超过最后一个下标（整体最优）即可。如果在既定覆盖范围内都无法跳出覆盖范围，就代表怎么样都无法到达最后一个下标，就退出循环。
+class Solution {
+public:
+    bool canJump(vector<int>& nums) {
+        if(nums.size()==1)return true;
+        int cover=0;
+        for(int i=0;i<=cover;i++){//走一步看一步
+            cover=max(i+nums[i],cover);
+            //如果覆盖范围超过了最后一个下标，则不用看后面了
+            if(cover>=nums.size()-1)return true;
+        }
+        //走完当前所有覆盖范围都无法到达最后一个下标
+        return false;
+    }
+};
+```
+
+### 6. LeetCode45. 跳跃游戏 II
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/10.png)
+
+```c++
+思路：
+1.需要两个信息：当前的覆盖范围，和下一步的覆盖范围。尽可能地让每一步的覆盖范围最大(局部最优)
+class Solution {
+public:
+    int jump(vector<int>& nums) {
+        int res=0;//结果
+        int start=0;//开始位置
+        int end=0;//结束位置同时也是每一步的目的地
+        //第一轮循环是初始化start和end的过程，同时让res多补上1，因为我们的判断条件是end<nums.size()-1，而不是start
+        while(end<nums.size()-1){
+            int maxPos=0;
+            for(int i=start;i<=end;i++){
+                maxPos=max(maxPos,i+nums[i]);
+            }
+            start=end+1;//跳完一步后，要从当前位置的下一个开始
+            end=maxPos;
+            res++;
+        }
+        return res;
+    }
+};
+```
+
+### 7. LeetCode1005. K 次取反后最大化的数组和
+
+```c++
+class Solution {
+public:
+    static bool cmp(int a,int b){
+        return abs(a)>abs(b);
+    }
+    int largestSumAfterKNegations(vector<int>& nums, int k) {
+        sort(nums.begin(),nums.end(),cmp);//按绝对值排序
+        for(int i=0;i<nums.size();i++){
+            if(nums[i]<0&&k>0){
+                nums[i]*=-1;
+                k--;
+            }
+        }
+        //退出循环有两张情况
+        //1.还有负数但是k==0，这种情况不需要额外处理
+        //2.k>0，但是全为正数，那就让绝对值最小的取反
+        if(k%2==1)nums[nums.size()-1]*=-1;
+        int res=0;
+        for(int num:nums)res+=num;
+        return res;
+    }
+};
+```
+
