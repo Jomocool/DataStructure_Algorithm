@@ -3540,3 +3540,129 @@ public:
 };
 ```
 
+### 8. LeetCode134. 加油站
+
+```c++
+贪心策略：尽量先把剩余油量为正的站点先走了，储存油量
+rest<0，则[0,i]区间都无法作为起始点
+证明：start从0开始
+1. gas[start]-cost[start]<0：那么一开始的rest就小于0，重置起始点
+2. gas[start]-cost[start]>=0：当前rest<0，说明gas[i]-cost[i]必定小于0，如果以[1.i]区间上的某一个点为起始点，意味着要删去gas[start]-cost[start]，一个小于0的数减去一个正数必然还是小于0的
+综上：当rest<0时，[0,i]区间都无法作为起始点，必须要更新起始点为i+1。
+
+class Solution {
+public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        int rest=0;//不同起始点剩余油量累加和
+        int totalSum=0;//整体剩余油量累加和
+        int start=0;//起始点
+        for(int i=0;i<gas.size();i++){
+            rest+=gas[i]-cost[i];
+            totalSum+=gas[i]-cost[i];
+            if(rest<0){//说明当前起始点无法满足绕环
+                start=i+1;
+                rest=0;//重置剩余油量
+            }
+        }
+        //start还不一定就是有效的起始点，还需要再判断整体剩余油量是否为正
+        if(totalSum<0){//总剩余油量小于0，说明无论如何都无法绕环
+            return -1;
+        }
+        return start;
+    }
+};
+```
+
+### 9. LeetCode135. 分发糖果
+
+```c++
+思路：
+相邻有左邻居和右邻居，所以要判断两边，但不能同时判断。所以我们定义左规则和右规则
+左规则：从左向右遍历，分数高的孩子多一块糖
+右规则：从右向左遍历，分数高的孩子多一块糖
+class Solution {
+public:
+    int candy(vector<int>& ratings) {
+        //左规则数组，先给每人一块糖
+        vector<int>left(ratings.size(),1);
+        for(int i=0;i<left.size()-1;i++){
+            if(ratings[i+1]>ratings[i])left[i+1]=left[i]+1;
+        }
+        //右规则数组同理
+        vector<int>right(ratings.size(),1);
+        for(int i=right.size()-1;i>0;i--){
+            if(ratings[i-1]>ratings[i])right[i-1]=right[i]+1;
+        }
+
+        int res=0;//最少糖果数
+        for(int i=0;i<ratings.size();i++){
+            //因为相邻两个孩子，高分必然获得更多糖果，所以既要满足左规则也要满足右规则，因此取max
+            res+=max(left[i],right[i]);
+        }
+        return res;
+    }
+};
+```
+
+### 10. 860. 柠檬水找零
+
+```c++
+class Solution {
+public:
+    bool lemonadeChange(vector<int>& bills) {
+        int five=0,ten=0,twenty=0;//记录5/10/20数量
+        for(int bill:bills){
+            if(bill==5){//不需找零
+                five++;
+            }
+            else if(bill==10){//找5
+                if(five==0){
+                    return false;
+                }else{
+                    five--;
+                    ten++;
+                }
+            }
+            else{//找15（10/5）（5/5/5）
+                if(ten>0&&five>0){
+                    ten--;
+                    five--;
+                }else if(five>=3){
+                    five-=3;
+                }else{
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+};
+```
+
+### 11. LeetCode406. 根据身高重建队列
+
+```c++
+class Solution {
+public:
+    static bool cmp(const vector<int>&vec1,const vector<int>&vec2){
+        return vec1[0]>vec2[0];
+    }
+
+    vector<vector<int>> reconstructQueue(vector<vector<int>>& people) {
+        //根据身高排序，非常关键
+        sort(people.begin(),people.end(),cmp);
+        list<vector<int>>que;//效率高于vector
+        for(int i=0;i<people.size();i++){
+            int position=people[i][1];
+            list<vector<int>>::iterator it=que.begin();
+            while(position--){
+                it++;
+            }
+            //先插入身高高的，因为身高高的前面人数必然更少，从少到多
+            que.insert(it,people[i]);
+        }
+        return vector<vector<int>>(que.begin(),que.end());
+    }
+};
+```
+
