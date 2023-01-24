@@ -3666,3 +3666,128 @@ public:
 };
 ```
 
+### 12. LeetCode452. 用最少数量的箭引爆气球
+
+```c++
+思路：
+1.排序数组，让起始点从小到大
+2.分析重叠的气球，看当前所覆盖的气球中的最小结束点
+class Solution {
+public:
+    static bool cmp(const vector<int>&vec1,const vector<int>&vec2){
+        return vec1[0]<vec2[0];
+    }
+
+    int findMinArrowShots(vector<vector<int>>& points) {
+        //排序二维数组，起始点从小到大
+        sort(points.begin(),points.end(),cmp);
+        int res=0;
+        for(int i=0;i<points.size();){
+            int minEnd=points[i][1];//被涵盖气球的最小结束点，初始时当前气球的的结束点
+            int count=0;//最小结束点所能涵盖气球的数量
+            while(i+count<points.size()&&points[i+count][0]<=minEnd){//注意是'<='
+                //更新最小结束点，因为前一个气球能覆盖到的，后一个气球不一定可以
+                minEnd=min(minEnd,points[i+count][1]);
+                //被打爆的气球数加1
+                count++;
+                //先更新minEnd，在count++，不然堆溢出
+            }
+            res++;
+            i+=count;
+        }
+        return res;
+    }
+};
+```
+
+### 13. LeetCode435. 无重叠区间
+
+```c++
+思路：
+1.按照右边界排序，从左向右遍历，因为右边界越小，留给下一个区间的空间就越大。右边界越大，从左向右遍历的过程中，和其他区间发生重叠的概率也越大，要删除的区间也就越多。
+2.如果按照左边界排序，左边界只是区间的起始点，后面覆盖的范围无法确定，因此在从左向右遍历的过程中无法做到局部最优。
+class Solution {
+public:
+    static bool cmp(const vector<int>&vec1,const vector<int>&vec2){
+        return vec1[1]<vec2[1];
+    }
+
+    int eraseOverlapIntervals(vector<vector<int>>& intervals) {
+        //按照右边界排序
+        sort(intervals.begin(),intervals.end(),cmp);
+
+        int count=0;//不重叠区间数
+        int maxEnd=INT_MIN;//当前不重叠区间中的最大右边界
+        for(int i=0;i<intervals.size();i++){
+            if(maxEnd<=intervals[i][0]){
+                count++;
+                maxEnd=intervals[i][1];//更新end
+            }
+        }
+        //总数减去不重叠区间数就是要删去的区间数
+        return intervals.size()-count;
+    }
+};
+```
+
+### 14. LeetCode763. 划分字母区间
+
+```c++
+思路：
+1.统计每一个字符最后出现的位置
+2.当前下标如果和已遍历字符的最后一个下标相同的话，说明到达了分界点。
+class Solution {
+public:
+    vector<int> partitionLabels(string s) {
+        int record[26]={0};
+        for(int i=0;i<s.length();i++){
+            record[s[i]-'a']=i;//统计字符最大小标
+        }
+
+        vector<int>res;
+        int left=0;//记录片段左边界
+        int right=0;//当前加入字符的最远右边界
+        for(int i=0;i<s.length();i++){
+            right=max(right,record[s[i]-'a']);
+            if(i==right){
+                res.push_back(right-left+1);
+                left=i+1;
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 15. LeetCode56. 合并区间
+
+```c++
+class Solution {
+public:
+    static bool cmp(const vector<int>&vec1,const vector<int>&vec2){
+        return vec1[0]<vec2[0];
+    }
+
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        sort(intervals.begin(),intervals.end(),cmp);
+        vector<vector<int>>res;
+        int start=intervals[0][0];
+        int end=intervals[0][1];
+        for(int i=1;i<intervals.size();i++){
+            if(end>=intervals[i][0]){//可覆盖当前区间，更新end
+                //因为是覆盖，所以取最大右边界（贪心策略）
+                end=max(end,intervals[i][1]);
+            }else{
+                //无法覆盖，重置start和end
+                res.push_back({start,end});
+                start=intervals[i][0];
+                end=intervals[i][1];
+            }
+        }
+        //由于判断完最后一个区间后就退出循环，还未来得及加入结果集，因此循环结束后单独加入
+        res.push_back({start,end});
+        return res;
+    }
+};
+```
+
