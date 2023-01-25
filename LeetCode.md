@@ -3791,3 +3791,134 @@ public:
 };
 ```
 
+16. LeetCode738.单调递增的数字
+
+```cpp
+思路：
+1.当出现strNum[i-1]>strNum[i]时，让strNum[i-1]--，然后strNum[i]=9，即局部最优。
+2.遍历顺序：从右向左（如果是从左向右遍历，无法保证strNum[i]--后，strNum[i]>str[i-1])）
+即无法保证局部最优传递下来。
+3.因为只要有一个strNum[i-1]>strNum[i]，strNum[i]就要置为9，为了保证单调递增，后面
+数位也必须置为9。因此，我们需要记录最高位的i(strNum[i-1]>strNum[i])
+class Solution {
+public:
+    int monotoneIncreasingDigits(int n) {
+        //转为字符串
+        string strNum=to_string(n);
+        //记录最高位i，让其后面数位都置为9
+        int flag=strNum.size();
+        //找最高数位i
+        for(int i=strNum.size()-1;i>0;i--){
+            if(strNum[i-1]>strNum[i]){
+                flag=i;//更新flag
+                strNum[i-1]--;//必须减1，不然就比原来的数大
+            }
+        }
+        for(int i=flag;i<strNum.size();i++){
+            strNum[i]='9';
+        }
+        return stoi(strNum);
+    }
+};
+```
+
+### 17. LeetCode714.买卖股票的最佳时机含手续费
+
+```cpp
+思路：
+每天有3种情况：
+buy：买入价格
+1.prices[i]+fee<buy：更新buy为最小买入价格
+2.prices[i]>buy：说明有利润可得。但是我们又无法确定当前是否为最大卖出价格，因此为了能
+够后悔，把buy更新为prices[i]，不加手续费，因为防止重复扣除手续费，后续遇到更高卖出价格
+时直接补上差价即可。
+3.prices[i]==buy：不做任何处理
+
+
+卡点：buy=prices[i]
+利润=prices[i]-buy
+假卖一次后，buy更新为prices[i]，下一次循环时和prices[i+1]+fee比较，下一次获取利润有
+两种情况。
+假设第j天最高卖出价格
+1.第i天真卖：下一次 利润=prices[j]-(prices[i+1]+fee)
+2.第i天假卖: 下一次 利润=prices[j]-prices[i]
+为了获取最大利润，肯定让buy=min(prices[i],prices[i+1]+fee)
+
+本质：
+当碰到一个高点时，真卖或假卖取决于后一天的prices[i+1]+fee是否足够小，能够比我假卖时的
+成本还要低
+class Solution {
+public:
+    int maxProfit(vector<int>& prices, int fee) {
+        int res=0;
+        int buy=prices[0]+fee;//最小买入价格
+        for(int i=1;i<prices.size();i++){
+            if(prices[i]+fee<buy){
+                //更新最低买入价格
+                buy=prices[i]+fee;
+            }
+            else if(prices[i]>buy){
+                res+=prices[i]-buy;//先记上一部分利润
+                buy=prices[i];//假卖
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 18. LeetCode968.监控二叉树
+
+```cpp
+思路：
+叶子节点不用放摄像头，从叶子节点开始看，局部最优推出全局最优。如果从根节点开始，只能省
+一个摄像头，从叶子节点开始可以省2^h个
+从底向上：后序遍历
+
+
+每个节点有3种状态：
+1.有覆盖(0)
+2.无覆盖(1)
+3.有摄像头(2)
+无摄像头拆分为0和1
+
+class Solution {
+public:
+    int res;
+
+    //0：有覆盖
+    //1：无覆盖
+    //2：有摄像头
+    //无摄像头拆分为0和1
+    int traversal(TreeNode*node){
+        //空节点是已覆盖状态
+        if(node==NULL){
+            return 0;
+        }
+
+        int left=traversal(node->left);//左孩子
+        int right=traversal(node->right);//右孩子
+
+        //左右有一个未被覆盖的，当前节点就要安装摄像头
+        if(left==1||right==1){
+            res++;
+            return 2;
+        }
+        //左右有一个摄像头，当前节点就是已被覆盖状态
+        if(left==2||right==2){
+            return 0;
+        }
+        //上述条件都不满足，left和right肯定都为0
+        //左右都是已被覆盖状态，说明都没有摄像头，当前节点未被覆盖
+        return 1;
+    }
+
+    int minCameraCover(TreeNode* root) {
+        res=0;
+        if(traversal(root)==1){//如果根节点是未被覆盖的状态，只能自己加一个摄像头了
+            res++;
+        }
+        return res;
+    }
+};
+```
