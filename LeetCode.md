@@ -3922,3 +3922,154 @@ public:
     }
 };
 ```
+
+九、动态规划
+
+### 1. LeetCode509. 斐波那契数
+
+```cpp
+1.动态规划
+class Solution {
+public:
+    int fib(int n) {
+        //边界情况
+        if(n<0){
+            return -1;
+        }
+        if(n==0){
+            return 0;
+        }
+
+        //dp[i]=F(i)
+        vector<int>dp(n+1);//0~n，n+1个数
+
+        //转移方程：F(n)=F(n-1)+F(n-2)
+        //所以先初始化F(1),F(0)
+        dp[0]=0;
+        dp[1]=1;
+
+        //完善动态规划表
+        for(int i=2;i<=n;i++){
+            dp[i]=dp[i-1]+dp[i-2];
+        }
+        return dp[n];
+    }
+};
+2.动态规划
+完善动态规划表的时候发现，只需要前两个数即可，所以我们只需要三个变量即可。
+空间复杂度从O(n)->O(1)
+class Solution {
+public:
+    int fib(int n) {
+        if(n<0){
+            return -1;
+        }
+
+        int a=0;//F(0)
+        int b=1;//F(1)
+        int c=a+b;//F(2)
+        while(n--){
+            c=a+b;
+            a=b;
+            b=c;
+        }
+        //在while循环中，相当于a/b/c都往后移了n个数
+        //所以最终a：F(n)，b：F(n+1)，c：F(n+2)
+        return a;
+    }
+};
+可能很多人不理解为什么返回a而不是c，其实只要代入一个案例进去算就明白了
+```
+
+### 2. LeetCode70. 爬楼梯
+
+```cpp
+1.动态规划表：
+class Solution {
+public:
+    int climbStairs(int n) {
+        //边界情况
+        if(n<1){
+            return 0;
+        }
+        if(n==1){
+            return 1;
+        }
+        
+        //dp[i]：到达i阶楼梯的方法数
+        vector<int>dp(n+1);//有dp[n]
+        dp[1]=1;
+        dp[2]=2;
+        //完善动态规划表
+        for(int i=3;i<=n;i++){
+            dp[i]=dp[i-1]+dp[i-2];
+        }
+        return dp[n];
+    }
+};
+2.动态规划：我们仍只需维护三个变量即可
+class Solution {
+public:
+    int climbStairs(int n) {
+        //边界情况
+        if(n<1){
+            return 0;
+        }
+        if(n==1){
+            return 1;
+        }
+        //注意要用long，不然c可能会溢出
+        long a=1;//F(1)
+        long b=2;//F(2)
+        long c=a+b;//F(3)
+        n-=1;//a往后(n-1)个数才是F(n)，所以n变成n-1
+        while(n--){
+            c=a+b;
+            a=b;
+            b=c;
+        }
+        return a;
+    }
+};
+```
+
+### 3. LeetCode746. 使用最小花费爬楼梯
+
+```cpp
+1.动态规划表
+class Solution {
+public:
+    int minCostClimbingStairs(vector<int>& cost) {
+        int n=cost.size();
+        //dp[i]：爬'到'第i阶楼梯所需最低费用
+        vector<int>dp(n+1);
+
+        //初始化dp，可以从下标为0或1的台阶开始爬楼梯
+        dp[0]=0;//从下标为0开始
+        dp[1]=0;//从下标为1开始
+        
+        //完善dp
+        for(int i=2;i<=n;i++){
+            dp[i]=min(dp[i-1]+cost[i-1],dp[i-2]+cost[i-2]);
+        }
+        return dp[n];
+    }
+};
+2.动态规划：只需维护三个变量
+class Solution {
+public:
+    int minCostClimbingStairs(vector<int>& cost) {
+        int a=0;
+        int b=0;
+        int c=0;
+        for(int i=2;i<=cost.size();i++){
+            //a是台阶更低的所需费用，所以和cost[i-2]搭配
+            c=min(a+cost[i-2],b+cost[i-1]);
+            a=b;
+            b=c;
+        }
+        //i向后移n-2位，c初始为F(2)，结束循环后刚好是F(n)
+        return c;
+    }
+};
+```
