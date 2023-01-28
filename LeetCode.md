@@ -4328,3 +4328,195 @@ public:
 };
 ```
 
+### 8. 背包问题
+
+```cpp
+0-1背包：
+有n件物品和一个最多能背重量为w 的背包。第i件物品的重量是weight[i]，得到的价值是value[i] 。每件物品只能用一次，求解将哪些物品装入背包里物品价值总和最大。
+
+思路：
+1.动态规划二维表：
+dp[i][j]：任意取0~i的物品，放假容量为j的背包里，价值总和最大值。
+2.转移方程：
+对于物品i：
+  2.1取物品i：dp[i][j]=dp[i-1][j](其实是背包当前容量无法再放入物品i)
+  2.2不取物品i：dp[i][j]=dp[i-1][j-weight[i]]+value[i](j-weight[i]是为物品i腾出空间)
+综上：dp[i][j]=max(dp[i-1][j],dp[i-1][j-weight[i]]+value[i])
+3.初始化dp：
+由转移方程可知，新dp值由左上角推得，所以先初始化第0行和第0列
+
+完整代码：
+int maxValueInBag(vector<int>weight,vector<int>value,int capacity){
+    //dp[i][j]：任意取0~i的物品，放假容量为j的背包里，价值总和最大值。
+    vector<vector<int>>dp(weight.size(),vector<int>(capacity+1));
+    
+    //初始化dp
+    for(int i=0;i<weight.size();i++){
+        //容量为0的情况下，什么都放不了，价值是0
+        dp[i][0]=0;
+    }
+    for(int j=weight[0];j<=capacity;j++){
+        dp[0][j]=value[0];
+    }
+    
+    //完善dp
+    for(int i=1;i<weight.size();i++){
+        for(int j=1;j<=capacity;j++){
+            if(j<weight[i])dp[i][j]=dp[i-1][j];
+            else dp[i][j]=max(dp[i-1][j],dp[i-1][j-weight[i]]+value[i]);
+            //腾出空间放入新物品的总价值不一定比不放入新物品的总价值大
+        }
+    }
+    return dp[weight.size()-1][capacity];
+}
+
+优化空间效率：滚动数组
+int maxValueInBag(vector<int>weight,vector<int>value,int capacity){
+    vector<int>dp(capacity+1);
+    //初始化dp
+    for(int j=weight[0];j<=capacity;j++){
+        dp[j]=value[0];
+    }
+    for(int i=1;i<weight.size();i++){
+        for(int j=capacity;j>=weight[i];j--){//因为依赖左上角值，所以从右往左遍历
+            //如果当前j<weight[i]，j--后必然也小于weight[i]，直接结束内层循环即可
+            dp[j]=max(dp[j],dp[j-weight[i]]+value[i]);
+        }
+    }
+    return dp[capacity];
+}
+```
+
+### 9. LeetCode416. 分割等和子集
+
+```cpp
+思路：
+转换成0-1背包问题，只要dp中有值等于sum/2的，就return true
+
+1. dp[i][j]：从0~i下标中组合起来的值不超过j的最大值
+2. dp[i][j]=max(dp[i-1][j],dp[i-1][j-nums[i]]+nums[i])
+3. 初始化dp
+    
+class Solution {
+public:
+    bool canPartition(vector<int>& nums) {
+        int sum=0;//nums总和
+        for(int i=0;i<nums.size();i++){
+            sum+=nums[i];
+        }
+        if(sum%2==1)return false;//奇数无法二分
+
+        //dp[i][j]：从0~i下标中组合起来的值不超过j的最大值
+        vector<vector<int>>dp(nums.size(),vector<int>((sum/2)+1));
+        
+        //初始化dp
+        for(int i=0;i<nums.size();i++){
+            dp[i][0]=0;
+        }
+        for(int j=nums[0];j<=sum/2;j++){
+            dp[0][j]=nums[0];
+        }
+
+        //完善dp
+        for(int i=1;i<nums.size();i++){
+            for(int j=1;j<=sum/2;j++){
+                if(j<nums[i])dp[i][j]=dp[i-1][j];
+                else dp[i][j]=max(dp[i-1][j],dp[i-1][j-nums[i]]+nums[i]);
+            }
+        }
+        //在整个nums数组(下标0~nums.size()-1)中，是否有能组成sum/2的集合
+        return dp[nums.size()-1][sum/2]==sum/2;
+    }
+};
+
+优化空间效率：滚动数组
+class Solution {
+public:
+    bool canPartition(vector<int>& nums) {
+        int sum=0;//nums总和
+        for(int i=0;i<nums.size();i++){
+            sum+=nums[i];
+        }
+
+        if(sum%2==1)return false;
+
+        vector<int>dp((sum/2)+1);
+        for(int j=nums[0];j<=sum/2;j++){
+            dp[j]=nums[0];
+        }
+        for(int i=1;i<nums.size();i++){
+            for(int j=sum/2;j>=nums[i];j--){
+                dp[j]=max(dp[j],dp[j-nums[i]]+nums[i]);
+            }
+        }
+        return dp[sum/2]==sum/2;
+    }
+};
+```
+
+### 10. LeetCode1049. 最后一块石头的重量 II
+
+```cpp
+思路：
+可把问题转变成将石头分成两堆且质量和尽可能相同，即靠近sum/2，这样两堆石头互相磨损完后，剩余石头质量最小。
+
+1. dp[i][j]：从0~i的石头中，取最靠近质量j的石头组合的质量和
+2. dp[i][j]=max(dp[i-1][j],dp[i-1][j-stones[i]]+stones[i])
+3. 初始化dp
+
+class Solution {
+public:
+    int lastStoneWeightII(vector<int>& stones) {
+        int sum=0;
+        for(int i=0;i<stones.size();i++){
+            sum+=stones[i];
+        }
+        int target=(sum+1)/2;//取较大的中间值，因为大的包含小的
+
+        //dp[i][j]：从0~i的石头中，取最靠近质量j的石头组合的质量和
+        vector<vector<int>>dp(stones.size(),vector<int>(target+1));
+
+        //初始化dp
+        for(int i=0;i<stones.size();i++){
+            dp[i][0]=0;
+        }
+        for(int j=stones[0];j<=target;j++){
+            dp[0][j]=stones[0];
+        }
+
+        //完善dp
+        for(int i=1;i<stones.size();i++){
+            for(int j=1;j<=target;j++){
+                if(j<stones[i])dp[i][j]=dp[i-1][j];
+                else dp[i][j]=max(dp[i-1][j],dp[i-1][j-stones[i]]+stones[i]);
+            }
+        }
+        return abs((sum-dp[stones.size()-1][target])-dp[stones.size()-1][target]);
+    }
+};
+
+优化空间效率：滚动数组
+class Solution {
+public:
+    int lastStoneWeightII(vector<int>& stones) {
+        int sum=0;
+        for(int i=0;i<stones.size();i++){
+            sum+=stones[i];
+        }
+        int target=(sum+1)/2;
+
+        vector<int>dp(target+1);
+        for(int j=stones[0];j<=target;j++){
+            dp[j]=stones[0];
+        }
+
+        for(int i=1;i<stones.size();i++){
+            for(int j=target;j>=stones[i];j--){
+                dp[j]=max(dp[j],dp[j-stones[i]]+stones[i]);
+            }
+        }
+        return abs((sum-dp[target])-dp[target]);
+    }
+};
+```
+
