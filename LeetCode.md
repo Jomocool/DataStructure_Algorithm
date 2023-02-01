@@ -4520,3 +4520,125 @@ public:
 };
 ```
 
+### 11. LeetCode494. 目标和
+
+```cpp
+思路：
+本题可分成两个组合，plus和minus，一个加正号，另一个加负号。
+plus-minus=target,plus+minus=sum=>plus=(target+sum)/2
+因此问题转变成在集合nums中找出和为plus的组合，即装满容量为(target+sum)/2的背包。把二维标准（+和-）转换成唯一标准（+），让集合nums里的元素组成我们的newTarget
+
+1.注意特殊情况：
+  1.1如果target+sum是奇数，(target+sum)/2无法精准取到，所以无解，return 0
+  1.2如果target的绝对值大于sum，无论如何都无法组合成target，也是无解
+2.因为每个物品（数字）只能用一次，所以是0-1背包问题，之前是装满的最大价值，但是现在求的是有几种方法装满背包。
+3.dp[i][j]：使用下标为[0,i]的数字装满容量为j的背包的方法数
+4.dp[i][j]=dp[i-1][j]+dp[i-1][j-nums[i]]：（j-nums[i]+nums[i]=j）
+5.初始化dp：dp[0][0]=1，因为dp[0][0]是一切递推结果的起源
+
+滚动数组：（如果用二维表需要考虑太多没必要的情况，防止堆溢出）
+class Solution {
+public:
+    int findTargetSumWays(vector<int>& nums, int target) {
+        //分成plus和minus
+        //plus-minus=target,plus+minus=sum=>new target=plus=(sum+target)/2
+        
+        int sum=0;//nums总和
+        for(int i=0;i<nums.size();i++){
+            sum+=nums[i];
+        }
+
+        //特殊情况
+        if((sum+target)%2==1||abs(target)>sum)return 0;
+        int newTarget=(sum+target)/2;
+
+        //dp[j]：装满容量为j的背包的方法数
+        vector<int>dp(newTarget+1);
+        //初始化dp
+        dp[0]=1;
+        //完善dp
+        for(int i=0;i<nums.size();i++){
+            for(int j=newTarget;j>=nums[i];j--){
+                dp[j]=dp[j]+dp[j-nums[i]];//取或不取的方法总数
+            }
+        }
+        return dp[newTarget];
+    }
+};
+```
+
+### 12. LeetCode474. 一和零
+
+```cpp
+1.dp[i][j]：最多有i个0和j个1的最大子集大小
+2.dp[i][j]=max(dp[i][j],dp[i-count0][j-count1]+1)
+3.初始化dp
+4.遍历顺序：外层遍历物品(strs)，内层遍历背包容量(count0,count1)
+
+滚动二维表：
+class Solution {
+public:
+    pair<int,int>getZeroOne(string& str){
+        int count0=0;
+        int count1=0;
+        for(int i=0;i<str.length();i++){
+            if(str[i]=='0')count0++;
+            else count1++;
+        }
+        return {count0,count1};
+    }
+
+    int findMaxForm(vector<string>& strs, int m, int n) {
+        //dp[i][j]：最多有i个0和j个1的最大子集大小
+        vector<vector<int>>dp(m+1,vector<int>(n+1));
+        //初始化dp，初始全为0即可
+        //完善dp
+        for(string&str:strs){//遍历物品
+            pair<int,int>data=getZeroOne(str);
+            for(int i=m;i>=data.first;i--){
+                for(int j=n;j>=data.second;j--){//从后向前遍历背包容量
+                    dp[i][j]=max(dp[i][j],dp[i-data.first][j-data.second]+1);
+                }
+            }
+        }
+        return dp[m][n];
+    }
+};
+```
+
+### 13. 完全背包
+
+```cpp
+完全背包：有N件物品和一个最多能背重量为W的背包。第i件物品的重量是weight[i]，得到的价值是value[i] 。每件物品都有无限个（也就是可以放入背包多次），求解将哪些物品装入背包里物品价值总和最大。
+
+完全背包与0-1背包唯一不同的是：完全背包每件物品有无限件。
+```
+
+### 14. LeetCode518. 零钱兑换 II
+
+```cpp
+1.dp[i][j]：用下标为0~i的硬币组成j的组合数
+2.dp[i][j]=dp[i-1][j]+dp[i-1][j-n*coins[i]]：（n：因为物品无限，所以需要记录物品数n）
+3.初始化dp：dp[0][n*coints[0]]=1，dp[i][0]=1;（只有一个硬币都不取才能组成0）
+4.遍历顺序：先遍历物品，在遍历容量
+
+滚动数组：
+class Solution {
+public:
+    int change(int amount, vector<int>& coins) {
+        //dp[j]：拼成j的组合数
+        vector<int>dp(amount+1);
+        //初始化dp
+        dp[0]=1;
+        //完善dp
+        for(int i=0;i<coins.size();i++){//遍历物品
+            for(int j=coins[i];j<=amount;j++){//遍历背包
+                //后面的方法数需要前面方法数推得，所以从前向后遍历
+                dp[j]+=dp[j-coins[i]];
+            }
+        }
+        return dp[amount];
+    }
+};
+```
+
