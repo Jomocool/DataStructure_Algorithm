@@ -4633,8 +4633,9 @@ public:
         //完善dp
         for(int i=0;i<coins.size();i++){//遍历物品
             for(int j=coins[i];j<=amount;j++){//遍历背包
-                //假设在二维表中，取n个coins[i]组成j的方法数由n-1个coins[i]递归而得
+                //假设在二维表中，取n个coins[i]组成j的方法数由n-1个coins[i]递推而得
                 //dp[i][j]需要用到同一行的dp值，因此在滚动数组中，先更新前面再由前面推得后面，使后面的dp值更新
+		//组成j：既可以不取coins[i](dp[j]),也可以比前一次多取一个coins[i](dp[j-coins[i]])
                 dp[j]+=dp[j-coins[i]];//因为是求方法数，所以要累加起来
         }
         return dp[amount];
