@@ -4781,3 +4781,273 @@ j^2不是j的平方，而是j异或2
 ```
 
 **总结：**题目要我们返回什么结果，动态规划表就表达什么意思。注意遍历顺序：如果是求组合数，就外物品内背包；如果是求组合数，就外背包内物品
+
+### 19. LeetCode139. 单词拆分
+
+```cpp
+思路：
+wordDict是物品，s是背包，本题问wordDict里的单词能否组成s，意思就是物品word能否装满背包s，单词可以重复使用，所以就是完全背包。
+1.dp[i]：s.substr(0,i)可以被wordDict中的单词组成
+2.
+dp[i]=dp[i]||(dp[i-wordDict[j].length()]&&s.substr(i-wordDict[j].length()+1,wordDic[j].length())==wordDict[j])
+3.初始化dp：dp[0]=true，因为dp[0]是基础值，如果为false后面所有都会推得为false
+4.遍历顺序：外背包，内物品：由于{leet，code}和{code，leet}拼成单词不同，所以物品是有顺序的，因此求得是排列个数。
+class Solution {
+public:
+    bool wordBreak(string s, vector<string>& wordDict) {
+        //dp[i]：s.substr(0,i)可以被wordDict中的单词组成
+        //因为转移方程减去的是单词的长度，所以i也表示长度才不容易混淆
+        vector<bool>dp(s.length()+1,false);
+        //初始化dp
+        dp[0]=true;
+        //完善dp
+        for(int i=1;i<=s.length();i++){
+            for(int j=0;j<wordDict.size();j++){
+                //字符串长度类型是unsigned int，
+                //int类型和unsigned int类型做运算时结果是unsigned int，永大于等于0
+                //所以要先转成int
+                if(i-(int)wordDict[j].length()>=0){
+                    //substr(起始下标，截取长度)
+                    string tmp=s.substr(i-wordDict[j].length(),wordDict[j].length());
+                    dp[i]=dp[i]||(dp[i-wordDict[j].length()]&&tmp==wordDict[j]);
+                }
+            }
+        }
+        return dp[s.length()];
+    }
+};
+```
+
+### 20. 多重背包
+
+```cpp
+多重背包：有N种物品和一个容量为V 的背包。第i种物品最多有Mi件可用，每件耗费的空间是Ci ，价值是Wi 。求解将哪些物品装入背包可使这些物品的耗费的空间 总和不超过背包容量，且价值总和最大。
+
+多重背包类似于0-1背包，物品都是有限个的，只要把物品摊开就是0-1背包了，只不过有多件相同的物品。
+
+int multiBagValue(vector<int>&weight,vector<int>&value,vector<int>&nums,int bagWeight){
+    //dp[j]：装满容量为j的背包的最大价值
+    vector<int>dp(bagWeight+1);
+    //初始化dp
+    //完善dp，求放入物品总价值，组合数和排列数没有区别
+    for(int i=0;i<weight.size();i++){
+        for(int j=bagWeight;j>=weight[i];j--){
+            //从放入1个开始算，因为dp[j]初始值就是放入0个物品i的值
+            for(int k=1;k<=nums[i]&&j-k*weight[i]>=0;k++){
+                dp[j]=max(dp[j],dp[j-k*weight[i]]+k*value[i]);
+            }
+        }
+    }
+    return dp[bagWeight];
+}
+```
+
+### 21.LeetCode198. 打家劫舍
+
+```cpp
+思路：
+1.dp[i]：经过第i家时，偷或不偷（二选一）的最大累积收获
+2.dp[i]=max(dp[i-1],dp[i-2]+nums[i])
+3.初始化dp：dp[0]=nums[0]，dp[1]=max(dp[0]，nums[1])
+class Solution {
+public:
+    int rob(vector<int>& nums) {
+        //特殊情况
+        if(nums.size()==1){
+            return nums[0];
+        }
+        //dp[i]：经过第i家时，偷或不偷（二选一）的最大累积收获
+        vector<int>dp(nums.size());
+        //初始化dp
+        dp[0]=nums[0];//在第0家肯定是偷有最大收获
+        dp[1]=max(dp[0],nums[1]);//在第1家要判断在第0家偷收获大，还是在当前偷收获更大
+        //完善dp
+        for(int i=2;i<nums.size();i++){
+            dp[i]=max(dp[i-1],dp[i-2]+nums[i]);
+        }
+        return dp[nums.size()-1];
+    }
+};
+```
+
+### 22. LeetCode213. 打家劫舍 II
+
+```cpp
+思路：
+1.情况一：考虑不包含首尾元素(只是考虑包不包含，还不确定，下面同理)(1,nums.size()-2)
+2.情况二：考虑包含首元素，不包含尾元素(0,nums.size()-2)
+3.情况三：考虑不包含首元素，包含尾元素(1,nums.size()-1)
+最终决定偷或不偷的属于完善dp表的工作
+情况二和情况三都包含了情况一，所以只需考虑情况二和情况三：
+(1,nums.size()-2)∈(0,nums.size()-2)&&(1,nums.size()-2)∈(1,nums.size()-1)
+
+class Solution {
+public:
+    int robRotate(vector<int>&nums,int start,int end){
+        //dp[i]：经过下标为i的屋舍，偷或不偷的最大累积收入
+        vector<int>dp(end+1);
+        //初始化dp
+        dp[start]=nums[start];
+        dp[start+1]=max(dp[start],nums[start+1]);
+        for(int i=start+2;i<=end;i++){//注意从start+2开始，因为基础值为dp[start]和dp[start+1]
+            dp[i]=max(dp[i-1],dp[i-2]+nums[i]);
+        }
+        return dp[end];
+    }
+
+    int rob(vector<int>& nums) {
+        if(nums.size()==1){
+            return nums[0];
+        }
+        if(nums.size()==2){
+            return max(nums[0],nums[1]);
+        }
+        int rob1=robRotate(nums,0,nums.size()-2);//情况二
+        int rob2=robRotate(nums,1,nums.size()-1);//情况三
+        return max(rob1,rob2);
+    }
+};
+```
+
+### 23. LeetCode337. 打家劫舍 III
+
+```cpp
+1.暴力递归：
+class Solution {
+public:
+    int rob(TreeNode* root) {
+        if(root==NULL)return 0;
+        //叶子节点没有左右孩子且没有被跳过，所以肯定会被偷
+        if(root->left==NULL&&root->right==NULL)return root->val;
+
+        //偷父节点
+        int val1=root->val;
+        if(root->left)val1+=rob(root->left->left)+rob(root->left->right);//跳过左孩子
+        if(root->right)val1+=rob(root->right->left)+rob(root->right->right);//跳过右孩子
+
+        //不偷父节点
+        int val2=0;
+        val2+=rob(root->left)+rob(root->right);
+
+        return max(val1,val2);
+    }
+};
+代码超时了，因为有重复计算（当前节点已经计算过孩子节点的孩子节点，但是当前节点的孩子节点会再算一遍其孩子节点）
+
+2.记忆化递推：
+class Solution {
+public:
+    map<TreeNode*,int>recorded;//记录已经计算过的节点
+    int rob(TreeNode* root) {
+        if(root==NULL)return 0;
+        if(root->left==NULL&&root->right==NULL)return root->val;
+        if(recorded[root])return recorded[root];
+
+        //偷父节点
+        int val1=root->val;
+        if(root->left)val1+=rob(root->left->left)+rob(root->left->right);//跳过左孩子
+        if(root->right)val1+=rob(root->right->left)+rob(root->right->right);//跳过右孩子
+
+        //不偷父节点
+        int val2=0;
+        val2+=rob(root->left)+rob(root->right);
+        
+        recorded[root]=max(val1,val2);
+        return max(val1,val2);
+    }
+};
+
+3.动态规划：
+(1)确定递归函数的参数和返回类型
+用大小为2的数组记录当前节点偷与不偷的最大金额
+dp[0]：不偷该节点的最大金额
+dp[1]：偷该节点的最大金额
+(2)终止条件
+if(node==NULL)return {0,0};
+(3)遍历顺序
+后序遍历
+(4)单层递归逻辑
+偷当前节点：左右孩子就不能偷
+不偷当前节点：左右孩子就可以偷（当不一定就必须要偷，选一个最大值）
+
+class Solution {
+public:
+    vector<int>process(TreeNode*node){
+        if(node==NULL)return {0,0};
+        vector<int>left=process(node->left);//左子树信息
+        vector<int>right=process(node->right);//右子树信息
+
+        //当前层逻辑
+        int val1=node->val+left[0]+right[0];//偷当前节点
+        int val2=max(left[0],left[1])+max(right[0],right[1]);//不偷当前节点
+
+        return {val2,val1};
+    }
+
+    int rob(TreeNode* root) {
+        vector<int>data=process(root);
+        return max(data[0],data[1]);
+    }
+};
+
+2和3的时间复杂度都是O(n)：每个节点都只遍历的一次
+```
+
+### 24. LeetCode121. 买卖股票的最佳时机
+
+```cpp
+1.贪心算法：
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int minCost=INT_MAX;
+        int res=INT_MIN;
+        for(int i=0;i<prices.size();i++){
+            minCost=min(minCost,prices[i]);
+            res=max(res,prices[i]-minCost);//必须在卖出前买入
+        }
+        return res;
+    }
+};
+
+2.动态规划：每天只可能有两种状态（持有或不持有股票）
+(1)dp[i][0]：第i天持有股票的所得最多现金（持有不是买入，可能前一天就持有了）- 历史最低值
+   dp[i][1]：第i天不持有股票所得最多现金（可能今天卖出。也可能前一天就不持有股票）- 历史最高利润 
+(2)dp[i][0]=max(dp[i-1][0],-prices[i])
+   dp[i][1]=max(dp[i-1][1],prices[i]+dp[i-1][0]);
+(3)初始化dp
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        //dp[i][0]：第i天持有股票的所得最多现金（持有不是买入，可能前一天就持有了）- 历史最低值
+        //dp[i][1]：第i天不持有股票所得最多现金（可能今天卖出或前一天就不持有股票）- 历史最高利润
+        vector<vector<int>>dp(prices.size(),vector<int>(2));
+        //初始化dp,dpp0][1]初始值就是0，因为没有前一天，没有买入就一定没有卖出，所以是0
+        dp[0][0]=-prices[0];//没有前一天，所以肯定是当天买入股票
+        //完善dp
+        for(int i=1;i<prices.size();i++){
+            dp[i][0]=max(dp[i-1][0],-prices[i]);
+            dp[i][1]=max(dp[i-1][1],prices[i]+dp[i-1][0]);
+        }
+        return dp[prices.size()-1][1];
+    }
+};
+
+滚动数组：
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        vector<vector<int>>dp(1,vector<int>(2));
+        dp[0][0]=-prices[0];
+        for(int i=1;i<prices.size();i++){
+            int pre=dp[0][0];
+            dp[0][0]=max(dp[0][0],-prices[i]);
+            //不能用新的dp[0][0]，因为是当天的，所以提前用pre记录之前的dp[0][0]
+            dp[0][1]=max(dp[0][1],prices[i]+pre);
+        }
+        return dp[0][1];
+    }
+};
+```
+
