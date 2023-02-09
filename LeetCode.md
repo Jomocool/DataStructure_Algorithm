@@ -5038,15 +5038,196 @@ public:
 class Solution {
 public:
     int maxProfit(vector<int>& prices) {
-        vector<vector<int>>dp(1,vector<int>(2));
-        dp[0][0]=-prices[0];
+        //dp[i][0]：第i天持有股票所得现金
+        //dp[i][1]：第i天不持有股票所得最多现金
+        vector<int>dp(2);
+
+        //初始化
+        dp[0]=-prices[0];
+        dp[1]=0;
+
+        //完善dp
         for(int i=1;i<prices.size();i++){
-            int pre=dp[0][0];
-            dp[0][0]=max(dp[0][0],-prices[i]);
-            //不能用新的dp[0][0]，因为是当天的，所以提前用pre记录之前的dp[0][0]
-            dp[0][1]=max(dp[0][1],prices[i]+pre);
+            dp[1]=max(dp[1],dp[0]+prices[i]);
+            dp[0]=max(dp[0],dp[1]-prices[i]);
         }
-        return dp[0][1];
+
+        return dp[1];  
+    }
+};
+```
+
+### 25. LeetCode122. 买卖股票的最佳时机 II
+
+```cpp
+思路：
+每天只可能有两种状态：持有或不持有股票
+持有股票：今天之前就已经买入，或者今天买入，选能够让现金最多的情况，因为dp[i][0]越大，说明买入价格越低
+不持有股票：今天之前就不持有，或者今天卖出，选能够让现金最多的情况，因为dp[i][1]越大，说明利润越高
+
+1.dp[i][0]：第i天持有股票所得现金
+  dp[i][1]：第i天不持有股票所得最多现金
+2.dp[i][0]=max(dp[i-1][0],dp[i-1][1]-prices[i])
+    由于本题的股票可以买卖多次，所以第i天买入股票时，所持有的现金可能包含之前买卖过的利润，则dp[i][0]=dp[i-1][1]-prices[i]     dp[i][1]=max(dp[i-1][1],dp[i-1][0]+prices[i])
+    第i-1天就不持有股票，或者第i天卖出股票，dp[i-1][0]已经减去过买入股票的价格，加上prices[i]刚好就是买卖一次股票的利润
+3.初始化dp：
+dp[0][0]=-prices[0]：第0天之前不可能买入股票，所以第0天必须买入股票
+dp[0][1]=0：第0天不持有股票的唯一选择就是不买入
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        //dp[i][0]：第i天持有股票所得现金
+        //dp[i][1]：第i天不持有股票所得最多现金
+        vector<vector<int>>dp(prices.size(),vector<int>(2));
+
+        //初始化
+        dp[0][0]=-prices[0];
+        dp[0][1]=0;
+
+        //完善dp
+        for(int i=1;i<prices.size();i++){
+            dp[i][0]=max(dp[i-1][0],dp[i-1][1]-prices[i]);
+            dp[i][1]=max(dp[i-1][1],dp[i-1][0]+prices[i]);
+        }
+
+        return dp[prices.size()-1][1];  
+    }
+};
+
+滚动数组：
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        //dp[i][0]：第i天持有股票所得现金
+        //dp[i][1]：第i天不持有股票所得最多现金
+        vector<int>dp(2);
+
+        //初始化
+        dp[0]=-prices[0];
+        dp[1]=0;
+
+        //完善dp
+        for(int i=1;i<prices.size();i++){
+            int pre=dp[0];//记录前一天的dp[0][0]，用于计算dp[0][1]
+            dp[0]=max(dp[0],dp[1]-prices[i]);
+            dp[1]=max(dp[1],dp[0]+prices[i]);
+        }
+
+        return dp[1];  
+    }
+};
+```
+
+### 26. LeetCode123. 买卖股票的最佳时机 III
+
+```  cpp
+思路：
+每天可能有四个状态
+持有股票：第一次持有或第二次持有
+不持有股票：第一次不持有或第二次不持有
+0.第一次持有股票
+1.第一次不持有股票
+2.第二次持有股票
+3.第二次不持有股票
+
+定义dp
+dp[i][0]：第一次持有股票最多现金
+dp[i][1]：第一次不持有股票所得最多现金
+dp[i][2]：第二次持有股票最多现金
+dp[i][3]：第二次不持有股票所得最多现金
+
+转移方程：
+dp[i][0]=max(dp[i-1][0],-prices[i])：
+第一次持有股票可能是今天之前就已经持有，也可能是今天买入（昨天是不持有股票状态）
+注意和上一题的区别，因为本题最多完成两笔交易，意味着可以有0/1/2次交易。意味着第一次持有股票时，现金数必定是-prices[i]，而不能用所得利润取购入，因为第一次持有股票之前肯定没有交易完成。
+dp[i][1]=max(dp[i-1][1],dp[i-1][0]+prices[i])：
+第一次不持有股票可能是今天之前就已经卖出，也可能是今天卖出（昨天是持有股票状态）
+dp[i][2]=max(dp[i-1][2],dp[i-1][1]-prices[i])：
+第二次持有股票是建立在第一次股票已经卖出的情况下，所以使用第一次已经卖出股票的利润来买入第二次股票。也可能是今天之前已经第二次买入
+dp[i][3]=max(dp[i-1][3],dp[i-1][2]+prices[i])：
+第二次不持有股票建立在第二次股票已经买入的情况下。也可能今天之前就已经第二次卖出股票。取最大值保存最大利润
+
+初始化dp：
+dp[0][0]=-prices[0];//第0天第一次只能买入
+dp[0][1]=0;//第0天第一次不持有股票的情况下只能不买入，所以是原始财产0
+dp[0][2]=-prices[0];//第0天第一次买入后再同一天卖出，之后第二次买入，便是第二次持有股票了
+dp[0][3]=0;//第0天第二次不持有股票，即第二次不买入
+
+遍历顺序：先更新那些不需要作为其他dp值基础的值
+
+滚动数组：
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        /*
+        dp[i][0]：第一次持有股票最多现金
+        dp[i][1]：第一次不持有股票所得最多现金
+        dp[i][2]：第二次持有股票最多现金
+        dp[i][3]：第二次不持有股票所得最多现金
+        */
+        vector<int>dp(4);
+
+        //初始化dp
+        dp[0]=-prices[0];
+        dp[1]=0;
+        dp[2]=-prices[0];
+        dp[3]=0;
+
+        //完善dp
+        for(int i=1;i<prices.size();i++){         
+            dp[3]=max(dp[3],dp[2]+prices[i]);
+            dp[2]=max(dp[2],dp[1]-prices[i]);
+            dp[1]=max(dp[1],dp[0]+prices[i]);
+            dp[0]=max(dp[0],-prices[i]);//第一次持有股票之前没有交易完成，不能用利润去购买
+        }
+
+        return dp[3];
+    }
+};
+```
+
+### 27. LeetCode188. 买卖股票的最佳时机 IV
+
+```cpp
+思路：
+1.dp[i][j]：第i天的状态为j时，所得最多现金
+  j的状态：奇数为买，偶数为卖
+    0.不操作，保证除了可以完成k次交易外，还可以完成0/1/2/3/.../k-1次交易，并不是固定k次交易，满足题意最多k次交易
+    1.第一次买入
+    2.第一次卖出
+    3.第二次买入
+    4.第二次卖出
+    ……
+  j的范围：2*k+1
+2.dp[i][j+1]=max(dp[i-1][j+1],dp[i-1][j]-prices[i])：用上一次卖出股票的利润买入这次股票
+  dp[i][j+2]=max(dp[i-1][j+2],dp[i-1][j+1]+prices[i])：用上一次买入股票后剩余现金加上当前股票值就是这次卖出所得利润
+3.初始化dp
+  dp[0][奇]=-prices[0];
+  dp[0][偶]=0;
+
+class Solution {
+public:
+    int maxProfit(int k, vector<int>& prices) {
+        if(prices.size()==0||k==0){
+            return 0;
+        }
+        //dp[i][j]：第i天的状态为j时，所得最多现金
+        vector<vector<int>>dp(prices.size(),vector<int>(2*k+1));
+        //初始化dp
+        for(int j=1;j<2*k+1;j+=2){
+            dp[0][j]=-prices[0];
+        }
+        //完善dp
+        for(int i=1;i<prices.size();i++){
+            for(int j=0;j<2*k-1;j+=2){
+                dp[i][j+1]=max(dp[i-1][j+1],dp[i-1][j]-prices[i]);//可能今天之前就买入了
+                dp[i][j+2]=max(dp[i-1][j+2],dp[i-1][j+1]+prices[i]);//可能今天直接就卖出了
+                //j+2<2*k+1 => j<2*k-1
+            }
+        }
+        //最终返回值是：最多完成k次交易后所得最多现金，可能只完成了k-j(j:0~k)次交易后，最大值延续到最后一天
+        return dp[prices.size()-1][2*k];
     }
 };
 ```
