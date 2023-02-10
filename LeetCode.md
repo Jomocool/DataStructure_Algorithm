@@ -5088,7 +5088,7 @@ public:
         //完善dp
         for(int i=1;i<prices.size();i++){
             dp[i][0]=max(dp[i-1][0],dp[i-1][1]-prices[i]);
-            dp[i][1]=max(dp[i-1][1],dp[i-1][0]+prices[i]);
+            dp[i][1]=max(dp[i-1][1],dp[i-1][0]+prices[i]);//有利润就卖出，保证在最短的时间内完成交易，且每次交易利润为正
         }
 
         return dp[prices.size()-1][1];  
@@ -5228,6 +5228,45 @@ public:
         }
         //最终返回值是：最多完成k次交易后所得最多现金，可能只完成了k-j(j:0~k)次交易后，最大值延续到最后一天
         return dp[prices.size()-1][2*k];
+    }
+};
+```
+
+### 28. LeetCode309. 最佳买卖股票时机含冷冻期
+
+```cpp
+思路：
+每天有3个状态：
+0.持有股票
+1.保持卖出股票状态（进入冷冻期前，一定卖出了股票，在冷冻期后，不一定就要买入股票（因为不确认是否一定有利润获取），所以保持卖出状态）
+2.卖出股票状态（当天卖出了股票）
+3.冷冻期
+因为多了一个冷冻期，所以把不持有股票状态分开计算。1和2状态合起来就是不持有股票状态，如果统合起来为不持有股票状态，就分不清是今天之前的哪一天卖出了股票，所以也就无法确认今天能否买入股票。
+
+1.dp[i][j]：第i天为j状态时的最多现金
+2.初始化dp：
+  dp[0][0]=-prices[0]
+  dp[0][1]=0
+  dp[0][2]=0
+  dp[0][3]=0
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        //dp[i][j]：第i天为j状态时的最多现金
+        vector<vector<int>>dp(prices.size(),vector<int>(4));
+        //初始化dp
+        dp[0][0]=-prices[0];
+        //完善dp
+        for(int i=1;i<prices.size();i++){
+            //dp[i][0]不能用dp[i-1][2]推得的原因：
+            //dp[i-1][2]是第i-1天具体卖出的现金，卖出后的第一天是冷冻期，不能买入，只有过了一天冷冻期后才行
+            dp[i][0]=max(dp[i-1][0],max(dp[i-1][1]-prices[i],dp[i-1][3]-prices[i]));
+            dp[i][1]=max(dp[i-1][1],dp[i-1][3]);//保持卖出状态的上一个状态一定是冷冻期
+            dp[i][2]=dp[i-1][0]+prices[i];//今天卖出
+            dp[i][3]=dp[i-1][2];//具体卖出后的一天是冷冻期
+        }
+        return max(dp[prices.size()-1][1],max(dp[prices.size()-1][2],dp[prices.size()-1][3]));
     }
 };
 ```
