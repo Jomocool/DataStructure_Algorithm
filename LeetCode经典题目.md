@@ -1,4 +1,4 @@
-# LeetCode
+# LeetCode经典题目
 
 ## 一、数组
 
@@ -5267,6 +5267,61 @@ public:
             dp[i][3]=dp[i-1][2];//具体卖出后的一天是冷冻期
         }
         return max(dp[prices.size()-1][1],max(dp[prices.size()-1][2],dp[prices.size()-1][3]));
+    }
+};
+```
+
+### 29. LeetCode714. 买卖股票的最佳时机含手续费
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/15.png)
+
+```cpp
+1.dp含义：
+  dp[i][0]：第i天持有股票时的最多现金
+  dp[i][1]：第i天不持有股票时的最多现金
+2.转移方程：
+  dp[i][0]=max(dp[i-1][0],dp[i-1][1]-prices[i])：
+  (1)今天之前就已经持有股票
+  (2)今天买入股票，因为不限制交易次数，所以为了记录总利润，用之前买卖股票所得利润买入股票
+  当天价格越低，dp[i-1][1]-prices[i]就越大，买入后获取利润值更大
+  
+  dp[i][1]=max(dp[i-1][1],dp[i-1][0]+prices[i]-fee)：
+  (1)今天之前就已经不持有股票
+  (2)今天卖出股票，因为买入股票时已经在总利润里减去了买入价格，再加上卖出价格，差价就是利润了，注意还要减去手续费
+  当天价格越高，dp[i-1][0]+prices[i]-fee就越大，利润也就更大
+3.初始化dp：
+  dp[0][0]=-prices[i]：第0天持有股票只能买入股票
+  dp[0][1]=0：不持有股票只能不买，或者买入后卖出，由于交易有手续费，肯定是不买所得现金最多。
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices, int fee) {
+        //dp[i][0]：第i天持有股票时的最多现金
+        //dp[i][1]：第i天不持有股票时的最多现金
+        vector<vector<int>>dp(prices.size(),vector<int>(2));
+        //初始化dp
+        dp[0][0]=-prices[0];
+        //完善dp
+        for(int i=1;i<prices.size();i++){
+            dp[i][0]=max(dp[i-1][0],dp[i-1][1]-prices[i]);
+            dp[i][1]=max(dp[i-1][1],dp[i-1][0]+prices[i]-fee);
+        }
+        return dp[prices.size()-1][1];
+    }
+};
+
+滚动数组：
+class Solution {
+public:
+    int maxProfit(vector<int>& prices, int fee) {
+        vector<int>dp(2);
+        dp[0]=-prices[0];
+        for(int i=1;i<prices.size();i++){
+            int pre=dp[0];
+            dp[0]=max(dp[0],dp[1]-prices[i]);
+            dp[1]=max(dp[1],pre+prices[i]-fee);
+        }
+        return dp[1];
     }
 };
 ```
