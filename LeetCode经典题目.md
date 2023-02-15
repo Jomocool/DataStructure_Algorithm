@@ -5326,3 +5326,211 @@ public:
 };
 ```
 
+### 30. LeetCode300. 最长递增子序列
+
+```cpp
+思路：
+1.dp含义：
+dp[i]：集合nums从下标0到下标i并且以nums[i]结尾的最长递增子序列长度
+(1)为什么能够以nums[i]结尾？因为每个递增子序列必定是以集合nums中的其中一个元素结尾。
+(2)为什么一定要以nums[i]结尾？因为在递推时，我们需要与前一个递增子序列作比较，而只有知道尾元素大小才能有效地比较。
+2.转移方程：
+if(nums[j]<nums[i])dp[i]=max(dp[i],dp[j]+1);//j：0~(i-1)
+3.初始化dp：
+dp[0]=1;
+
+方法一：动态规划
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        if(nums.size()<=1)return nums.size();
+        //dp[i]：集合nums从下标0到下标i并且以nums[i]结尾的最长递增子序列长度
+        vector<int>dp(nums.size(),1);//基础长度是1
+        int res=0;
+        //完善dp
+        for(int i=1;i<nums.size();i++){
+            for(int j=0;j<i;j++){
+                if(nums[j]<nums[i])dp[i]=max(dp[i],dp[j]+1);//保留以nums[i]结尾最大长度
+            }
+            res=max(dp[i],res);//保留整体集合最长递增子序列长度
+        }
+        return res;
+    }
+};
+时间复杂度：O(n^2)
+空间复杂度：O(n)
+
+方法二：贪心+动态规划
+ends[i]：所有长度为i+1的递增子序列的尾元素最小值，且ends[i]必定小于ends[i+1]
+为什么ends[i]<ends[i+1]？设以ends[i]、ends[i+1]结尾的递增子序列分别为subSequence1（长度为i+1），subSequence2（长度为i+2），
+假设ends[i]>ends[i+1]，即subSequence1[i]>subSequence2[i+1]，由于递增，
+所以subSequence1[i]>subSequence2[i+1]>subSequence2[i] => subSequence1[i]>subSequence2[i]
+则 ends[i]=subSequence2[i]，有矛盾，所以假设不成立。
+
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        if(nums.size()<=1)return nums.size();
+        //ends[i]：所有长度为i+1的递增子序列的尾元素最小值，且ends[i]必定小于ends[i+1]
+        vector<int>ends(nums.size());
+        ends[0]=nums[0];
+        int right=0;
+        for(int i=1;i<nums.size();i++){
+            //长度最长的递增子序列尾元素小于nums[i]，有效区域右移，并记录最小尾元素
+            if(ends[right]<nums[i]){
+                ends[++right]=nums[i];
+            }
+            else{
+                int l=0;
+                while(l<right&&ends[l]<nums[i]){//找到ends最左边比nums[i]大的尾元素
+                    l++;
+                }
+                //退出循环有两种情况，只有第二种情况才能赋值
+                if(ends[l]>nums[i])ends[l]=nums[i];
+            }
+        }
+        //ends[right]是"长度为right+1"的递增子序列的最小尾元素
+        return right+1;
+    }
+};
+时间复杂度：O(n*logn)
+空间复杂度：O(n)
+```
+
+### 31. LeetCode674. 最长连续递增序列
+
+```cpp
+1.dp[i]：以nums[i]结尾的连续递增序列长度
+2.if(nums[i]>nums[i-1])dp[i]=dp[i-1]+1：因为是连续的，所以只需要考虑nums[i]是否比nums[i-1]大就行了（贪心）
+3.初始化dp：全都初始化成1，因为至少包含nums[i]
+
+动态规划：
+class Solution {
+public:
+    int findLengthOfLCIS(vector<int>& nums) {
+        if(nums.size()<=1)return nums.size();
+        //dp[i]：以nums[i]结尾的连续递增序列长度
+        vector<int>dp(nums.size(),1);
+        int res=INT_MIN;
+        //完善dp
+        for(int i=1;i<nums.size();i++){
+            if(nums[i]>nums[i-1])dp[i]=dp[i-1]+1;
+            res=max(res,dp[i]);//记录最长连续递增序列长度
+        }
+        return res;
+    }
+};
+
+贪心：
+class Solution {
+public:
+    int findLengthOfLCIS(vector<int>& nums) {
+        if(nums.size()<=1)return nums.size();
+        int count=1;//记录过程中个递增序列长度
+        int res=INT_MIN;//记录最长递增序列长度
+        for(int i=1;i<nums.size();i++){
+            if(nums[i]>nums[i-1])count++;
+            else count=1;//重新取递增序列头元素
+            res=max(res,count);
+        }
+        return res;
+    }
+};
+
+与前一题的区别是：
+本题dp[i]状态之和dp[i-1]有关，因为是连续的。
+而前一题因为是不连续的，所以dp[i]状态和dp[0]/dp[1]/.../dp[i-1]都有关系
+```
+
+### 32. LeetCode18. 最长重复子数组
+
+```cpp
+1.dp[i][j]：以nums1[i]结尾的nums1和以nums2[j]结尾的nums2的重复子数组长度
+2.if(nums1[i]==nums[j])dp[i][j]=dp[i-1][j-1]+1;
+  else dp[i][j]=0;
+3.初始化dp
+
+普通动态规划二维表：
+class Solution {
+public:
+    int findLength(vector<int>& nums1, vector<int>& nums2) {
+        //长度是1，看唯一元素是否相同
+        if(nums1.size()==1&&nums2.size()==1)return nums1[0]==nums2[0]?1:0;
+        //dp[i][j]：以nums1[i]结尾的nums1和以nums2[j]结尾的nums2的重复子数组长度
+        vector<vector<int>>dp(nums1.size(),vector<int>(nums2.size()));
+        //记录最长重复子数组长度
+        int res=0;
+        //初始化dp
+        for(int i=0;i<nums1.size();i++){
+            if(nums1[i]==nums2[0])dp[i][0]=1;
+            res=max(res,dp[i][0]);
+        }
+        for(int j=0;j<nums2.size();j++){
+            if(nums2[j]==nums1[0])dp[0][j]=1;
+            res=max(res,dp[0][j]);
+        }
+        //完善dp
+        for(int i=1;i<nums1.size();i++){
+            for(int j=1;j<nums2.size();j++){
+                if(nums1[i]==nums2[j]){
+                    dp[i][j]=dp[i-1][j-1]+1;
+                }else{
+                    //如果nums1[i]!=nums2[j]，那必不可能重复，因为子数组一定要包含nums1[i]和nums2[j]
+                    dp[i][j]=0;
+                }
+                res=max(res,dp[i][j]);
+            }
+        }
+        return res;
+    }
+};
+
+观察上方代码，发现不仅要额外判断数组长度为1时的情况，还要在初始化dp时更新res，代码略显臃肿。
+再看转移方程，我们可以多一行一列，基础值为0，但也因此有额外空间开销
+1.dp[i][j]：以nums1[i-1]结尾的nums1和以nums2[j-1]结尾的nums2的重复子数组长度
+2.if(nums1[i]==nums[j])dp[i][j]=dp[i-1][j-1]+1;
+  else dp[i][j]=0;
+3.初始化dp
+改良动态规划二维表（代码行数更少）：
+class Solution {
+public:
+    int findLength(vector<int>& nums1, vector<int>& nums2) {
+        //dp[i][j]：以nums1[i-1]结尾的nums1和以nums2[j-1]结尾的nums2的重复子数组长度
+        vector<vector<int>>dp(nums1.size()+1,vector<int>(nums2.size()+1));
+        //记录最长重复子数组长度
+        int res=0;
+        //完善dp
+        for(int i=1;i<nums1.size()+1;i++){
+            for(int j=1;j<nums2.size()+1;j++){
+                if(nums1[i-1]==nums2[j-1])dp[i][j]=dp[i-1][j-1]+1;
+                else dp[i][j]=0;
+                res=max(res,dp[i][j]);
+            }
+        }
+        return res;
+    }
+};
+
+滚动数组：
+观察转移方程，dp是一行一行更新，并且是从左到右
+class Solution {
+public:
+    int findLength(vector<int>& nums1, vector<int>& nums2) {
+        vector<int>dp(nums2.size()+1);
+        int res=0;
+        for(int i=1;i<nums1.size()+1;i++){
+            for(int j=nums2.size();j>=1;j--){
+                //滚动数组应当优先更新那些不用来递推其他dp值的
+                if(nums1[i-1]==nums2[j-1])dp[j]=dp[j-1]+1;
+                else dp[j]=0;
+                res=max(res,dp[j]);
+            }
+        }
+        return res;
+    }
+};
+
+总结：
+实现出动态规划二维表后，观察转移方程，看是否能够利用滚动数组实现，一般来说一行一行遍历的都可以转成一维数组。
+```
+
