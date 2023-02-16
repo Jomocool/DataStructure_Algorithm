@@ -5534,3 +5534,63 @@ public:
 实现出动态规划二维表后，观察转移方程，看是否能够利用滚动数组实现，一般来说一行一行遍历的都可以转成一维数组。
 ```
 
+### 33. LeetCode1143. 最长公共子序列
+
+```cpp
+1.dp[i][j]：text1[0,i-1]和text2[0,j-1]的最长公共子序列长度
+2.if(text[i]==text[j])dp[i][j]=dp[i-1][j-1]+1;
+  else dp[i][j]=max(dp[i-1][j],dp[i][j-1]);
+
+class Solution {
+public:
+    int longestCommonSubsequence(string text1, string text2) {
+        //dp[i][j]：text1[0,i-1]和text2[0,j-1]的最长公共子序列长度
+        vector<vector<int>>dp(text1.length()+1,vector<int>(text2.length()+1));
+        //完善dp
+        for(int i=1;i<text1.length()+1;i++){
+            for(int j=1;j<text2.length()+1;j++){
+                if(text1[i-1]==text2[j-1]){
+                    dp[i][j]=dp[i-1][j-1]+1;
+                }
+                else{
+                    //text1[i-1]!=text2[j-1]
+                    //1.text1[i-2]和text[j-1]比较
+                    //2.text1[i-1]和text[j-2]比较
+                    //上述两种情况已经涵盖了所有可能性：text1[i-2]子序列涵盖了text1[i-3]所有子序列
+                    //text1[i-1]和text2[j-1]是新出现的字符，所以必须带着
+                    dp[i][j]=max(dp[i-1][j],dp[i][j-1]);//记忆化搜索
+                }
+            }
+        }
+        return dp[text1.length()][text2.length()];
+    }
+};
+```
+
+### 34. LeetCode1035. 不相交的线
+
+```cpp
+思路：
+线只要在连接nums1和nums2的元素时按照相对同样的顺序就不会相交，所以本质上是求nums1和nums2最长公共子序列长度。
+
+1.dp[i][j]：nums1[0,i-1]和nums2[0,j-1]的公共子序列长度
+2.if(nums1[i-1]==nums2[j-1])dp[i][j]=dp[i-1][j-1]+1;
+  else dp[i][j]=max(dp[i-1][j],dp[i][j-1]);
+
+class Solution {
+public:
+    int maxUncrossedLines(vector<int>& nums1, vector<int>& nums2) {
+        //dp[i][j]：nums1[0,i-1]和nums2[0,j-1]的公共子序列长度
+        vector<vector<int>>dp(nums1.size()+1,vector<int>(nums2.size()+1));
+        //完善dp
+        for(int i=1;i<nums1.size()+1;i++){
+            for(int j=1;j<nums2.size()+1;j++){
+                if(nums1[i-1]==nums2[j-1])dp[i][j]=dp[i-1][j-1]+1;
+                else dp[i][j]=max(dp[i][j-1],dp[i-1][j]);
+            }
+        }
+        return dp[nums1.size()][nums2.size()];
+    }
+};
+```
+
