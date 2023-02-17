@@ -5594,3 +5594,49 @@ public:
 };
 ```
 
+### 35. LeetCode53. 最大子数组和
+
+```cpp
+1.dp[i]：以nums[i-1]结尾的最大子数组和
+2.if(dp[i-1]>0)dp[i]=dp[i-1]+nums[i];
+  else dp[i]=nums[i-1];
+
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        //dp[i]：以nums[i]结尾的最大子数组和
+        vector<int>dp(nums.size()+1);
+        int res=INT_MIN;
+        //完善dp
+        for(int i=1;i<nums.size()+1;i++){
+            //只有前面子数组和为正，才对自己有帮助，才能够获取最大子数组和
+            if(dp[i-1]>0)dp[i]=dp[i-1]+nums[i-1];
+            else dp[i]=nums[i-1];
+            res=max(res,dp[i]);
+        }
+        return res;
+    }
+};
+
+dp[i]只与dp[i-1]有关，与dp[i-1]前的元素都无关，所以我们只需一个值即可
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int cur=0;
+        int res=INT_MIN;
+        for(int i=0;i<nums.size();i++){
+            if(cur>=0){
+                cur=cur+nums[i];
+            }else{
+                //cur<0，只会减少后续子数组和
+                cur=nums[i];
+            }
+            res=max(res,cur);
+        }
+        return res;
+    }
+};
+```
+
+
+
