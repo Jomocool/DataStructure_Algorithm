@@ -5640,3 +5640,108 @@ public:
 
 
 
+### 36. LeetCode392.判断子序列
+
+```cpp
+1.dp含义：
+dp[i][j]：以s[i-1]结尾的字符串s，和以t[j-1]结尾的字符串t，相同子序列长度
+注意：是判断s是否为t的子序列，所以t.length()>=s.length()；s一定要包含s[i-1]，t不一定要包含t[j-1]
+    
+2.转移方程：
+只需要考虑删除字符串t的元素即可
+if(s[i-1]==t[j-1])dp[i][j]=dp[i-1][j-1]+1;//t中新出现的字符能够和s[i-1]匹配
+else dp[i][j]=dp[i][j-1];//无法匹配，t删除元素，继续匹配，然前一个字符去处理
+
+3.初始化dp：
+//初始化二维数组dp时就已经完成了
+dp[0][j]=0;
+dp[i][0]=0;
+
+4.遍历顺序：
+dp值从左上角递推而得
+i：从上到下
+j：从左至右
+
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        //dp[i][j]：以s[i-1]结尾的字符串s，和以t[j-1]结尾的字符串t，相同子序列长度
+        vector<vector<int>>dp(s.length()+1,vector<int>(t.length()+1));
+        //完善dp
+        for(int i=1;i<s.length()+1;i++){
+            for(int j=i;j<t.length()+1;j++){
+                if(s[i-1]==t[j-1])dp[i][j]=dp[i-1][j-1]+1;
+                else dp[i][j]=dp[i][j-1];
+            }
+        }
+        return dp[s.length()][t.length()]==s.length();
+    }
+};
+
+双指针法：
+创建两个索引指针sIndex、tIndex分别指向s和t，如果t[tIndex]==s[sIndex]，那么两根指针同时后移；否则tIndex后移，直到sIndex扫完s
+，恰好也符合子序列顺序。
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        int sIndex=0;//指向s字符的指针
+        int tIndex=0;//指向t字符的指针
+        while(sIndex<s.length()&&tIndex<t.length()){
+            if(s[sIndex]==t[tIndex]){
+                sIndex++;
+                tIndex++;
+            }else{
+                tIndex++;
+            }
+        }
+        //sIndex扫过的区域都是在t中以同样的顺序出现过的
+        return sIndex==s.length();
+    }
+};
+```
+
+### 37. LeetCode115. 不同的子序列
+
+```cpp
+解读题意：从s中可以找出几个子序列恰好和t相同。s如何删除元素可以变成t
+1.dp含义：
+dp[i][j]：以s[i-1]结尾的字符串s中，以j[i-1]结尾的字符串t个数
+
+2.转移方程：
+只有出现新字符时（下一轮循环）才会有未考虑的情况，对于新出现字符只有两种考虑（使用或不使用）
+if(s[i-1]==t[j-1])dp[i][j]=dp[i-1][j-1]+dp[i-1][j];//s[i-1]可使用也可不使用(模拟删除)，两种情况总和。t无法删除元素
+else dp[i][j]=dp[i-1][j];//不匹配，不用考虑s[i-1]
+
+3.初始化dp：
+dp[0][j]=0;
+dp[i][0]=1;
+dp[0][0]=1;
+
+4.遍历顺序：
+i：从上到下
+j：从左到右
+
+class Solution {
+public:
+    int numDistinct(string s, string t) {
+        //dp[i][j]：以s[i-1]结尾的字符串s中，以j[i-1]结尾的字符串t个数
+        vector<vector<uint64_t>>dp(s.length()+1,vector<uint64_t>(t.length()+1));
+        //初始化dp
+        for(int i=0;i<s.length()+1;i++){
+            dp[i][0]=1;
+        }
+        for(int j=1;j<t.length()+1;j++){
+            dp[0][j]=0;
+        }
+        //完善dp
+        for(int i=1;i<s.length()+1;i++){
+            for(int j=1;j<t.length()+1;j++){
+                if(s[i-1]==t[j-1])dp[i][j]=dp[i-1][j-1]+dp[i-1][j];
+                else dp[i][j]=dp[i-1][j];
+            }
+        }
+        return dp[s.length()][t.length()];
+    }
+};
+```
+
