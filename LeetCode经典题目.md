@@ -5745,3 +5745,96 @@ public:
 };
 ```
 
+### 38. LeetCode583. 两个字符串的删除操作
+
+```cpp
+思路：
+二维数组，因为需要操作两个字符串
+
+1.dp含义：
+dp[i][j]：让以word1[i-1]结尾的字符串word1和以word2[j-1]结尾的字符串word2相同的最少操作数
+2.转移方程：
+对于新字符word1[i-1]和word2[j-1]只有相同和不相同两种情况
+if(word1[i-1]==word[j-1])dp[i][j]=dp[i-1][j-1];//保留这两字符可以减少两步删除操作
+else dp[i][j]=min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+2);//二者选一个删除或都删除，取最小操作数
+3.遍历顺序：
+i：从上到下
+j：从左到右
+4.初始化dp：
+dp[0][j]=j;//word1是空字符，word2必须删掉所有字符才能相同
+dp[i][0]=i;
+
+class Solution {
+public:
+    int minDistance(string word1, string word2) {
+      //dp[i][j]：让以word1[i-1]结尾的字符串word1和以word2[j-1]结尾的字符串word2相同的最少操作数
+      vector<vector<int>>dp(word1.length()+1,vector<int>(word2.length()+1));
+      //初始化dp
+      for(int i=0;i<=word1.length();i++){
+          dp[i][0]=i;
+      }
+      for(int j=0;j<=word2.length();j++){
+          dp[0][j]=j;
+      }
+      //完善dp
+      for(int i=1;i<=word1.length();i++){
+          for(int j=1;j<=word2.length();j++){
+              if(word1[i-1]==word2[j-1])dp[i][j]=dp[i-1][j-1];
+              else dp[i][j]=min(dp[i-1][j]+1,min(dp[i][j-1]+1,dp[i-1][j-1]+2));
+          }
+      }
+      return dp[word1.length()][word2.length()];
+    }
+};
+
+也可以求最长公共子序列长度，然后经过计算得出结果。
+```
+
+### 39. LeetCode72. 编辑距离
+
+```cpp
+思路：
+虽然题目说让word1变成word2，但也可以让word2变成word1。因为删除word1的字符，等效于在word2中添加字符，所以删除操作包含了添加操作
+
+1.dp含义：
+dp[i][j]：让以word1[i-1]结尾的字符串word1和以word2[j-1]结尾的字符串word2相同的最少操作数
+2.转移方程：
+if(word1[i-1]==word2[j-1])dp[i][j]=dp[i-1][j-1];
+else{
+    dp[i][j]=min(dp[i-1][j]+1,dp[i][j-1]+1);//删除，这二者已经包含了dp[i-1][j-1]+2
+    dp[i][j]=min(dp[i][j],dp[i-1][j-1]+1);//替换
+}
+3.遍历顺序：
+i：从上到下
+j：从左到右
+4.初始化dp：
+dp[0][j]=j;
+dp[i][0]=i;
+
+class Solution {
+public:
+    int minDistance(string word1, string word2) {
+        //dp[i][j]：让以word1[i-1]结尾的字符串word1和以word2[j-1]结尾的字符串word2相同的最少操作数
+        vector<vector<int>>dp(word1.length()+1,vector<int>(word2.length()+1));
+        //初始化dp
+        for(int i=0;i<=word1.length();i++){
+            dp[i][0]=i;
+        }
+        for(int j=0;j<=word2.length();j++){
+            dp[0][j]=j;
+        }
+        //完善dp
+        for(int i=1;i<=word1.length();i++){
+            for(int j=1;j<=word2.length();j++){
+                if(word1[i-1]==word2[j-1])dp[i][j]=dp[i-1][j-1];
+                else{
+                    dp[i][j]=min(dp[i-1][j]+1,dp[i][j-1]+1);//删除，这二者已经包含了dp[i-1][j-1]+2
+                    dp[i][j]=min(dp[i][j],dp[i-1][j-1]+1);//替换
+                }
+            }
+        }
+        return dp[word1.length()][word2.length()];
+    }
+};
+```
+
