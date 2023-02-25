@@ -5838,3 +5838,114 @@ public:
 };
 ```
 
+### 40. LeetCode647. 回文子串
+
+```cpp
+1.dp含义：
+dp[i][j]：s[i,j]是否为回文串
+2.转移方程：
+if(s[i]==s[j])dp[i][j]=dp[i+1][j-1];
+3.遍历顺序：
+i：从下到上
+j：从左到右
+4.初始化dp：
+//因为新的字符总是从两边一起加入，所以字符串长度每次递增2
+//初始化一个字符的情况：1/3/5/7
+//初始化两个字符的情况：2/4/6/8
+//这样就可以把所有情况都覆盖到了，所以要初始化一个字符和两个字符的情况，因为他们都是递推dp的基础值
+dp[i][i]=true;
+if(s[i]==s[i+1])dp[i][i+1]=true;
+
+class Solution {
+public:
+    int countSubstrings(string s) {
+        //dp[i][j]：s[i,j]是否为回文串
+        vector<vector<int>>dp(s.length(),vector<int>(s.length()));
+        int res=0;//有多少个true，就有多少个回文子串
+        //初始化dp
+        for(int i=0;i<s.length();i++){
+            dp[i][i]=true;
+            res++;
+        }
+        for(int i=0;i<s.length()-1;i++){
+            if(s[i]==s[i+1]){
+                dp[i][i+1]=true;
+                res++;
+            }
+        }
+        //完善dp
+        for(int i=s.length()-3;i>=0;i--){
+            for(int j=i+2;j<s.length();j++){
+                if(s[i]==s[j])dp[i][j]=dp[i+1][j-1];
+                if(dp[i][j])res++;
+            }
+        }
+        return res;
+    }
+};
+
+双指针法：节省空间
+class Solution {
+public:
+    int extend(string&s,int i,int j){
+        int res=0;
+        while(i>=0&&j<s.length()&&s[i]==s[j]){
+            res++;
+            i--;
+            j++;
+        }
+        return res;
+    }
+
+    int countSubstrings(string s) {
+        int result=0;
+        for(int i=0;i<s.length();i++){
+            result+=extend(s,i,i);//以s[i]为中心点
+            result+=extend(s,i,i+1);//以s[i,i+1]为中心点
+        }
+        return result;
+    }
+};
+```
+
+### 41. LeetCode516. 最长回文子序列
+
+```cpp
+1.dp含义：
+dp[i][j]：s[i,j]最长回文子序列的长度
+2.转移方程：
+if(s[i]==s[j])dp[i][j]=dp[i+1][j-1]+2;
+else dp[i][j]=max(dp[i+1][j],dp[i][j-1]);//因为是序列，所以可以删除
+3.遍历顺序：
+i：从下到上
+j：从左到右
+4.初始化dp
+dp[i][i]=1;
+if(s[i]==s[i+1])dp[i][i+1]=2;
+else dp[i][i+1]=1;
+
+class Solution {
+public:
+    int longestPalindromeSubseq(string s) {
+        //dp[i][j]：s[i,j]最长回文子序列的长度
+        vector<vector<int>>dp(s.length(),vector<int>(s.length()));
+        //初始化dp
+        for(int i=0;i<s.length();i++){
+            dp[i][i]=1;
+        }
+        for(int i=0;i<s.length()-1;i++){
+            if(s[i]==s[i+1])dp[i][i+1]=2;
+            else dp[i][i+1]=1;
+        }
+        //完善dp
+        for(int i=s.length()-3;i>=0;i--){
+            for(int j=i+2;j<s.length();j++){
+                if(s[i]==s[j])dp[i][j]=dp[i+1][j-1]+2;
+                else dp[i][j]=max(dp[i+1][j],dp[i][j-1]);
+            }
+        }
+        return dp[0][s.length()-1];
+    }
+};
+```
+
