@@ -5949,3 +5949,102 @@ public:
 };
 ```
 
+## 十、单调栈
+
+在一维数组中，要寻找任一元素的右边或者左边第一个自己大或小的元素的位置，就可以想到用单调栈了。——代码随想录
+
+### 1. LeetCode739. 每日温度
+
+```cpp
+思路：
+1.创建辅助栈stk和结果数组answer
+2.遍历温度数组，把第i天的温度temperatures[i]入栈，栈顶到栈底单调递减
+3.如果当前温度大于栈顶温度，则不断出栈，并把相隔天数(i-stk.top())写入到结果集中
+
+class Solution {
+public:
+    vector<int> dailyTemperatures(vector<int>& temperatures) {
+        //结果集，因为对于后续没有温度更高的，结果是0，所以默认都为0
+        vector<int>answer(temperatures.size());
+        //辅助栈
+        stack<int>stk;
+        //遍历数组
+        for(int i=0;i<temperatures.size();i++){
+            while(!stk.empty()&&temperatures[i]>temperatures[stk.top()]){
+                answer[stk.top()]=i-stk.top();
+                stk.pop();
+            }
+            stk.push(i);//存入下标，既能知道天数，又可以知道温度
+        }
+        return answer;
+    }
+};
+
+时间复杂度：O(n)，对于每个温度数组的元素下标，只有入栈和出栈各一次操作;
+空间复杂度：O(n)，需要维护一个辅助栈
+```
+
+### 2. LeetCode496. 下一个更大元素 I
+
+```cpp
+思路：
+1.创建辅助栈stk，结果集ans，映射表存储nums1中各元素和下标的对应
+2.初始化结果集为-1
+3.建立好nums1的映射关系
+4.遍历nums2，找到nums1中的元素在nums2右边第一个比自己大的值，放入结果集中
+
+卡点：因为nums1和nums2是元素方面的联系，所以可以通过哈希表来找到当前遍历元素在nums1中的对应下标
+
+class Solution {
+public:
+    vector<int> nextGreaterElement(vector<int>& nums1, vector<int>& nums2) {
+        //结果集，默认-1
+        vector<int>ans(nums1.size(),-1);
+        //辅助栈
+        stack<int>stk;//栈底到栈顶：单调递减
+        //映射表
+        unordered_map<int,int>recorded;
+        //建立映射关系
+        for(int i=0;i<nums1.size();i++){
+            recorded[nums1[i]]=i;
+        }
+        //遍历nums2
+        for(int i=0;i<nums2.size();i++){
+            while(!stk.empty()&&nums2[i]>nums2[stk.top()]){
+                if(recorded.count(nums2[stk.top()])>0){
+                    ans[recorded[nums2[stk.top()]]]=nums2[i];
+                }
+                stk.pop();
+            }
+            stk.push(i);
+        }
+        return ans;
+    }
+};
+```
+
+### 3. LeetCode503. 下一个更大元素 II
+
+```cpp
+class Solution {
+public:
+    vector<int> nextGreaterElements(vector<int>& nums) {
+        vector<int>ans(nums.size(),-1);//结果集，默认-1
+        stack<int>stk;//辅助栈，栈底到栈顶：单调递减
+        
+        //当第二次遍历到最大值时，就可以结束循环了
+        //第一次遍历到最大值：后面的元素还没遍历到，需要继续处理
+        //第二次遍历到最大值时，最坏情况下，后面的所有元素右边比自己更大的数刚好就是最大值
+        //由于所有位置的元素都有可能是最大值，所以把所有元素都遍历两次，nums的所有元素肯定都处理好了
+        for(int i=0;i<nums.size()*2-1;i++){
+            while(!stk.empty()&&nums[i%nums.size()]>nums[stk.top()]){
+                ans[stk.top()]=nums[i%nums.size()];
+                stk.pop();
+            }
+            stk.push(i%nums.size());
+        }
+        return ans;
+    }
+};
+```
+
