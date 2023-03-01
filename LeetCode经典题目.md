@@ -6048,3 +6048,198 @@ public:
 };
 ```
 
+### 4. LeetCode42. 接雨水
+
+```cpp
+1.双指针：按列计算雨水面积
+当前列的雨水面积=min(左边最大高度,右边最大高度)-当前列高度，因为宽度默认是1，取最小值是由于短板效应
+因为我们只需要每一列柱子左边和右边的高度的最小值，所以可以用maxLeft和maxRight来记录，这样就避免了重复计算左右两边最大高度的操作
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        int res=0;//结果
+        vector<int>maxLeft(height.size());//左边最大高度
+        vector<int>maxRight(height.size());//右边最大高度
+        
+        //动态规划
+        maxLeft[0]=height[0];
+        for(int i=1;i<height.size();i++){
+            maxLeft[i]=max(maxLeft[i-1],height[i]);
+        }
+        maxRight[height.size()-1]=height[height.size()-1];
+        for(int i=height.size()-2;i>=0;i--){
+            maxRight[i]=max(maxRight[i+1],height[i]);
+        }
+
+        //计算雨水面积
+        for(int i=1;i<height.size()-1;i++){
+            res+=min(maxLeft[i],maxRight[i])-height[i];
+        }
+        return res;
+    }
+};
+
+2.单调栈：按行计算雨水面积
+辅助栈：栈底到栈顶（单调递减）
+（1）当前高度大于栈顶对应高度：一旦出现更高的柱子，就出现凹槽了，需要计算雨水面积
+（2）当前高度等于栈顶对应高度：栈顶元素弹出，当前元素入栈，因为我们需要相同高度的柱子的最右边那个来计算雨水面积
+（3）当前高度小于栈顶对应高度：直接入栈
+
+出现凹槽时，我们需要三个元素来计算面积：栈顶，栈顶的下一个元素，准备入栈的元素
+栈顶：凹槽底下的柱子
+栈顶的下一个元素：凹槽左边的柱子
+准备入栈的元素：凹槽右边的柱子
+
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        stack<int>stk;//辅助栈
+        int res=0;//结果
+        stk.push(0);//先让0入栈，因为已进入循环就要和stk.top()比较，所以先让0入栈
+        for(int i=1;i<height.size();i++){
+            if(height[i]<height[stk.top()])stk.push(i);
+            else if(height[i]==height[stk.top()]){
+                stk.pop();
+                stk.push(i);
+            }
+            else{
+                while(!stk.empty()&&height[i]>height[stk.top()]){
+                    int mid=stk.top();
+                    stk.pop();
+                    if(!stk.empty()){
+                        int h=min(height[stk.top()],height[i])-height[mid];
+                        int w=i-stk.top()-1;
+                        res+=h*w;
+                    }
+                }
+                stk.push(i);
+            }
+        }
+        return res;
+    }
+};
+
+简化代码：
+等于和小于的操作类似，而等于的更新栈顶元素不影响计算。如果栈顶和栈顶的下一个元素相同，则在大于的操作中h=0，不影响结果。等到栈顶下一个相等高度的柱子做凹槽底部时，h是正常的，w也不受影响，因为w只和stk.top()有关，和弹出的柱子无关
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        stack<int>stk;//辅助栈
+        int res=0;//结果
+        stk.push(0);
+        for(int i=1;i<height.size();i++){
+            while(!stk.empty()&&height[i]>height[stk.top()]){
+                int mid=stk.top();
+                stk.pop();
+                if(!stk.empty()){
+                    int h=min(height[stk.top()],height[i])-height[mid];
+                    int w=i-stk.top()-1;
+                    res+=h*w;
+                }
+            }
+            stk.push(i);
+        }
+        return res;
+    }
+};
+
+卡点：没有考虑凹槽底部柱子高度，导致计算了很多多余的面积
+```
+
+### 5. LeetCode84. 柱状图中最大的矩形
+
+```cpp
+1.双指针：
+leftFirst[i]：0~i-1第一个比柱子i低的下标
+rightFirst[i]：i+1~height.size()-1第一个比i低的下标
+把leftFirst[0]初始化为-1，把rightFirst初始化为height.size()，能够最低的柱子计算出正确的矩形
+
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        int res=0;
+        vector<int>leftFirst(heights.size());
+        vector<int>rightFirst(heights.size());
+        leftFirst[0]=-1;
+        for(int i=1;i<heights.size();i++){
+            int t=i-1;
+            while(t>=0&&heights[i]<=heights[t])t=leftFirst[t];
+            leftFirst[i]=t;   
+        }
+        rightFirst[heights.size()-1]=heights.size();
+        for(int i=heights.size()-2;i>=0;i--){
+            int t=i+1;
+            while(t<heights.size()&&heights[i]<heights[t])t=rightFirst[t];
+            rightFirst[i]=t;
+        }
+        
+        for(int i=0;i<heights.size();i++){
+            int sum=heights[i]*(rightFirst[i]-leftFirst[i]-1);
+            res=max(res,sum);
+        }
+        return res;
+    }
+};
+
+本题和接雨水的唯一区别就是本题是找左右两边第一个小于的柱子
+2.单调栈：
+栈底到栈顶：单调递增，因为需要找的是左右两边第一个小于自己的柱子
+height[i]>height[stk.top()]：入栈
+height[i]==height[stk.top()]：更新栈顶
+height[i]<height[stk.top()]：计算最大矩形
+
+在数组前后都插入0，避免原始数组单调递增而导致没有计算矩形就结束循环了
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        stack<int>stk;
+        int res=0;
+        heights.insert(heights.begin(),0);
+        heights.push_back(0);
+        stk.push(0);
+
+        for(int i=1;i<heights.size();i++){
+            if(heights[i]>heights[stk.top()])stk.push(i);
+            else if(heights[i]==heights[stk.top()])stk.top()=i;
+            else{
+                while(!stk.empty()&&heights[i]<heights[stk.top()]){
+                    int h=heights[stk.top()];
+                    stk.pop();
+                    if(!stk.empty()){
+                        int w=i-stk.top()-1;
+                        res=max(res,h*w);
+                    }
+                }
+                stk.push(i);
+            }
+        }
+        return res;
+    }
+};
+
+精简代码：
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        stack<int>stk;
+        int res=0;
+        heights.insert(heights.begin(),0);
+        heights.push_back(0);
+        stk.push(0);
+
+        for(int i=1;i<heights.size();i++){
+            while(!stk.empty()&&heights[i]<heights[stk.top()]){
+                int h=heights[stk.top()];
+                stk.pop();
+                if(!stk.empty()){
+                    int w=i-stk.top()-1;
+                    res=max(res,h*w);
+                }
+            }
+            stk.push(i);
+        }
+        return res;
+    }
+};
+```
+
