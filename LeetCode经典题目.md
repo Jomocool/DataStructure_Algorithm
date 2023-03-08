@@ -6243,3 +6243,84 @@ public:
 };
 ```
 
+## 十一、数组额外题目
+
+### 1.LeetCode1365. 有多少小于当前数字的数字
+
+```cpp
+思路：
+1.使数组排序，从小到大
+2.创建哈希表记录每个元素最左的下标
+
+class Solution {
+public:
+    vector<int> smallerNumbersThanCurrent(vector<int>& nums) {
+        //结果集合
+        vector<int>vec=nums;
+        //排序数组
+        sort(vec.begin(),vec.end());
+        //哈希表记录下标
+        map<int,int>recorded;
+        for(int i=nums.size()-1;i>=0;i--){//从右到左遍历数组，这样记录的就是最左边的下标
+            recorded[vec[i]]=i;
+        }
+        //处理结果集
+        for(int i=0;i<nums.size();i++){
+            vec[i]=recorded[nums[i]];
+        }
+        return vec;
+    }
+};
+```
+
+### 2.LeetCode941. 有效的山脉数组
+
+```cpp
+思路：
+1.利用bool变量up判断现在是否在上升期
+2.当第一次下降时，把up置为false，且之后都必须为false。如果下降或平地之后还有上升过程，说明就是无效的山脉
+
+方法一：状态法
+class Solution {
+public:
+    bool validMountainArray(vector<int>& arr) {
+        //山脉数组先递增，所以up先置为true
+        bool up=true;
+        int peak=0;
+        //遍历山脉数组
+        for(int i=1;i<arr.size();i++){
+            if(arr[i-1]==arr[i]){//不是严格递增或递减，有平地，无效山脉
+                return false;
+            }
+            else if(arr[i-1]<arr[i]){
+                if(!up){//在非上升过程中遇到上升过程，无效山脉
+                    return false;
+                }
+                peak=i;//记录顶点坐标
+            }else{
+                up=false;
+            }
+        }
+        //能出循环，顶点坐标不是0且最终趋势是下降(即up==false)，就说明是有效的山脉数组
+        return peak!=0&&!up;
+    }
+};
+
+方法二：双指针法
+class Solution {
+public:
+    bool validMountainArray(vector<int>& arr) {
+        //左指针
+        int left=0;
+        //右指针
+        int right=arr.size()-1;
+        //注意不要越界
+        while(left<arr.size()-1&&arr[left]<arr[left+1])left++;
+        while(right>0&&arr[right]<arr[right-1])right--;
+
+        //left和right必须都指向顶点，且山脉不是单纯上坡或下坡
+        return left==right&&left!=0&&right!=arr.size()-1;
+    }
+};
+```
+
