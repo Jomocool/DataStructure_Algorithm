@@ -6324,3 +6324,217 @@ public:
 };
 ```
 
+### 3. LeetCode1207. 独一无二的出现次数
+
+```cpp
+class Solution {
+public:
+    bool uniqueOccurrences(vector<int>& arr) {
+        unordered_map<int,int>recorded;//记录每个元素出现的次数
+        set<int>count;//记录出现过的词频
+        
+        for(int i=0;i<arr.size();i++){
+            recorded[arr[i]]++;
+        }
+
+        for(auto &p:recorded){
+            if(count.find(p.second)==count.end()){//如果count不曾出现当前词频
+                count.insert(p.second);
+            }else{
+                return false;
+            }
+        }
+        
+        return true;
+    }
+};
+```
+
+### 4. LeetCode283. 移动零
+
+```cpp
+双指针：
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+        if(nums.size()==1)return;
+        int left=0;//左边第一个为0的
+        int right=0;//left右边第一个不为0的
+        while(left<nums.size()&&right<nums.size()){
+            while(left<nums.size()&&nums[left]!=0)left++;//最好把越界条件放在最前面
+            right=left;
+            while(right<nums.size()&&nums[right]==0)right++;//最好把越界条件放在最前面
+            if(left<nums.size()&&right<nums.size())swap(nums[left],nums[right]);
+        }
+    }
+};
+
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+        int slowIndex=0;
+        for(int fastIndex=0;fastIndex<nums.size();fastIndex++){
+            if(nums[fastIndex]!=0){//先把不为0的值放在数组左边
+                nums[slowIndex++]=nums[fastIndex];
+            }
+        }
+
+        while(slowIndex<nums.size()){//后面赋0
+            nums[slowIndex++]=0;
+        }
+    }
+};
+```
+
+### 5. LeetCode189. 轮转数组
+
+```cpp
+思路：
+假设以原数组的状态（即所有元素相对顺序一致）定义为有序，此种状态下，nums从0到nums.size()-1都是有序的
+轮转后的数组：
+1. 0~k-1有序
+2. k~nums.size()-1有序
+3. [0,k-1]和[k,nums.size()-1]各自有序，但二者在一起不有序
+
+先将整体反转，这样就使得右边的能够到左边，左边的能够到右边，再以k为界限让两边局部反转，使得两边局部有序
+注意：必须先让整体反转使各元素到了正确的区域，才能够局部反转使得局部有序
+
+class Solution {
+public:
+    void rotate(vector<int>& nums, int k) {
+        k=k%nums.size();
+        reverse(nums.begin(),nums.end());//反转整个数组
+        reverse(nums.begin(),nums.begin()+k);//反转前k个元素[0,k-1]
+        reverse(nums.begin()+k,nums.end());//反转后续所有元素[k,nums.size()-1]
+    }
+};
+```
+
+### 6. LeetCode724. 寻找数组的中心下标
+
+```cpp
+class Solution {
+public:
+    int pivotIndex(vector<int>& nums) {
+        int sum=0;//数组总和
+        for(auto&val:nums){
+            sum+=val;
+        }
+        int leftSum=0;//中心下标左边元素和
+        for(int i=0;i<nums.size();i++){
+            //中心左边右边元素和rightSum=sum-leftSum-nums[i]，注意也要减去中心下标的值
+            if(leftSum==sum-leftSum-nums[i])return i;
+            leftSum+=nums[i];
+        }
+        return -1;
+    }
+};
+```
+
+### 7. LeetCode34. 在排序数组中查找元素的第一个和最后一个位置
+
+```cpp
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        if(nums.size()==1){
+            vector<int>vec0(2,0);
+            vector<int>vec1(2,-1);
+            return (nums[0]==target)?vec0:vec1;
+        }
+        int targetIndex=-1;
+        int left=0;
+        int right=nums.size()-1;
+        //二分查找
+        while(left<=right){
+            int mid=left+((right-left)>>1);
+            if(nums[mid]==target){
+                targetIndex=mid;
+                break;
+            }else if(nums[mid]>target){
+                right=mid-1;
+            }else{
+                left=mid+1;
+            }
+        }
+        if(targetIndex==-1){//说明未找到目标值
+            return{-1,-1};
+        }else{
+            left=targetIndex;
+            right=targetIndex;
+while(left>=0&&nums[left]==target)left--;//找到左边边界
+            while(right<=nums.size()-1&&nums[right]==target)right++;//找到右边边界
+        }
+        return {left+1,right-1};
+    }
+};
+```
+
+### 8. LeetCode922. 按奇偶排序数组 II
+
+```cpp
+class Solution {
+public:
+    vector<int> sortArrayByParityII(vector<int>& nums) {
+        int evenIndex=0;//偶数下标
+        int oddIndex=1;//奇数下标
+        while(oddIndex<nums.size()&&evenIndex<nums.size()){
+            while(oddIndex<nums.size()&&oddIndex%2==1&&nums[oddIndex]%2==1)oddIndex+=2;//元素合理就下一个奇数元素
+            while(evenIndex<nums.size()&&evenIndex%2==0&&nums[evenIndex]%2==0)evenIndex+=2;//元素合理就下一个偶数元素
+            if(oddIndex<nums.size()&&evenIndex<nums.size())swap(nums[oddIndex],nums[evenIndex]);//必须保证不越界
+        }
+        return nums;
+    }
+};
+```
+
+### 
+
+```cpp
+1.[left,right]，闭区间
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        //排序数组、O(logn) -> 二分查找
+        int left=0;
+        int right=nums.size()-1;
+        while(left<=right){//因为target在[left,right]区间，所以left==right时，区间仍然有效
+            int mid=left+((right-left)>>1);
+            if(nums[mid]==target){
+                return mid;
+            }else if(nums[mid]<target){
+                left=mid+1;
+            }else{
+                right=mid-1;
+            }
+        }
+        // 分别处理如下四种情况
+        //目标值等于数组中某一个元素  return middle;
+        // 目标值在数组所有元素之前  [0, -1]，0 = -1 + 1 = right+1
+        // 目标值插入数组中的位置 [left, right]，return  right + 1，因为mid是向下取整的
+        // 目标值在数组所有元素之后的情况 [left, right]， 因为是右闭区间，所以 return right + 1
+        return right+1;
+    }
+};
+
+2.[left,right)，左闭右开区间
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        int left=0;
+        int right=nums.size();
+        while(left<right){
+            int mid=left+((right-left)>>1);
+            if(nums[mid]==target){
+                return mid;
+            }else if(nums[mid]<target){
+                left=mid+1;
+            }else{
+                right=mid;
+            }
+        }
+        return right;
+    }
+};
+```
+
