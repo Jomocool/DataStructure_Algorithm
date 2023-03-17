@@ -6538,3 +6538,93 @@ public:
 };
 ```
 
+## 十二、链表额外题目
+
+### 1. LeetCode24. 两两交换链表中的节点
+
+```cpp
+class Solution {
+public:
+    ListNode* swapPairs(ListNode* head) {
+        if(head==NULL||head->next==NULL){
+            return head;
+        }
+        ListNode*node1=head;//交换节点1
+        ListNode*node2=head->next;//交换节点2
+        ListNode*pre=NULL;//前驱节点
+        ListNode*next=node2->next;//后续节点，防止丢失链表
+        while(node1&&node2){//node1和node2必须都不为空，才能交换，因为空指针无next
+            node1->next=next;
+            node2->next=node1;
+            if(pre)pre->next=node2;//第一对节点无前驱节点
+            else head=node2;//pre是空，说明在交换第一对节点，头指针更换为node2
+            //更新节点信息
+            pre=node1;
+            node1=next;
+            if(node1)node2=node1->next;
+            if(node2)next=node2->next;
+        }
+        return head;
+    }
+};
+```
+
+**虽然有重复的题，但是每次做的感觉都不一样，都有不同的感悟**
+
+### 2. LeetCode234. 回文链表
+
+```cpp
+方法一：
+数组/字符串 模拟
+提高效率：提前确定数组和字符串的长度，这样就不用resize
+
+方法二：
+反转后半部分字符串（快慢指针）
+class Solution {
+public:
+    bool isPalindrome(ListNode* head) {
+        if(head==NULL||head->next==NULL){
+            return true;
+        }
+        ListNode*slow=head;
+        ListNode*fast=head;
+        ListNode*pre=slow;//slow的前置节点
+        //fast一定放在fast->next前面，当fast==NULL时，fast->next有异常，因为空指针没有next
+        //并且因为是‘与’，所以判断fast为false后，就不会判断后面的了
+        while(fast&&fast->next){
+            pre=slow;
+            slow=slow->next;
+            fast=fast->next->next;
+        }
+        //如果链表长度是奇数，后半部分链表长度多1一个
+        //长度奇数：fast指向最后一个节点
+        //长度偶数：fast==NULL
+        pre->next=NULL;//断开
+        slow=reverseList(slow);//从slow开始的节点都是后半部分链表的
+
+        fast=head;
+        while(fast&&slow){
+            if(fast->val!=slow->val)return false;
+            fast=fast->next;
+            slow=slow->next;
+        }
+        return true;
+    }
+
+        ListNode* reverseList(ListNode*head){//反转链表并返回新链表头
+        ListNode*reverseHead=new ListNode(-1);
+        reverseHead->next=NULL;
+        ListNode*cur=head;
+        ListNode*next=cur->next;
+        while(cur){
+            cur->next=reverseHead->next;
+            reverseHead->next=cur;
+            cur=next;
+            //cur可能在等于next之后变为空，但不能在next为空时就停止循环，因为cur不为空，还有节点要反转
+            if(cur)next=cur->next;
+        }
+        return reverseHead->next;
+    }
+};
+```
+
