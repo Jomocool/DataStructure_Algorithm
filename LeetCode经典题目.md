@@ -6628,3 +6628,380 @@ public:
 };
 ```
 
+### 3. LeetCode143. 重排链表
+
+```cpp
+方法一：数组模拟(双指针)
+class Solution {
+public:
+    void reorderList(ListNode* head) {
+        //特殊情况
+        if(head->next==NULL||head->next->next==NULL)return;
+
+        //计算链表长度
+        int len=0;//链表长
+        ListNode*cur=head;//临时链表头
+        while(cur){
+            len++;
+            cur=cur->next;
+        }
+        vector<ListNode*>nodeVec(len,NULL);
+
+        //将链表节点按序放入集合中
+        cur=head;
+        for(int i=0;i<len;i++){
+            nodeVec[i]=cur;
+            cur=cur->next;
+        }
+
+        //重排链表
+        cur=head;
+        //双指针
+        int i=1;
+        int j=len-1;
+        int count=1;//计数
+        while(i<=j){
+            if((count&1)==1){
+                cur->next=nodeVec[j--];
+            }else{
+                cur->next=nodeVec[i++];
+            }
+            cur=cur->next;
+            count++;
+        }
+        //最后cur指向重排链表的最后一个节点
+        cur->next=NULL;
+    }
+};
+
+方法二：双向队列
+通过双向队列一前一后弹出完成重排链表
+
+方法三：切割并反转链表
+class Solution {
+public:
+    void reorderList(ListNode* head) {
+        if(head->next==nullptr||head->next->next==nullptr)return;
+        
+        //快慢指针
+        ListNode*slow=head;
+        ListNode*fast=head;
+        ListNode*pre=nullptr;//slow的前驱节点
+        while(fast&&fast->next){
+            pre=slow;
+            slow=slow->next;
+            fast=fast->next->next;
+        }
+        //切割链表
+        pre->next=nullptr;
+        //出循环后，slow为后半段链表的链表头
+        slow=reverseList(slow);
+        fast=head->next;
+
+        //重排链表
+        ListNode*cur=head;
+        int count=1;
+        while(slow&&fast){
+            if((count&1)==1){
+                    cur->next=slow;
+                    slow=slow->next;
+            }else{
+                    cur->next=fast;
+                    fast=fast->next;
+            }
+            cur=cur->next;
+            count++;
+        }
+        //slow链表的长度大于等于fast链表的长度
+        cur->next=slow;
+    }
+    /*
+    误区：
+    while(slow||fast){
+            if((count&1)==1){
+                if(slow){
+                    cur->next=slow;
+                    slow=slow->next;
+                }
+            }else{
+                if(fast){
+                    cur->next=fast;
+                    fast=fast->next;
+                }
+            }
+            cur=cur->next;
+            count++;
+     }
+     这样写会陷入死循环，因为即使fast为空时，按理说cur的next没有指向正确的方向，但是cur仍向前移动了，导致cur不断在slow链表里
+     移动，cur最后不是在重排链表，而是在延长slow链表了，slow一直不为空，陷入死循环
+    */
+
+    ListNode*reverseList(ListNode*head){
+        ListNode*reverseHead=new ListNode(-1);
+        reverseHead->next=NULL;
+        ListNode*cur=head;
+        ListNode*next=cur->next;
+        while(cur){
+            cur->next=reverseHead->next;
+            reverseHead->next=cur;
+            cur=next;
+            if(cur)next=cur->next;
+        }
+        return reverseHead->next;
+    }
+};
+```
+
+### 4. LeetCode141. 环形链表
+
+```cpp
+class Solution {
+public:
+    bool hasCycle(ListNode *head) {
+        if(head==nullptr||head->next==nullptr)return false;
+        //快慢指针
+        ListNode*fast=head->next->next;
+        ListNode*slow=head;
+        while(fast&&fast->next){
+            if(fast==slow){//相遇，说明有环
+                return true;
+            }
+            fast=fast->next->next;
+            slow=slow->next;
+        }
+        //退出循环，说明链表无环
+        return false;
+    }
+};
+```
+
+### 5. 面试题 02.07. 链表相交
+
+```cpp
+class Solution {
+public:
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        ListNode*A=headA;
+        ListNode*B=headB;
+        while(A||B){
+            if(A==B)return A;
+            A=A?A->next:headB;
+            B=B?B->next:headA;
+            //这样先到尽头的指针可以先在长链表提前补上位移差
+        }
+        return nullptr;
+    }
+};
+```
+
+## 十三、哈希表额外题目
+
+### 1. LeetCode205. 同构字符串
+
+![](https://github.com/Jomocool/DataStructure_Algorithm/blob/main/LeetCode-img/16.png)
+
+```cpp
+思路：
+1.创建映射表recorded，记录字符串s中各字符和字符串t的映射关系
+2.遍历字符串s，如果已有映射关系(即已经加入映射表)，看是否和当前t字符串的字符映射；如果没有映射关系，判断当前t[i]是否已被映射，加入映射表，并确定好映射关系
+
+class Solution {
+public:
+    bool isIsomorphic(string s, string t) {
+        unordered_map<char,char>sTot;//映射表(x->t)
+        unordered_map<char,char>tTos;//映射表(t->x)
+        for(int i=0;i<s.length();i++){
+            if(sTot.find(s[i])!=sTot.end()){//有映射关系
+                if(sTot[s[i]]!=t[i])return false;
+            }else{
+                if(tTos.find(t[i])!=tTos.end()){//当前t[i]已被映射
+                    if(tTos[t[i]]!=s[i])return false;//如果当前被映射t[i]的来源不是s[i]，说明被重复映射，无效
+                }else{
+                    //既无s[i]->t[i]，也无t[i]->s[i]
+                    sTot[s[i]]=t[i];
+                    tTos[t[i]]=s[i];
+                }
+            }
+        }
+        return true;
+    }
+};
+本题需要注意的点是既要知道s->t，也要知道t->s，所以需要两个映射表
+```
+
+### 2. LeetCode1002. 查找共用字符
+
+```cpp
+思路：
+1.创建数组模拟哈希表统计每个字符串词频，int recorded[26]={0};
+2.创建数组hash记录整个字符串属猪的公共字符词频，取最小值
+
+注意，想要整型数组 全部初始化为1的时候不能粗暴的设置为 
+int a[5] = {1};    //[1, 0, 0, 0, 0]
+因为 数组初始化列表中的元素个数小于指定的数组长度时， 不足的元素以默认值填补。
+
+class Solution {
+public:
+    vector<string> commonChars(vector<string>& words) {
+        vector<int>recorded(26,0);//初始化为0
+        vector<int>hash(26,INT_MAX);//整体字符串数组公共字符词频，注意不能初始化为0，否则结果集永远都是空
+        vector<string>res;//结果集
+        for(int i=0;i<words.size();i++){
+            for(int j=0;j<words[i].length();j++){
+                recorded[words[i][j]-'a']++;
+            }
+            for(int k=0;k<26;k++){
+                hash[k]=min(hash[k],recorded[k]);
+                recorded[k]=0;//清零，不影响下一个字符串词频统计
+            }
+        }
+        for(int i=0;i<26;i++){
+            while(hash[i]!=0){
+                string s(1,'a'+i);//转成字符串
+                res.push_back(s);
+                hash[i]--;
+            }
+        }
+        return res;
+    }
+};
+
+出现频率最小的字符才是决定性字符，要注意重复字符也要算入，所以记录词频的就是记录每个字符出现的次数，刚好把重复字符考虑到了
+```
+
+## 十四、字符串额外题目
+
+### 1. LeetCode925. 长按键入
+
+```cpp
+思路：
+对于typed[i]：
+1.匹配：typed[i]==name[index]
+2.长按字符：typed[i]!=name[index],but typed[i]==typed[i-1]
+3.不匹配：typed[i]!=name[index] && typed[i]!=typed[i-1]
+遍历typed，用index记录name当前匹配下标，如果typed[i]能够和name[index]匹配，同时后移；如果无法匹配且typed[i]==typed[i-1]，说明是长按字符，否则无效
+
+class Solution {
+public:
+    bool isLongPressedName(string name, string typed) {
+        int index=0;//记录name当前匹配下标
+        for(int i=0;i<typed.length();i++){
+            if(name[index]==typed[i]){
+                index++;
+                continue;
+            }else{
+                if(i>0&&typed[i]==typed[i-1]){//长按字符
+                    continue;
+                }else{
+                    return false;
+                }
+            }
+        }
+        return index==name.length();//看name的全部字符是否都被匹配上了，因为只有被匹配了，index才会后移
+    }
+};
+```
+
+### 2. LeetCode844. 比较含退格的字符串
+
+```cpp
+思路：
+创建新的字符串newS和newT，遇到#就pop_back（注意字符串不能为空，否则有异常），否则push_back
+字符串模拟栈
+
+class Solution {
+public:
+    string getString(string& s){
+        string newStr="";
+        for(int i=0;i<s.length();i++){
+            if(s[i]!='#')newStr.push_back(s[i]);
+            else if(!newStr.empty())newStr.pop_back();
+        }
+        return newStr;
+    }
+
+    bool backspaceCompare(string s, string t) {
+        return getString(s)==getString(t);
+    }
+};
+
+双指针法：从后向前遍历，遇到#就跳过
+class Solution {
+public:
+    bool backspaceCompare(string s, string t) {
+        int sSkipNum=0;//遍历s过程中，s遇到#的个数
+        int tSkipNum=0;//遍历t过程中，t遇到#的个数
+        int sIndex=s.length()-1;
+        int tIndex=t.length()-1;
+        while(1){
+            //处理'#'
+            while(sIndex>=0){
+                if(s[sIndex]=='#')sSkipNum++;
+                else{
+                    //遇到不是#的字符，且sSkipNum>>0，说明在#的作用域中，是要删去的
+                    if(sSkipNum>0)sSkipNum--;//说明当前还在#的作用域中，跳过
+                    else break;//不能够再删除了，得退出循环去匹配了
+                }
+                sIndex--;
+            }
+            while(tIndex>=0){
+                if(t[tIndex]=='#')tSkipNum++;
+                else{
+                    if(tSkipNum>0)tSkipNum--;
+                    else break;
+                }
+                tIndex--;
+            }
+
+            //退出循环有两种可能性
+            //1.sIndex/tIndex<0
+            //2.#已经处理完了，break
+
+            //为避免异常，先判断下标是否有效
+            if(sIndex<0||tIndex<0)break;//s或t，遍历到头了
+
+            //匹配字符
+            if(s[sIndex]!=t[tIndex])return false;
+
+            //还没退出循环，说明当前字符匹配成功，继续下一轮处理#
+            sIndex--;
+            tIndex--;
+        }
+
+        //退出整体循环后，如果sIndex和tIndex不是同时等于-1，说明其中有一个先遍历到头了，不匹配
+        return sIndex==-1&&tIndex==-1;
+    }
+};
+```
+
+## 十五、二叉树额外题目
+
+### 1. LeetCode129. 求根节点到叶节点数字之和
+
+```cpp
+回溯法：
+注意本题不可以递归到空节点，因为空节点没有值，没有意义
+class Solution {
+public:
+    int res=0;//定义全局变量记录最终结果
+    int path=0;//记录根节点到每个叶子节点的值
+
+    void backTracking(TreeNode*node){
+        path=path*10+node->val;
+        //当前节点是叶子节点
+        if(node->left==nullptr&&node->right==nullptr){
+            res+=path;//只有在叶子节点时才需要把path附加给res
+        }
+        //不能走到空指针
+        if(node->left)backTracking(node->left);
+        if(node->right)backTracking(node->right);
+        path/=10;//回溯
+    }
+
+    int sumNumbers(TreeNode* root) {
+        backTracking(root);
+        return res;
+    }
+};
+```
+
