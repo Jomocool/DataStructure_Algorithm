@@ -7005,3 +7005,96 @@ public:
 };
 ```
 
+### 2. LeetCode1382. 将二叉搜索树变平衡
+
+```cpp
+思路：
+1.将二叉搜索树转成有序数组
+2.将有序数组构建成平衡二叉搜索树
+
+class Solution {
+public:
+    vector<int>vec;//有序数组
+    void traversal(TreeNode*node){//中序遍历二叉搜索树可以得到有序数组
+        if(node==nullptr)return;
+        traversal(node->left);
+        vec.push_back(node->val);
+        traversal(node->right);
+    }
+
+    TreeNode* buildAVLtree(int left,int right){
+        if(left>right)return nullptr;
+        int mid=left+((right-left)>>1);
+        TreeNode* node=new TreeNode(vec[mid]);
+        node->left=buildAVLtree(left,mid-1);
+        node->right=buildAVLtree(mid+1,right);
+        return node;
+    }
+
+    TreeNode* balanceBST(TreeNode* root) {
+        vec.clear();
+        traversal(root);
+        return buildAVLtree(0,vec.size()-1);
+    }
+};
+```
+
+### 3. LeetCode100. 相同的树
+
+```cpp
+思路：
+递归两棵树，分清每个节点有几种情况
+1.tree1为空，tree2不为空
+2.tree1不为空，tree2为空
+3.tree1、tree2同时为空
+4.tree1、tree2都不为空，但是值不等
+5.tree1、tree2都不为空，且值相等，但是还不能说明就是相同的，因为还需要子树相同才行
+
+class Solution {
+public:
+    bool compare(TreeNode* tree1,TreeNode* tree2){
+        //必须先把空节点的所有情况都先判断了，才能取判断值是否相等，否则会出现异常
+        if(tree1==nullptr&&tree2!=nullptr)return false;//1
+        else if(tree1!=nullptr&&tree2==nullptr)return false;//2
+        else if(tree1==nullptr&&tree2==nullptr)return true;//3
+        else if(tree1->val!=tree2->val)return false;//4
+
+        bool isLeftSame=compare(tree1->left,tree2->left);
+        bool isRightSame=compare(tree1->right,tree2->right);
+        return isLeftSame&&isRightSame;
+    }
+
+    bool isSameTree(TreeNode* p, TreeNode* q) {
+        return compare(p,q);
+    }
+};
+```
+
+### 4. 116. 填充每个节点的下一个右侧节点指针
+
+```cpp
+思路：
+前序遍历
+如果有左子节点，左子节点的next兄弟节点是右子节点；如果有右子节点，且（当前节点如果有next兄弟节点，右子节点的next兄弟节点就是当前节点的next兄弟节点的左子节点，如果没有next兄弟节点，右子节点的next兄弟节点就是NULL）
+
+class Solution {
+public:
+    void traversal(Node*cur){
+        //中
+        if(cur==nullptr)return;
+        if(cur->left)cur->left->next=cur->right;
+        if(cur->right){
+            if(cur->next)cur->right->next=cur->next->left;
+            else cur->right->next=nullptr;
+        }
+        traversal(cur->left);//左
+        traversal(cur->right);//右
+    }
+
+    Node* connect(Node* root) {
+        traversal(root);
+        return root;
+    }
+};
+```
+
