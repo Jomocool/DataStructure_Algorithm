@@ -7098,3 +7098,114 @@ public:
 };
 ```
 
+## 十六、回溯算法额外题目
+
+### 1. LeetCode52. N 皇后 II
+
+```cpp
+class Solution {
+public:
+    vector<vector<char>>record;//记录皇后位置，'Y'代表有，'N'代表无
+    int count;//方法数
+
+    bool isEffective(int row,int col,int n){//判断当前位置能否放置皇后
+        //不用判断同行，因为我们放置一个皇后之后就进入下一行了
+        
+        //同列
+        for(int i=0;i<row;i++){
+            if(record[i][col]=='Y')return false;
+        }
+        //45度角
+        int distance=0;
+        for(int i=row-1;i>=0;i--){
+            distance++;
+            if(col-distance>=0&&record[i][col-distance]=='Y')return false;
+            if(col+distance<n&&record[i][col+distance]=='Y')return false;
+        }
+        return true;
+    }
+
+    void backTracking(int row,int n){//row代表当前到了第几行，即要放置第几个皇后了
+        if(row==n){
+            count+=1;//只有最后一行的皇后被放置了，row才会等于n，此时才算一种有效的放置方法
+        }
+        for(int j=0;j<n;j++){//遍历当前所在行的列
+            if(isEffective(row,j,n)){
+                record[row][j]='Y';
+                backTracking(row+1,n);
+                record[row][j]='N';//关键点，回溯。因为一行只能放置一个皇后，不能重复
+            }
+        }
+    }
+
+    int totalNQueens(int n) {
+        record.clear();
+        record=vector<vector<char>>(n,vector<char>(n));
+        backTracking(0,n);
+        return count;
+    }
+};
+```
+
+## 十七、贪心算法额外题目
+
+### 1. LeetCode649. Dota2 参议院
+
+```cpp
+思路：
+贪心策略：消灭自己后面的对手，因为前面的对手已经使用过权利了，威胁不大
+局部最优（每个人都消灭自己后面的对手） -> 全局最优（为自己的阵营消灭更多的对手）
+keypoint：用flag与0的大小比较，来判断当前参议员之前的R多还是D多，假设R过多，说明当前参议员肯定被消灭了，因此也就没有权利了
+对每一轮做判断
+
+class Solution {
+public:
+    string predictPartyVictory(string senate) {
+        int flag=0;//flag>0，即前面D>R，D还没被消灭，还有权利;flag<0，即前面D<R，R还没被消灭，还有权利
+        bool D=true;//是否还有D
+        bool R=true;;//是否还有R
+
+        while(D&&R){//R和D还有剩余时才需要继续下一轮
+            //默认没有
+            D=false;
+            R=false;
+
+            for(int i=0;i<senate.length();i++){
+                if(senate[i]=='R'){
+                    if(flag>0)senate[i]='0';
+                    else R=true;//R没被消灭，说明还有R
+                    flag--;
+                }
+                //不能用else，因为可能是0
+                if(senate[i]=='D'){
+                    if(flag<0)senate[i]='0';
+                    else D=true;//D没别消灭，还有D
+                    flag++;
+                }
+            }
+        }
+        return D?"Dire":"Radiant";
+    }
+};
+```
+
+### 2. LeetCode1221. 分割平衡字符串
+
+```cpp
+贪心策略：为了有尽可能多的平衡字符串，所以一旦出现L和R数量相同时，立马分割，这样分割出来的字符串就尽可能短
+
+class Solution {
+public:
+    int balancedStringSplit(string s) {
+        int flag=0;
+        int res=0;
+        for(char& ch:s){
+            ch=='L'?flag--:flag++;//碰到L，flag减1,；碰到R，flag加1
+            if(flag==0)res++;//如果flag==0，说明加上当前字符后，L和R数量相同，可以分割为一个平衡字符串
+        }
+        return res;
+    }
+};
+如果需要确认分割点，记住flag==0的位置即可
+```
+
