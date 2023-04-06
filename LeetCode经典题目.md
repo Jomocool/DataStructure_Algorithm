@@ -7209,3 +7209,137 @@ public:
 如果需要确认分割点，记住flag==0的位置即可
 ```
 
+## 十七、动态规划额外题目
+
+### 1. LeetCode5. 最长回文子串
+
+```cpp
+1.双指针
+class Solution {
+public:
+    int start=0;
+    int maxLen=0;
+
+    void extend(string&s,int left,int right,int len){
+        while(left>=0&&right<len&&s[left]==s[right]){
+            if((right-left+1)>maxLen){
+                start=left;
+                maxLen=right-left+1;
+            }
+            left--;
+            right++;
+        }
+    }
+
+    string longestPalindrome(string s) {
+        if(s.length()==1)return s;
+        int len=s.length();
+        for(int i=0;i<len;i++){
+            extend(s,i,i,len);
+            extend(s,i,i+1,len);
+        }
+        return s.substr(start,maxLen);
+    }
+};
+
+2.动态规划：
+注意基础情况有两种，1.单字符 2.双字符 因为回文串一加就是两个字符，奇偶性如此
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        int len=s.length();
+        int start=0;
+        int maxLen=0;
+        //dp[i][j]：s[i,j]是否为回文串
+        vector<vector<bool>>dp(len,vector<bool>(len,false));
+        for(int i=len-1;i>=0;i--){
+            for(int j=i;j<len;j++){
+                if(s[i]==s[j]&&(j-i<=1||dp[i+1][j-1])){//基础情况：1.单字符 2.双字符
+                    dp[i][j]=true;
+                }
+                if(dp[i][j]&&(j-i+1)>maxLen){
+                    start=i;
+                    maxLen=j-i+1;
+                }
+            }
+        }
+        return s.substr(start,maxLen);
+    }
+};
+```
+
+### 2. LeetCode132. 分割回文串 II
+
+```cpp
+class Solution {
+public:
+    int minCut(string s) {
+        int len=s.length();
+        vector<vector<bool>>isPalindrome(len,vector<bool>(len,false));//s[i,j]是否为回文串
+        for(int i=len-1;i>=0;i--){
+            for(int j=i;j<len;j++){
+                if(s[i]==s[j]&&(j-i<=1||isPalindrome[i+1][j-1])){
+                    isPalindrome[i][j]=true;
+                }
+            }
+        }
+
+        vector<int>dp(len);//dp[i]：s[0,i]字符串要分成都是回文串的最少切割数
+        for(int i=0;i<len;i++)dp[i]=i;
+
+        for(int i=1;i<len;i++){
+            if(isPalindrome[0][i]){
+             dp[i]=0;
+             continue;   
+            }
+            for(int j=0;j<i;j++){//以j为切割点
+                if(isPalindrome[j+1][i]){//dp[j]是s[0,j]的最小切割数，所以我们需要判断的是s[j+1,i]是否为回文串，这样才能在j切割
+                    //并非是dp[j]+1和dp[i]比较，而是在这个过程中找到最小的dp[i],加1是把s[j,i]回文子串切割出来
+                    dp[i]=min(dp[j]+1,dp[i]);
+                }
+            }
+        }
+        return dp[len-1];
+    }
+};
+```
+
+### 3. LeetCode673. 最长递增子序列的个数
+
+```cpp
+思路：
+1.先找出最长递增子序列的长度
+2.再从dp里看最长长度有几个
+
+class Solution {
+public:
+    int findNumberOfLIS(vector<int>& nums) {
+        if(nums.size()==1)return 1;
+        //1.找出最长递增子序列长度
+        int size=nums.size();
+        int maxLen=0;
+        vector<pair<int,int>>dp(size,make_pair(1,1));//dp[i]：nums[0,i]最长递增子序列长度，和nums[i]可以是多少个递增子序列的尾元素
+        for(int i=1;i<size;i++){
+            //遍历i之前的数，和nums[i]比大小，如果比nums[i]小，那nums[i]就可以当作其递增子序列的最后一个元素，添加到尾部
+            for(int j=0;j<i;j++){
+                if(nums[i]>nums[j]){//严格递增，不能等于
+                    if(dp[i].first<dp[j].first+1){//当有更长的递增子序列时才修改
+                        dp[i]=make_pair(dp[j].first+1,dp[j].second);
+                    }else if(dp[i].first==dp[j].first+1){
+                        dp[i].second+=dp[j].second;//是直接加上dp[j].second，而不是加1，因为任何元素都有可能是多个递增子序列的尾元素
+                    }
+                }
+            }
+            maxLen=max(maxLen,dp[i].first);
+        }
+        
+        //2.再从dp里看最长长度有几个
+        int count=0;
+        for(int i=0;i<size;i++){
+            if(dp[i].first==maxLen)count+=dp[i].second;
+        }
+        return count;
+    }
+};
+```
+
