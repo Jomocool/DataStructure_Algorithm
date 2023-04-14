@@ -7343,3 +7343,95 @@ public:
 };
 ```
 
+### 2. LeetCode127. 单词接龙
+
+```cpp
+思路：
+广度优先探索优于深度优先探索，因为广度优先探索只要到达了终点就一定是最短路径（当第一个到达endWord后，就直接返回路径长度了，而最短的路径必定最先到达），而深度优先探索还要去判断哪条路径更短
+
+class Solution {
+public:
+    //判断str1和str2是否只有一个位置不同，连线的充要条件
+    bool onlyOne(string&str1,string&str2){
+        int index1=0;
+        int index2=0;
+        int len1=str1.length();
+        int len2=str2.length();
+        int count=0;//计数有几个字符不同
+        while(index1<len1&&index2<len2){
+            if(str1[index1++]!=str2[index2++])count++;
+        }
+        return (count+abs(len1-len2))==1;//可能长度不等
+    }
+
+    int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+        if(find(wordList.begin(),wordList.end(),endWord)==wordList.end())return 0;//endWord不存在于wordList
+        unordered_map<string,int>visited;//key:单词，value:beginWord到当前单词的路径长度
+        queue<string>que;//存放途经的单词
+        que.push(beginWord);
+        visited[beginWord]=1;//初始已经有一个单词了，所以长度是1
+        while(!que.empty()){
+            string curWord=que.front();//取当前单词
+            que.pop();
+            for(int i=0;i<wordList.size();i++){
+                if(onlyOne(curWord,wordList[i])){//字典中和当前字符只有一个字母不同的
+                    if(visited.find(wordList[i])==visited.end()){//不曾访问过的
+                        que.push(wordList[i]);//加入到队列中，表明即将访问该单词
+                        visited[wordList[i]]=visited[curWord]+1;//标记已访问
+                        if(wordList[i]==endWord)return visited[wordList[i]];//如果是终点，直接返回
+                    }
+                }
+            }
+        }
+        //经过while循环还没结束，说明无法到达终点
+        return 0;
+    }
+};
+```
+
+## 十九、并查集
+
+### 1. LeetCode684. 冗余连接
+
+```cpp
+class Solution {
+public:
+    int n=1005;
+    int father[1005];
+
+    //并查集初始化
+    void init(){
+        for(int i=0;i<n;i++){
+            father[i]=i;
+        }
+    }
+    
+    //寻根
+    int find(int u){
+        return u==father[u]?u:father[u]=find(father[u]);//如果u不是根节点，那么就要修改它的根节点(最顶的节点)
+    }
+
+    //加边u->v，改的是u和v的根节点之间的联系
+    void join(int u,int v){
+        u=find(u);
+        v=find(v);
+        if(u!=v)father[u]=v;
+    }
+
+    //是否同根
+    bool same(int u,int v){
+        return find(u)==find(v);
+    }
+
+    vector<int> findRedundantConnection(vector<vector<int>>& edges) {
+        init();
+        vector<int>res;
+        for(int i=0;i<edges.size();i++){
+            if(!same(edges[i][0],edges[i][1]))join(edges[i][1],edges[i][0]);
+            else res=edges[i];
+        }
+        return res;//返回的是edges的最后一条边
+    }
+};
+```
+
