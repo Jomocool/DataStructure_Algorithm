@@ -7435,3 +7435,96 @@ public:
 };
 ```
 
+### 2. LeetCode685. 冗余连接 II
+
+```cpp
+思路：
+1.一棵树的根节点入度是0，其他节点的入度是1；不看出度，因为树中可以不止有一个父结点有多个出度
+2.因为给的图是在一棵有向树的基础上多加了一条边：
+  2.1该边可能指向根节点，导致根节点的入度从0->1，但加完之后仍然是棵树，所以应该不会这么加，因此只有第二种情况
+  2.2该边可能指向中间节点，导致中间节点的入度从1->2
+  2.3如果没有入度是2的中间节点，那就还有一种情况是加入边之后，树里出现了有向回路
+3.综上：
+  3.1有入度为2的节点，可能出现有向回路也可能不出现，如果出现有向回路应该删去有向回路的那一条边
+  3.2没有入度为2的节点，一定出现有向回路
+注：这里的回路指有边连接起来即可，不看方向
+
+前两种入度为2的情况，一定是删除指向入度为2的节点的两条边其中的一条，如果删了一条，判断这个图是一个树，那么这条边就是答案，同时注意要从后向前遍历，因为如果两天边删哪一条都可以成为树，就删最后那一条。
+
+如果两个节点在添加边之前就可以找到共同祖先，那么这条边添加后，必定不是树了
+
+class Solution {
+public:
+    int n=1005;
+    int parent[1005];//父集
+    int inDegree[1005]={0};//入度集
+    
+    //初始化并查集
+    void init(){
+        for(int i=0;i<n;i++){
+            parent[i]=i;
+        }
+    }
+
+    //寻根
+    int find(int u){
+        return u==parent[u]?u:parent[u]=find(parent[u]);//统一根
+    }
+
+    //加边u->v
+    void join(int u,int v){
+        u=find(u);
+        v=find(v);
+        if(u!=v)parent[v]=u;
+    }
+
+    //判断是否有共同祖先
+    bool same(int u,int v){
+        return find(u)==find(v);
+    }
+
+    bool isTreeAfterRemove(const vector<vector<int>>&edges,int deleteEdgeIndex){
+        //删掉边之后重构树，看是否有效
+        for(int i=0;i<edges.size();i++){
+            if(i==deleteEdgeIndex)continue;//删掉该边的方法就是跳过该边，不构建
+            if(!same(edges[i][0],edges[i][1]))join(edges[i][0],edges[i][1]);
+            else return false;
+        }
+        return true;
+    }
+
+    vector<int> getRemoveEdge(const vector<vector<int>>& edges){
+        vector<int>res;
+        for(int i=0;i<edges.size();i++){
+            if(!same(edges[i][0],edges[i][1]))join(edges[i][0],edges[i][1]);
+            else res=edges[i];
+        }
+        return res;
+    }
+
+    vector<int> findRedundantDirectedConnection(vector<vector<int>>& edges) {
+        init();//初始化并查集
+        //计算入度
+        for(int i=0;i<edges.size();i++){
+            inDegree[edges[i][1]]++;
+        }
+        
+        vector<int>vec;//记录指向入度是2的节点的两条边
+        for(int i=edges.size()-1;i>=0;i--){//一定是从后向前遍历，因为如果两条边都可以删去的话优先删除后面的边
+            if(inDegree[edges[i][1]]==2){
+                vec.push_back(i);
+            }
+        }
+
+        //1.有入度是2的节点，那就要删掉指向它的其中一条边之后判断是否为树
+        if(vec.size()>0){
+            if(isTreeAfterRemove(edges,vec[0]))return edges[vec[0]];
+            else return edges[vec[1]];
+        }
+
+        //2.没有入度是2的节点，那就一定有回路了
+        return getRemoveEdge(edges);
+    }
+};
+```
+
