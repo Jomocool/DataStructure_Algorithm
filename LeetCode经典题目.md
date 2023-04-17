@@ -7605,3 +7605,91 @@ public:
 };
 ```
 
+### 3. LeetCode463. 岛屿的周长
+
+**思路**
+
+![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/LeetCode-img/17.png)
+
+```cpp
+代码：
+class Solution {
+public:
+    int islandPerimeter(vector<vector<int>>& grid) {
+        int sum=0;//岛屿总数，即1的数量
+        int cover=0;//相邻岛屿对数量
+        for(int i=0;i<grid.size();i++){
+            for(int j=0;j<grid[i].size();j++){
+                if(grid[i][j]==1){
+                    sum++;
+                    //只统计当前岛屿与左边和上边的相邻情况，避免重复计算
+                    if(i-1>=0&&grid[i-1][j]==1)cover++;
+                    if(j-1>=0&&grid[i][j-1]==1)cover++;
+                }
+            }
+        }
+        return (sum*4)-(cover*2);
+    }
+};
+```
+
+## 二十一、位运算
+
+### 1. LeetCode1356. 根据数字二进制下 1 的数目排序
+
+```cpp
+class Solution {
+public:
+    //计算n的2进制有几个1
+    int countOne(int n){
+        int count=0;
+        //每次只计算最低位的1，最低位的1后面全是0，比如1000减1后是0111,1000&0111=0000，相当于计算一次1就删去该1
+        while(n>0){
+            n&=(n-1);
+            count++;
+        }
+        return count;
+    }
+
+    //归并排序，但规则是看1的数量
+    void mergeSort(vector<int>&arr,int left,int right){
+        if(left<right){
+            int mid=left+((right-left)>>1);
+            mergeSort(arr,left,mid);
+            mergeSort(arr,mid+1,right);
+            merge(arr,left,right);
+        }
+    }
+
+    void merge(vector<int>&arr,int left,int right){
+        vector<int>tmp(right-left+1);//辅助数组，用于暂存元素
+        int mid=left+((right-left)>>1);
+        int l=left;
+        int r=mid+1;
+        int tmpIndex=0;
+        while(l<=mid&&r<=right){
+            if(countOne(arr[l])==countOne(arr[r])){//如果1的数量相同，就比大小
+                tmp[tmpIndex++]=arr[l]<=arr[r]?arr[l++]:arr[r++];
+            }else{
+                tmp[tmpIndex++]=countOne(arr[l])<countOne(arr[r])?arr[l++]:arr[r++];
+            }
+        }
+        while(l<=mid){
+            tmp[tmpIndex++]=arr[l++];
+        }
+        while(r<=right){
+            tmp[tmpIndex++]=arr[r++];
+        }
+        //拷贝回去
+        for(int i=left;i<=right;i++){
+            arr[i]=tmp[i-left];
+        }
+    }
+
+    vector<int> sortByBits(vector<int>& arr) {
+        mergeSort(arr,0,arr.size()-1);
+        return arr;
+    }
+};
+```
+
