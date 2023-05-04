@@ -148,54 +148,6 @@ public:
 小结：之前写过两次这道题，但这一次还是被如何判断重复字符卡住了，因为总想着中间出现重复字符怎么办，最后意识到因为是子串，所以从左向右删除即可。还有就是虽然看的是别人的思路，但最好还是按着自己的理解手写一遍代码，因为这才是属于自己的代码
 ```
 
-## [3. 无重复字符的最长子串](https://leetcode.cn/problems/longest-substring-without-repeating-characters/)
-
-```cpp
-字符串子串
-
-子串：连续的
-子序列：不连续，但相对顺序一致
-
-思路：滑动窗口
-1.窗口意味着有边界，定义left为左边界，right为右边界，哈希表record，key(字符)，value(字符在窗口中出现的次数)
-2.right不断右扫加入新的字符到窗口中，首先需要判断是否有重复字符在窗口中，如果有就不断让left右移，一个一个删去字符直到没有重复字符为止。如果没有重复字符，加入新字符后，判断当前窗口大小是否大于已知最大大小，如果大于就更新
-
-卡点：
-一开始我一直在想如果要加入的新字符和窗口中间的字符重复的话，岂不是要遍历整个窗口去查到底是否有重复字符。但是其实可以用哈希表记录当前要加入的字符是否已经在窗口中，然后从left向右不断删去就好了。因为是子串，所以必须是连续的，中间有重复字符要从中间删去的话，那左边的必然也被切割了，所以不如直接从左边开始一个一个删直到没有重复字符即可。
-
-算法：
-1.定义left，right，record，maxLen
-2.滑动窗口遍历字符串，注意细节的判断
-3.返回最大长度
-
-代码：
-class Solution {
-public:
-    int lengthOfLongestSubstring(string s) {
-        //窗口[left,right)
-        int left=0;
-        int right=0;
-        int maxLen=0;
-        unordered_map<char,int>record;
-        while(right<s.length()){
-            while(right<s.length()&&record[s[right]]==0){//没有重复字符时，才可以加入
-                record[s[right++]]++;
-                maxLen=max(maxLen,right-left);
-            }
-            while(right<s.length()&&record[s[right]]==1){//有重复字符时，就从左边开始一直删直到没有重复字符
-                record[s[left++]]--;
-            }
-        }
-        return maxLen;
-    }
-};
-
-时空复杂度分析:
-时间复杂度：O(n)  滑动窗口移动，由于right每次循环时都是加，没有往回走，所以即使有两个while循环，但仍然是n;
-空间复杂度：O(n)  哈希表的最坏情况是把整个字符串都记录下来了;
-
-小结：之前写过两次这道题，但这一次还是被如何判断重复字符卡住了，因为总想着中间出现重复字符怎么办，最后意识到因为是子串，所以从左向右删除即可。还有就是虽然看的是别人的思路，但最好还是按着自己的理解手写一遍代码，因为这才是属于自己的代码
-```
 
 ## [4. 寻找两个正序数组的中位数](https://leetcode.cn/problems/median-of-two-sorted-arrays/)
 
