@@ -497,3 +497,214 @@ public:
 空间复杂度：O(1)  常数个变量记录需要的值;
 ```
 
+## [12. 整数转罗马数字](https://leetcode.cn/problems/integer-to-roman/)
+
+```cpp
+思路：
+1.记录每位的罗马数字格式，然后拼接而成
+2.1<=num<=3999
+3.用字符串数组记录各数位上对应数字的罗马数字格式
+
+class Solution {
+public:
+    string intToRoman(int num) {
+        string thounds[]={"","M","MM","MMM"};
+        string hundreds[]={"","C","CC","CCC","CD","D","DC","DCC","DCCC","CM"};
+        string tens[]={"","X","XX","XXX","XL","L","LX","LXX","LXXX","XC"};
+        string ones[]={"","I","II","III","IV","V","VI","VII","VIII","IX"};
+
+        return thounds[num/1000]+hundreds[num%1000/100]+tens[num%100/10]+ones[num%10/1];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(1)  计算量与数字大小无关;
+空间复杂度：O(1)  只需要用到常数个字符串数组;
+```
+
+## [13. 罗马数字转整数](https://leetcode.cn/problems/roman-to-integer/)
+
+```cpp
+思路：
+1.如果当前罗马字符小于右边相邻的罗马字符，则减，否则加
+
+class Solution {
+public:
+    int romanToInt(string s) {
+        unordered_map<char,int>map{
+            {'I',1},
+            {'V',5},
+            {'X',10},
+            {'L',50},
+            {'C',100},
+            {'D',500},
+            {'M',1000}
+        };
+        int res=0;
+        for(int i=0;i<s.length();i++){
+            if(i==s.length()-1){
+                res+=map[s[i]];//如果i是最后一位了，肯定是加
+                break;//结束循环，不然会向下继续运算
+            }
+            if(map[s[i]]<map[s[i+1]]){
+                res-=map[s[i]];
+            }else{
+                res+=map[s[i]];
+            }
+        }
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)  需要遍历字符串s;
+空间复杂度：O(1)  只需要用到常数个变量;
+```
+
+## [14. 最长公共前缀](https://leetcode.cn/problems/longest-common-prefix/)
+
+```cpp
+思路：纵向比较法
+1.以strs[0]为基准字符串
+
+class Solution {
+public:
+    string longestCommonPrefix(vector<string>& strs) {
+        for(int i=0;i<strs[0].length();i++){//以strs[0]为基准
+            char c=strs[0][i];
+            for(int j=1;j<strs.size();j++){//strs[0][i]是不等的字符，所以不拷贝
+                if(i>strs[j].length()-1||strs[j][i]!=c)return strs[0].substr(0,i); 
+            }
+        }
+        //如果能够出循环，说明遍历完了strs[0]，即strs[0]是最短的字符串，直接返回它即可
+        return strs[0];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(mn)  其中m是字符串数组中的字符串的平均长度，n是字符串的数量。最坏情况下，字符串数组中的每个字符串的每个字符都会被比较一次;
+空间复杂度：O(1);
+```
+
+## [15. 三数之和](https://leetcode.cn/problems/3sum/)
+
+```cpp
+1.蛮力法
+思路：
+3层for循环依次找到i、j、k，有两点需要注意，因为不能有重复的集合，为了方便跳过重复的元素，我们提前排好序，让等值的集中在一起，但不能简单的判断当前值等于前一个值就跳过，因为所属范围不同，也就不等价。比如[0,0,0]，如果单纯的判断为当前值等于前一个值就跳过的话那么结果集就是空的了，实际上不为空，所以结果错误了，因为在第一层for循环的时候，就一直跳直接结束了，不会进入第二层for循环。我们可以把等值的元素看作一整块，对于每一块我们只需要其第一个元素即可，剩余的直接跳过，所以在每层for循环多加一个判断，如果不是每一块的第一个元素，并且该元素属于当前块，则直接跳过，这样就可以保证没有重复的结果了。
+
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        sort(nums.begin(),nums.end());//排序数组，让相等的值集中在一起
+        vector<vector<int>>res;//结果集
+        
+        for(int i=0;i<nums.size()-2;i++){
+            if(nums[i]>0)break;//nums[i]是三者中最小的，如果其大于0，后面的必然都大于0
+            if(i!=0&&nums[i]==nums[i-1])continue;
+            for(int j=i+1;j<nums.size()-1;j++){
+                if(nums[i]+nums[j]>0)break;//二者和大于0，说明二者最大值必然大于0，而nums[k]是三者最大的，必然也大于0，三者和肯定也大于0
+                if(j-1>i&&nums[j]==nums[j-1])continue;
+                for(int k=j+1;k<nums.size();k++){
+                    if(nums[i]+nums[j]+nums[k]>0)break;
+                    if(k-1>j&&nums[k]==nums[k-1])continue;
+                    if(nums[i]+nums[j]+nums[k]==0){
+                        vector<int>vec(3);
+                        vec[0]=nums[i];
+                        vec[1]=nums[j];
+                        vec[2]=nums[k];
+                        res.push_back(vec);
+                    }
+                }
+            }
+        }
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n^3)  3层for循环，超出时间限制;
+空间复杂度：O(1)  返回结果不算额外空间;
+
+2.双指针
+引入：
+对于一个排好序的数组，可以利用双指针法，找到和为0的二元组。
+(1)如果和为0，两边都需要跳过重复的元素
+(2)如果和小于0，左边跳过重复的元素
+(3)如果和大于0，右边跳过重复的元素
+
+思路：
+通过引入，我们可以把-nums[i]当作我们的目标值，从而找到三元组
+
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        sort(nums.begin(),nums.end());//排序是关键
+        vector<vector<int>>res;
+        for(int i=0;i<nums.size()-2;i++){
+            if(i>0&&nums[i]==nums[i-1])continue;//去重nums[i]
+            int left=i+1;
+            int right=nums.size()-1;
+            while(left<right){
+                if(nums[i]+nums[left]+nums[right]==0){
+                    res.push_back({nums[i],nums[left],nums[right]});
+                    while(left<right&&nums[left]==nums[left+1])left++;//去重nums[left]
+                    while(left<right&&nums[right]==nums[right-1])right--;//去重nums[right]
+                    //这样不用额外考虑right是最后一位时的判断情况
+                    //此时left在当前块的最后一位
+                    //此时right在当前块的第一位
+                    //各自再移动一位就到下一块了
+                    left++;
+                    right--;
+                }
+                else if(nums[i]+nums[left]+nums[right]<0){//nums[left]偏小
+                    left++;
+                }
+                else{//nums[right]偏大
+                    right--;
+                }
+            }
+        }
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n^2)  双指针提高了时间效率;
+空间复杂度：O(1)  返回结果不算额外空间;
+```
+
+## [16. 最接近的三数之和](https://leetcode.cn/problems/3sum-closest/)
+
+```cpp
+思路：
+1.最接近：保留差的绝对值
+2.排序
+3.偏小右移左指针，偏大左移右指针
+
+class Solution {
+public:
+    int threeSumClosest(vector<int>& nums, int target) {
+        int res=nums[0]+nums[1]+nums[2];//用数组的元素初始化res，因为本身也是数组的三数之和去和其他三数之和比较
+        sort(nums.begin(),nums.end());
+        for(int i=0;i<nums.size()-2;i++){
+            int left=i+1;
+            int right=nums.size()-1;
+            while(left<right){
+                int sum=nums[i]+nums[left]+nums[right];//三数之和
+                if(sum==target)return sum;
+                if(abs(sum-target)<abs(res-target))res=sum;
+                if(sum<target)left++;//偏小
+                if(sum>target)right--;//偏大
+            }
+        }
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n^2)  双指针提高了时间效率;
+空间复杂度：O(1)  返回结果不算额外空间;
+```
+
