@@ -587,47 +587,7 @@ public:
 ```
 
 ## [15. 三数之和](https://leetcode.cn/problems/3sum/)
-
-```cpp
-1.蛮力法
-思路：
-3层for循环依次找到i、j、k，有两点需要注意，因为不能有重复的集合，为了方便跳过重复的元素，我们提前排好序，让等值的集中在一起，但不能简单的判断当前值等于前一个值就跳过，因为所属范围不同，也就不等价。比如[0,0,0]，如果单纯的判断为当前值等于前一个值就跳过的话那么结果集就是空的了，实际上不为空，所以结果错误了，因为在第一层for循环的时候，就一直跳直接结束了，不会进入第二层for循环。我们可以把等值的元素看作一整块，对于每一块我们只需要其第一个元素即可，剩余的直接跳过，所以在每层for循环多加一个判断，如果不是每一块的第一个元素，并且该元素属于当前块，则直接跳过，这样就可以保证没有重复的结果了。
-
-class Solution {
-public:
-    vector<vector<int>> threeSum(vector<int>& nums) {
-        sort(nums.begin(),nums.end());//排序数组，让相等的值集中在一起
-        vector<vector<int>>res;//结果集
-        
-        for(int i=0;i<nums.size()-2;i++){
-            if(nums[i]>0)break;//nums[i]是三者中最小的，如果其大于0，后面的必然都大于0
-            if(i!=0&&nums[i]==nums[i-1])continue;
-            for(int j=i+1;j<nums.size()-1;j++){
-                if(nums[i]+nums[j]>0)break;//二者和大于0，说明二者最大值必然大于0，而nums[k]是三者最大的，必然也大于0，三者和肯定也大于0
-                if(j-1>i&&nums[j]==nums[j-1])continue;
-                for(int k=j+1;k<nums.size();k++){
-                    if(nums[i]+nums[j]+nums[k]>0)break;
-                    if(k-1>j&&nums[k]==nums[k-1])continue;
-                    if(nums[i]+nums[j]+nums[k]==0){
-                        vector<int>vec(3);
-                        vec[0]=nums[i];
-                        vec[1]=nums[j];
-                        vec[2]=nums[k];
-                        res.push_back(vec);
-                    }
-                }
-            }
-        }
-
-        return res;
-    }
-};
-
-时空复杂度分析:
-时间复杂度：O(n^3)  3层for循环，超出时间限制;
-空间复杂度：O(1)  返回结果不算额外空间;
-
-2.双指针
+双指针
 引入：
 对于一个排好序的数组，可以利用双指针法，找到和为0的二元组。
 (1)如果和为0，两边都需要跳过重复的元素
