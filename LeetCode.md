@@ -668,3 +668,246 @@ public:
 空间复杂度：O(1)  返回结果不算额外空间;
 ```
 
+## [17. 电话号码的字母组合](https://leetcode.cn/problems/letter-combinations-of-a-phone-number/)
+
+```cpp
+思路：递归
+1.对于digits的一个数字就代表某一层递归，而每层递归需要遍历自己所代表的所有字符
+2.每层递归处理path的方式是，在path加上自己当前所代表的字符后，交给下一层去处理
+3.index下标表示当前所在层，刚好可以用来做base case的判断，如果经历过所有层递归后，就可以把path加入结果集了
+
+class Solution {
+public:
+    vector<string>res;//结果集
+    unordered_map<char,string>map{//映射表
+        {'2',"abc"},{'3',"def"},{'4',"ghi"},{'5',"jkl"},
+        {'6',"mno"},{'7',"pqrs"},{'8',"tuv"},{'9',"wxyz"}
+    };
+	
+    //递归函数
+    void traversal(string& digits,int index,string path){
+        if(index==digits.length()){//遍历完所有数字后，path完型了，加入结果集
+            res.push_back(path);
+            return;
+        }
+
+        for(int j=0;j<map[digits[index]].length();j++){//遍历当前数字代表的所有字符
+            traversal(digits,index+1,path+map[digits[index]][j]);//由于是交给下一层处理，所以idnex要加1
+        }
+    }
+
+    vector<string> letterCombinations(string digits) {
+        res.clear();
+        if(digits.length()==0)return res;
+        traversal(digits,0,"");
+        return res;
+    }
+};
+
+一开始有一个误区，就是在每一层递归中，外面多加了一个for循环，i:index->digits.length()，想着这样是交给后面处理，但实际上index+1时，下一层也会有index+1，这样就已经能够把digits遍历完了，不需要再额外处理了，不然会有很多不符合预期的额外结果。多加一层for循环可以找到以不同数字为起点的，以最后一个数字为终点的所有结果。
+
+时空复杂度分析:
+时间复杂度：O(n)  digits有多长，就有几层递归，每次递归的for循环只是常数个字符而已;
+空间复杂度：O(n)  path的最终长度和digits一样;
+```
+
+## [18. 四数之和](https://leetcode.cn/problems/4sum/)
+
+```cpp
+思路和三数之和类似，唯一要注意的点是，四数之和可能会溢出，需要一个比int更大范围的数去保存
+
+class Solution {
+public:
+    vector<vector<int>> fourSum(vector<int>& nums, int target) {
+        sort(nums.begin(),nums.end());//先排序，集中等值元素
+        vector<vector<int>>res;//结果集合
+        if(nums.size()<4)return res;//如果nums元素个数小于3，nums.size()-3不符合预期
+        for(unsigned int i=0;i<nums.size()-3;i++){
+            if(i>0&&nums[i]==nums[i-1])continue;
+            for(unsigned int j=i+1;j<nums.size()-2;j++){
+                if(j>i+1&&nums[j]==nums[j-1])continue;
+                int left=j+1;
+                int right=nums.size()-1;
+                while(left<right){
+                    long sum=(long)nums[i]+nums[j]+nums[left]+nums[right];//将第一个数改为long类型后，后面和都是long类型了
+                    if(sum==target){
+                        res.push_back({nums[i],nums[j],nums[left],nums[right]});
+                        while(left<right&&nums[left]==nums[left+1])left++;
+                        while(left<right&&nums[right]==nums[right-1])right--;
+                        left++;
+                        right--;
+                    }
+                    else if(sum>target){
+                        right--;
+                    }
+                    else{
+                        left++;
+                    }
+                }
+            }
+        }
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n^3);
+空间复杂度：O(1);
+```
+
+## [19. 删除链表的倒数第 N 个结点](https://leetcode.cn/problems/remove-nth-node-from-end-of-list/)
+
+```cpp
+思路：快慢指针
+1.快指针先走n步
+2.慢指针等快指针走完n步后开始移动
+3.等快指针走到最后一个节点时，慢指针刚好就在倒数第n个结点的前一个节点了
+4.由于要删掉倒数第n个节点，所以需要其前一个节点
+注意：head没有前一个节点，所以需要额外判断
+
+class Solution {
+public:
+    ListNode* removeNthFromEnd(ListNode* head, int n) {
+        if(!head->next){//如果只有一个节点，必定只能删除当前节点
+            return nullptr;
+        }
+        ListNode* fast=head;
+        while(n>0&&fast){
+            fast=fast->next;
+            n--;
+        }
+
+        if(!fast)return head->next;//如果fast是空，说明n==节点数，所以要删除的是头节点，直接从第二个节点开始返回即可
+
+        ListNode*slow=head;
+        while(fast->next){
+            fast=fast->next;
+            slow=slow->next;
+        }
+        
+        slow->next=slow->next->next;
+
+        return head;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+## [20. 有效的括号](https://leetcode.cn/problems/valid-parentheses/)
+
+```cpp
+class Solution {
+public:
+    bool isValid(string s) {
+        stack<char>stk;//辅助栈
+        unordered_map<char,char>map{
+            {'(',')'},
+            {'[',']'},
+            {'{','}'}
+        };
+        for(int i=0;i<s.length();i++){
+            if(map.find(s[i])!=map.end()){//左括号，入栈
+                stk.push(s[i]);
+            }
+            else{//右括号
+                if(stk.empty())return false;//有右括号，但是栈为空，说明没有对应左括号
+                char c=stk.top();
+                stk.pop();
+                if(map[c]!=s[i])return false;
+            }
+        }
+        return stk.empty();//栈里的左括号需要被全部匹配完
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n)  辅助栈;
+```
+
+## [21. 合并两个有序链表](https://leetcode.cn/problems/merge-two-sorted-lists/)
+
+```cpp
+思路：双指针
+1.指针head1和head2分别指向链表1、2
+2.谁小谁先移动，然后把较小的那个节点加入到新链表中
+3.直到某一个指针为空时，把另一个还为空的链表插入到新链表尾部
+
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        ListNode*head1=list1;
+        ListNode*head2=list2;
+        ListNode*res=new ListNode(-1);//结果链表头的前驱节点
+        ListNode*cur=res;//用于操作结果链表
+
+        while(head1&&head2){//head1和head2都不为空
+            if(head1->val<head2->val){
+                cur->next=head1;
+                head1=head1->next;
+            }else{
+                cur->next=head2;
+                head2=head2->next;
+            }
+            cur=cur->next;
+        }
+        cur->next=head1?head1:head2;//谁不为空，就在尾部加入谁
+
+        return res->next;//返回的是前驱节点的下一个，因为这才是我们添加的第一个节点
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n+m)  list1和list2的长度和;
+空间复杂度：O(1)  辅助链表属于返回结果，不算额外空间;
+```
+
+## [22. 括号生成](https://leetcode.cn/problems/generate-parentheses/)
+
+```cpp
+思路：递归
+1.每一层让path添加左括号或右括号
+2.注意括号要有效，所以当右括号数量和左括号持平时，一定只能加左括号了
+3.避免添加的括号数过多导致递归停不下来，每次递归前加一个判断，避免括号过多
+
+class Solution {
+public:
+    vector<string>res;
+
+    void traversal(string path,int left, int right,int n){
+        if(left==n&&right==n){
+            res.push_back(path);
+            return;
+        }
+        
+        //括号数不能超过n，所以要在每次递归前判断当前括号数是否会溢出
+        if(right==left){//左右括号数相同，只能加左括号
+            if(left<=n-1)traversal(path+"(",left+1,right,n);
+        }else{
+            if(left<=n-1)traversal(path+"(",left+1,right,n);
+            if(right<=n-1)traversal(path+")",left,right+1,n);
+        }
+    }
+
+    vector<string> generateParenthesis(int n) {
+        res.clear();
+        traversal("",0,0,n);
+        return res;
+    }
+};
+```
+
