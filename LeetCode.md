@@ -1020,5 +1020,200 @@ public:
         return dummy->next;
     }
 };
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+## [25. K 个一组翻转链表](https://leetcode.cn/problems/reverse-nodes-in-k-group/)
+
+```cpp
+思路：
+1.其实就是多次反转长度为k的链表
+2.虚拟头节点指向整条链表，防止丢失
+3.每次将k个节点的链表反转前，先让最后一个节点的next指向空，否则会出现next指向不明的情况
+
+class Solution {
+public:
+    //翻转链表
+    ListNode*reverse(ListNode*head){
+        ListNode*dummy=new ListNode(-1);
+        ListNode*cur=head;
+        ListNode*next=cur->next;
+        while(cur){
+            cur->next=dummy->next;
+            dummy->next=cur;
+            cur=next;
+            if(cur)next=cur->next;
+        }
+        return dummy->next;
+    }
+
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        ListNode*dummy=new ListNode(-1),*cur=dummy;
+        ListNode*beginNode=head;//当前起始节点
+        ListNode*endNode=head;//当前截止节点
+        ListNode*nextBeginNode=beginNode;//下一次翻转起始节点
+        
+        while(true){
+            for(int i=0;i<k-1;i++){//移动k-1次就已经是第k个节点了
+                if(endNode==nullptr)break;
+                endNode=endNode->next;
+            }
+            //如果endNode是空，说明最后不够k个了，不用翻转了
+            if(endNode==nullptr)break;
+
+            nextBeginNode=endNode->next;//记录下一次开始翻转的节点
+            endNode->next=nullptr;//截止节点的next指向空
+
+            cur->next=reverse(beginNode);//开始反转，并让cur指向翻转后的头节点
+
+            cur=beginNode;//此时，beginNode是翻转后的链表的最后一个节点，刚好是我们所需的前驱节点
+            beginNode=nextBeginNode;//跳到下一次开始的地方
+            endNode=beginNode;//重置endNode
+        }
+
+        cur->next=nextBeginNode;//最后没被翻转的链表需要补充到尾部
+        return dummy->next;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)  (n/k)*k;
+空间复杂度：O(1);
+```
+
+## [26. 删除有序数组中的重复项](https://leetcode.cn/problems/remove-duplicates-from-sorted-array/)
+
+```cpp
+思路：快慢指针
+1.确定数组中不同的元素个数，假设为n
+2.slow的大小可以理解成当前已经填入到nums前面的不重复的元素个数，而对应的索引自然就是下一个不重复的元素需要填入的下标
+3.fast可以理解成去寻找不重复元素的索引
+
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        int n=1;//第一个元素必然不会重复，所以n初始化成1，即至少有一个不重复的值
+
+        //由于是有序数组，所以相同元素集中在一块
+        for(int i=1;i<nums.size();i++){
+            if(nums[i-1]!=nums[i])n++;
+        }
+        
+        //第一个元素必然不会重复，所以不处理
+        int slow=1;
+        int fast=1;
+        while(slow<n){
+            while(nums[fast]==nums[fast-1])fast++;
+            nums[slow++]=nums[fast++];//重写覆盖掉前面重复的值，不仅要移动slow，也要移动fast，不然fast会卡住
+        }
+
+        nums.resize(n);
+        return nums.size();
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)  fast和slow一直在向后移，而不会重复计算;
+空间复杂度：O(1);
+```
+
+## [27. 移除元素](https://leetcode.cn/problems/remove-element/)
+
+```cpp
+思路：
+和26题类似
+
+class Solution {
+public:
+    int removeElement(vector<int>& nums, int val) {
+        int count=0;//和val等值的元素的个数
+        for(int i=0;i<nums.size();i++){
+            if(nums[i]==val)count++;
+        }
+
+        int n=nums.size()-count;//新数组长度
+        int slow=0;
+        int fast=0;
+        while(slow<n){
+            while(nums[fast]==val)fast++;//跳过等于val的元素
+            nums[slow++]=nums[fast++];
+        }
+
+        nums.resize(n);
+        return n;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)  fast和slow一直在向后移，而不会重复计算;
+空间复杂度：O(1);
+```
+
+## [28. 找出字符串中第一个匹配项的下标](https://leetcode.cn/problems/find-the-index-of-the-first-occurrence-in-a-string/)
+
+```cpp
+思路：kmp算法
+
+class Solution {
+public:
+    vector<int>next;//next[i]，字符串从0~i-1的最长公共前后缀长度
+
+    void setNext(string& needle){
+        if(needle.length()==1){
+            next={-1};
+            return;
+        }
+        next.resize(needle.length());
+        next[0]=-1;
+        next[1]=0;
+        int i=2;
+        int cn=0;
+        while(i<next.size()){
+            if(needle[i-1]==needle[cn]){
+                next[i++]=++cn;
+            }
+            //如果字符不匹配，但当前公共前后缀大于0的话就让当前字符needle[i]和更前面的最长公共前后缀作比较
+            else if(cn>0){//{[()()][()()]}，即让最左边的小括号子串的下一个字符和needle[i]比较
+                cn=next[cn];
+            }
+            else{
+                next[i++]=0;
+            }
+        }
+    }
+
+    int strStr(string haystack, string needle) {
+        next.clear();
+        setNext(needle);
+
+        int index=0;
+        int j=0;
+        while(index<haystack.length()&&j<needle.length()){
+            if(haystack[index]==needle[j]){
+                index++;
+                j++;
+            }else if(j==0){//说明第一个字符就匹配不成功
+                index++;
+            }else{
+                j=next[j];//j之前都是匹配成功的，下一次直接从略过匹配成功的子串，跳到匹配不成功的位置
+            }
+        }
+
+        return j==needle.length()?index-j:-1;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n+m)  n是haystack的长度，m是needle的长度，至多需要遍历两字符串各一次;
+空间复杂度：O(m)  needle字符串的前缀函数;
+```
+
+## [29. 两数相除](https://leetcode.cn/problems/divide-two-integers/)
+
+```cpp
+
 ```
 
