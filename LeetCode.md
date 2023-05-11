@@ -909,5 +909,116 @@ public:
         return res;
     }
 };
+	
+
+时空复杂度分析:
+时间复杂度：O((4^n)/(n^(1/2)));
+空间复杂度：O(n)  额外空间大小取决于递归栈的深度，而深度等于n;
+```
+
+## [23. 合并 K 个升序链表](https://leetcode.cn/problems/merge-k-sorted-lists/)
+
+```cpp
+思路：
+1.和21题类似
+2.建一个小顶堆存放当前需要比较的k个节点
+3.//对于基础类型 默认是大顶堆
+  priority_queue<int> a; 
+  //等同于 priority_queue<int, vector<int>, less<int> > a;
+  priority_queue<int, vector<int>, greater<int> > c;  //这样就是小顶堆
+
+  std::vector<int> values{21, 22, 12, 3, 24, 54, 56};
+  std::priority_queue<int> numbers {std::less<int>(),values};//56 54 24 22 21 12 3
+
+  greater：越来越大，less：越来越小
+
+4.我们需要小顶堆，所以应该是越来越大，这样最小的元素就在vector最前面，即栈顶
+
+class Solution {
+public:
+    struct Cmp{
+        bool operator()(ListNode* a,ListNode*b){
+            return a->val>b->val;
+        }
+    };
+
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        priority_queue<ListNode*,vector<ListNode*>,Cmp>minHeap;
+        ListNode*dummy=new ListNode(-1),*cur=dummy;
+        for(int i=0;i<lists.size();i++){
+            if(lists[i])minHeap.push(lists[i]);//装入各链表头
+        }
+
+        while(!minHeap.empty()){
+            ListNode*top=minHeap.top();minHeap.pop();
+            cur->next=top;
+            cur=cur->next;
+            top=top->next;
+            if(top)minHeap.push(top);//如果top的下一个节点不为空，就加入小顶堆
+        }
+
+        return dummy->next;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(nlogk)  n是最长链表的长度，k是链表数，有几条链表就需要比较几次，小顶堆深度为logk;
+空间复杂度：O(k)  每次都是进出各一个;
+
+这题主要是找各链表当前指向的节点值的最小值，利用小顶堆的高效查找效率很方便的就找到最小值了，查找时间是O(1)，因为就是minHeap.top()，但是push到小顶堆的时间是取决于深度。
+```
+
+## [24. 两两交换链表中的节点](https://leetcode.cn/problems/swap-nodes-in-pairs/)
+
+```cpp
+思路：
+1.增加虚拟头节点，防止丢失整条链表
+2.需要有三个指针，第一个pre指向当前待交换节点对的前驱节点，第二个first指向当前待交换节点对的第一个节点，第三个last指向当前待交换节点对第二个节点
+3.开始交换
+  3.1 first->next=last->next;
+  3.2 last->next=first;
+  3.3 pre->next=last;
+注意：1和2的相对顺序一定不能反，否则会丢失last->next
+4.移动指针到下一个要处理的地方
+  4.1 pre=first;
+  4.2 first=pre->next;
+  4.3 last=first->next;
+5.注意奇数个节点和偶数个节点的最后情况
+
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* swapPairs(ListNode* head) {
+        if(head==nullptr||head->next==nullptr)return head;//如果节点数小于2，就没有交换的必要了
+
+        ListNode*dummy=new ListNode(-1),*pre=dummy;
+        dummy->next=head;
+        ListNode*first=head;
+        ListNode*last=head->next;
+
+        //奇数个节点时，最后一对节点的last为空，不需要交换了
+        //偶数个节点时，交换完最后一对节点后，first和last都为空
+        while(first&&last){
+            first->next=last->next;
+            last->next=first;
+            pre->next=last;
+
+            pre=first;
+            first=pre->next;//这里不用加空指针判断，因为pre不会为空，因为没有节点的前驱节点是nullptr
+            if(first)last=first->next;//多加一个判断条件，防止空指针异常
+        }
+
+        return dummy->next;
+    }
+};
 ```
 
