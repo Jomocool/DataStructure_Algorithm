@@ -193,7 +193,7 @@ public:
 
 ### 1.4 剑指 Offer II 022. 链表中环的入口节点
 
-![](https://github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/1.png)
+![](https:///github.com/Jomocool/Data_Structure_Algorithm/blob/main/zsLeetCode-img/1.png)
 
 ```c++
 方法一：哈希表
