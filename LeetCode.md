@@ -1210,10 +1210,3 @@ public:
 时间复杂度：O(n+m)  n是haystack的长度，m是needle的长度，至多需要遍历两字符串各一次;
 空间复杂度：O(m)  needle字符串的前缀函数;
 ```
-
-## [29. 两数相除](https://leetcode.cn/problems/divide-two-integers/)
-
-```cpp
-
-```
-
