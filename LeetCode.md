@@ -1210,3 +1210,105 @@ public:
 时间复杂度：O(n+m)  n是haystack的长度，m是needle的长度，至多需要遍历两字符串各一次;
 空间复杂度：O(m)  needle字符串的前缀函数;
 ```
+
+## [29. 两数相除](https://leetcode.cn/problems/divide-two-integers/)
+
+```cpp
+思路：位运算
+1.处理边界条件
+2.准备candidates数组，提前记录好divisor左移的结果，空间换时间
+3.遍历candidates数组，如果当前dividend小于candidates[i]，说明有(1<<i)个divisor。然后要注意因为我们一开始就取反了，所以越小反而绝对值越大。
+
+class Solution {
+public:
+    int divide(int dividend, int divisor) {
+        //被除数为最小值
+        if(dividend==INT_MIN){
+            if(divisor==1)return INT_MIN;
+            if(divisor==-1)return INT_MAX;
+        }
+        //除数为最小值
+        if(divisor==INT_MIN){
+            return dividend==INT_MIN?1:0;
+        }
+
+        if(dividend==0){
+            return 0;
+        }
+
+        //将所有正数取反，因为负数的范围更大
+        //异号为负
+        bool flag=(dividend>0&&divisor<0)||(dividend<0&&divisor>0);
+        dividend=dividend>0?-dividend:dividend;
+        divisor=divisor>0?-divisor:divisor;
+		
+        /*
+        关键点：
+        eg.39/3=13=(1101)，所以39=3*2^3+3*2^2+3*2^0用数组存放3,3+3,(3+3)+(3+3)……,candidates[i]=divisor*2^i，如果dividend小于candidates[i]，说明有(1<<i)个divisor。注意因为是负数，所以越小绝对值反而越大
+        */
+        vector<int>candidates={divisor};
+        while(candidates.back()>=dividend-candidates.back()){//防止溢出
+            candidates.push_back(candidates.back()+candidates.back());
+        }
+        
+        int res=0;//商
+        for(int i=candidates.size()-1;i>=0;i--){
+            if(candidates[i]>=dividend){
+                res|=(1<<i);
+                dividend-=candidates[i];
+            }
+        }
+
+        return flag?-res:res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(logn)  遍历candidates;
+空间复杂度：O(logn)  candidates的大小;
+```
+
+## [30. 串联所有单词的子串](https://leetcode.cn/problems/substring-with-concatenation-of-all-words/)
+
+```cpp
+思路：滑动窗口+哈希表
+class Solution {
+public:
+    vector<int> findSubstring(string s, vector<string>& words) {
+        vector<int>res;//结果集
+        if(s.length()==0||words.size()==0)return res;
+        
+        //key:words[i],value:words[i]的词频
+        unordered_map<string,int>words_map;
+        for(int i=0;i<words.size();i++){
+            words_map[words[i]]++;
+        }
+
+        int w=words[0].length();//单个单词的大小
+        int len=w*words.size();//窗口大小
+
+        //由于对顺序没有要求，那只需要保证子串中每个单词的词频和要求的一致即可
+        unordered_map<string,int>count_map;
+        for(int start=0;start+len<=s.length();start++){
+            count_map.clear();//注意每个新的窗口都要先清空原先的记录
+            int j=0;
+            for(;j<len;j+=w){
+                string substr=s.substr(start+j,w);
+                if(words_map[substr]){
+                    count_map[substr]++;
+                    //词频不匹配
+                    if(count_map[substr]>words_map[substr])break;
+                }else{//没有当前单词，也不匹配
+                    break;
+                }
+            }
+            if(j==len){//匹配完全了
+                res.push_back(start);
+            }
+        }
+
+        return res;
+    }
+};
+```
+
