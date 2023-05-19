@@ -1310,5 +1310,108 @@ public:
         return res;
     }
 };
+
+时空复杂度分析:
+时间复杂度：O(n*m)  n是s长度，m是窗口大小;
+空间复杂度：O(n)  n是words大小，哈希表存放词频;
+```
+
+## [31. 下一个排列](https://leetcode.cn/problems/next-permutation/)
+
+```cpp
+思路：
+1.从右到左找到第一个元素的下标j，特点是这个元素大于其右边的元素
+解释：因为当一组元素是从左到右递减排列时，已经就是最大排列了，因为最大的数放在了最高位，必然是最大的
+2.从j的右边找到大于nums[j]并且最接近nums[j]的元素下标，然后和nums[j]交换
+解释：为什么不从左边找呢？因为左边的权重更大，动左边的必然会引起巨大的变化，就不是题目要求的下一个排列了。
+3.可能会出现一种情况，即整个数组是递减的，说明是最大排列，返回最小排列即可，用反转比排序快
+4.交换完后，需要把j之后的元素都反转成从左到右的递增序列，这样才能确保是最小的，也就最接近上一个排列了
+解释：eg.最接近12378654的下一个排列是12384567
+
+class Solution {
+public:
+    void nextPermutation(vector<int>& nums) {
+        int j=nums.size()-2;
+        while(j>=0&&nums[j]>=nums[j+1]){//等于也需要左移，我们需要找到严格小于其右边元素的元素下标
+            j--;
+        }
+
+        //结束循环后，j右边的元素是递减的
+        if(j==-1){
+            //说明整个nums数组是递减的，也就是最大排列了，没有更大的，反转后变最小，返回
+            reverse(nums.begin(),nums.end());
+            return;
+        }
+        
+        int index=0;
+        int minDiff=INT_MAX;
+        int cur=nums.size()-1;
+        while(cur>j){
+            int diff=nums[cur]-nums[j];
+            if(nums[cur]>nums[j]&&diff<minDiff){//一定要保证nums[j]交换后变大了，因为后面还有反转
+                index=cur;
+                minDiff=diff;
+            }
+            cur--;
+        }
+
+        swap(nums[j],nums[index]);
+        reverse(nums.begin()+j+1,nums.end());
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+## [32. 最长有效括号](https://leetcode.cn/problems/longest-valid-parentheses/)
+
+```cpp
+思路：
+1.有效括号串的条件：
+  1.1任意[前缀]中'('的数量>=')'的数量
+  1.2'('的数量==')'的数量
+2.找到合法的有效括号子串，就需要找到其左右边界
+  2.1右边界可通过性质1(1.1)决定，找到右边界后需要重置左右括号数量，然后继续找下一段的右边界
+  2.2可将字符串分成n段，在段内可通过栈进行左右括号匹配，根据栈内剩余左括号数量可以确定右边界
+3.右括号匹配前判断一次栈是否空，匹配后判读一次栈是否空
+  3.1匹配前判断栈是为了防止无左括号可以匹配，导致弹栈异常，同时可以知道右括号多于左括号了，找到右边界
+  3.2匹配后判断栈是为了计算结果
+4.当某段前缀的右括号数量更多时，其必定不能再和后面的括号串组成连续有效括号串了，所以我们以此为依据分段，互不干扰
+
+class Solution {
+public:
+    int longestValidParentheses(string s) {
+        stack<int>stk;//存放左括号的下标
+        int res=0;//结果
+
+        //start是右边界
+        for(int i=0,start=-1;i<s.length();i++){
+            if(s[i]=='(')stk.push(i);//碰到左括号直接入栈
+            else{//碰到右括号
+                if(!stk.empty()){//如果栈不为空，和左括号匹配
+                    stk.pop();
+                    if(stk.empty()){
+                        //说明整个栈的左括号都匹配完了，上一次空栈是在前一段的右边界
+                        res=max(res,i-start);
+                    }else{
+                        //stk.top()就是左边界
+                        res=max(res,i-stk.top());
+                    }
+                }else{
+                    //说明右括号大于左括号了，找到当前段的右边界了
+                    start=i;
+                }
+            }
+        }
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
 ```
 
