@@ -1415,3 +1415,82 @@ public:
 空间复杂度：O(n);
 ```
 
+## [33. 搜索旋转排序数组](https://leetcode.cn/problems/search-in-rotated-sorted-array/)
+
+```cpp
+思路：
+1.旋转后的数组可看作两个升序数组，且前段升序数组的任何一个值都大于后段升序数组的所有值
+2.特殊值是左边升序数组的最小值，即nums[0]，依此和nums[mid]比较来判断当前是在前段有序数组还是后段有序数组
+3.将数组一分为二，其中一定有一个是有序的，另一个可能是有序，也能是部分有序。此时有序部分用二分法查找。部分有序部分再一分为二，其中一个一定有序，另一个可能有序，可能无序。循环下去。———— LeetCode用户@HaominYuan
+
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left=0;
+        int right=nums.size()-1;
+        while(left<=right){
+            int mid=left+((right-left)>>1);//外括号很重要，保证先右移再加
+            if(nums[mid]==target)return mid;
+            //和nums[0]或nums[nums.size()-1]比较时才加等号，因为target已经和nums[mid]比较过了，不可能相等才进入下面分支，其次是边界值可能就是target，需要向其靠近
+            else if(nums[0]<=nums[mid]){//在前段有序数组，注意这里的等号，因为nums[0]也属于前半段
+                if(nums[0]<=target&&target<nums[mid]){//[0,mid]是有序的，target属于这部分
+                    right=mid-1;
+                }else{//target不属于[0,mid]，去[mid+1,right]二分查找，这部分可能有序也可能无序
+            //target<nums[0]||target>nums[mid]，而mid右边既有小于nums[0]的部分，也有大于nums[mid]的部分
+                    left=mid+1;
+                }
+            }else{//在后段有序数组
+                if(nums[mid]<target&&target<=nums[nums.size()-1]){//[mid,nums.size()-1]是有序的，target属于这部分
+                    left=mid+1;
+                }else{//target不属于[mid,nums.size()-1]，可能属于[left,mid-1]
+           //target<nums[mid]||target>nums[nums.size()-1]，mid左边既有小于nums[mid]的部分，也有大于nums[nums.size()-1]的部分
+                    right=mid-1;
+                }
+            }
+        }
+        return -1;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
+## [34. 在排序数组中查找元素的第一个和最后一个位置](https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/)
+
+```cpp
+思路：
+和二分查找一样，只不过在找到target值时，向左右扩展找到其第一个和最后一个位置
+
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        int len=(int)nums.size();//长度，转为int型
+        int left=0;//左边界
+        int right=len-1;//右边界
+
+        while(left<=right){
+            int mid=left+((right-left)>>1);
+            if(nums[mid]==target){
+                int i=mid;
+                int j=mid;
+                while(i>=0&&nums[i]==target)i--;//向左扩展
+                while(j<len&&nums[j]==target)j++;//向右扩展
+                return {i+1,j-1};//注意边界，当前i,j所在位置的元素都不等于target，或者越界了，向内缩进一个
+            }else if(nums[mid]<target){
+                left=mid+1;
+            }else{
+                right=mid-1;
+            }
+        }
+
+        return {-1,-1};
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
