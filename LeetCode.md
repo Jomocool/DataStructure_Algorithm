@@ -1494,3 +1494,131 @@ public:
 空间复杂度：O(1);
 ```
 
+## [35. 搜索插入位置](https://leetcode.cn/problems/search-insert-position/)
+
+```cpp
+思路：二分查找
+nums为[无重复元素]的[升序]数组
+
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        //处理边界
+        if(target<=nums[0])return 0;
+        if(target>nums[nums.size()-1])return nums.size();
+        if(target==nums[nums.size()-1])return nums.size()-1;
+        
+		//上述边界都不符合要求，说明要插入的索引在[1,nums.size()-2]，在其中二分查找
+        int left=1;
+        int right=nums.size()-2;
+        int mid=0;
+        while(left<=right){
+            mid=left+((right-left)>>1);
+            if(nums[mid]==target){//如果存在target，直接返回其下标
+                return mid;
+            }else if(nums[mid]<target){
+                if(nums[mid+1]>=target){//nums[mid]<target<=nums[mid+1]
+                    return mid+1;
+                }else{//target>nums[mid+1]>nums[mid]，所以要插入的索引在[mid+1,right]
+                    left=mid+1;
+                }
+            }else{
+                //这里nums[mid-1]不能等于target，否则返回值就不匹配了
+                if(nums[mid-1]<target){//nums[mid-1]<target<nums[mid]
+                    return mid;
+                }else{//target<nums[mid-1]<nums[mid]，所以插入的索引在[left,mid-1]
+                    right=mid-1;
+                }
+            }
+        }
+		
+        //进入循环就必然有返回值，能到这一步说明没有进入循环，只有一种可能
+		//即nums.size()==2，且target不处于边界，所以nums[0]<target<nums[1]，因此返回1
+        return 1;
+    }
+};
+
+优化代码：
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        int l=0,r=nums.size()-1;
+        while(l<=r){
+            int mid=l+((r-l)>>1);
+            if(nums[mid]<target)l=mid+1;//这里只判断小于很关键
+            else r=mid-1;
+        }
+        return l;
+    }
+};
+解释：
+1.循环过程中：根据if判断条件，l左边都是小于target值的元素，r右边都是大于等于target值的元素
+2.循环结束后：l=r+1，nums[0~r]<target<=nums[l~nums.size()-1]，所以返回l即可，考虑边界条件：
+  2.1 target<nums[0]，r=-1，l=0，返回l符合要求
+  2.2 target>nums[nums.size()-1]，r=nums.size()-1，l=nums.size()，返回l符合要求
+
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
+## [36. 有效的数独](https://leetcode.cn/problems/valid-sudoku/)
+
+```cpp
+思路：蛮力法
+按数独规则去判断即可
+
+class Solution {
+public:
+    bool isValidSudoku(vector<vector<char>>& board) {
+        int row=board.size();
+        int col=board[0].size();
+
+        vector<bool>isExist(row,false);//判断数字是否已经出现
+        //判断行是否合格
+        for(int i=0;i<row;i++){
+            isExist.assign(isExist.size(),false);
+            for(int j=0;j<col;j++){
+                if(board[i][j]=='.')continue;
+                int t=board[i][j]-'1';//数字从1开始，而数组从0开始，所以减1对应下标
+                if(isExist[t])return false;
+                isExist[t]=true;
+            }
+        }
+
+        //判断列是否合格
+        for(int j=0;j<col;j++){
+            isExist.assign(isExist.size(),false);
+            for(int i=0;i<row;i++){
+                if(board[i][j]=='.')continue;
+                int t=board[i][j]-'1';//数字从1开始，而数组从0开始，所以减1对应下标
+                if(isExist[t])return false;
+                isExist[t]=true;
+            }
+        }
+
+        //判断九宫格
+        for(int i=0;i<row;i+=3){
+            for(int j=0;j<col;j+=3){
+                isExist.assign(isExist.size(),false);
+                for(int x=i,countx=0;countx<3;x++,countx++){
+                    for(int y=j,county=0;county<3;y++,county++){
+                        if(board[x][y]=='.')continue;
+                        int t=board[x][y]-'1';
+                        if(isExist[t])return false;
+                        isExist[t]=true;
+                    }
+                }
+            }
+        }
+
+        //行，列，九宫格都有效
+        return true;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(1)  遍历81个格子;
+空间复杂度：O(1)  isExist大小是9，常数空间;
+```
+
