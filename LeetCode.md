@@ -1622,3 +1622,157 @@ public:
 空间复杂度：O(1)  isExist大小是9，常数空间;
 ```
 
+## [37. 解数独](https://leetcode.cn/problems/sudoku-solver/)
+
+```cpp
+思路：DFS
+1.定义3个数组rows、cols和cells分别记录各行、各列和各九宫格的数字出现情况
+2.递归回溯
+
+class Solution {
+public:
+    bool rows[9][9];//9行9个数
+    bool cols[9][9];//9列9个数
+    bool cells[3][3][9];//行列各分成3个九宫格，共有9个九宫格，9个数
+
+    bool dfs(vector<vector<char>>&board,int row,int col){
+        //超过第9列，跳到下一行并重置列
+        if(col==9)row++,col=0;
+        
+        //超过第9行，说明数独已经填好了
+        if(row==9)return true;
+
+        //当前格已经填好数字了，不能修改
+        if(board[row][col]!='.')return dfs(board,row,col+1);
+
+        //枚举1~9，填入空格中
+        for(int digit=0;digit<9;digit++){
+            //当前行、列或九宫格出现过digit，说明不可以填，直接看下一个数
+            if(rows[row][digit]||cols[col][digit]||cells[row/3][col/3][digit])continue;
+
+            //可以填
+            rows[row][digit]=cols[col][digit]=cells[row/3][col/3][digit]=true;
+            board[row][col]=digit+'1';
+            if(dfs(board,row,col+1))return true;
+
+            //填了之后但是后面无法解出数独，回溯，填下一个数
+            rows[row][digit]=cols[col][digit]=cells[row/3][col/3][digit]=false;
+            board[row][col]='.';
+        }
+
+        //所有数都无法解出的话，说明当前路径走不通
+        return false;
+    }
+
+    void solveSudoku(vector<vector<char>>& board) {
+        //完善辅助数组
+        memset(rows,0,sizeof(rows));
+        memset(cols,0,sizeof(cols));
+        memset(cells,0,sizeof(cells));
+        for(int i=0;i<9;i++){
+            for(int j=0;j<9;j++){
+                if(board[i][j]=='.')continue;
+                int t=board[i][j]-'1';
+                rows[i][t]=cols[j][t]=cells[i/3][j/3][t]=true;
+            }
+        }
+
+        dfs(board,0,0);
+    }
+};
+
+分析：
+每一格就代表着一层递归，而每一层的处理逻辑是枚举1~9，填入当前格子后，然后交给下一个格子去处理，而下一个格子只需要让列加1，因为列加到9之后通过前面的if判断会自动跳到下一行的第一列。其次就是边界条件的判断了，如果已经超过棋盘的行数了，说明已经填完所有格子了，已经找到解了，返回true
+```
+
+## [38. 外观数列](https://leetcode.cn/problems/count-and-say/)
+
+```cpp
+思路：
+1.base case：n==1
+2.每一层先获取前一层的字符串，再去分析
+
+class Solution {
+public:
+    string traversal(int n){
+        if(n==1)return "1";
+
+        string preItem=traversal(n-1);
+        
+        string res;//结果字符串
+        int index=0;
+        while(index<preItem.length()){
+            int count=1;//记录连续数字的长度，即有几个数
+            while(index<preItem.length()-1&&preItem[index]==preItem[index+1]){
+                index++;
+                count++;
+            }
+            res.push_back(count+'0');//先添加词频
+            res.push_back(preItem[index]);//再添加数字
+            index++;//后移index，因为当前指向连续数字的最后一个
+        }
+
+        return res;
+    }
+
+    string countAndSay(int n) {
+        return traversal(n);
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(nm)  n是给定的正整数，m为生成字符串的最大长度;
+空间复杂度：O(m)  生成字符串的最大长度;
+```
+
+## [39. 组合总和](https://leetcode.cn/problems/combination-sum/)
+
+```cpp
+思路：回溯递归
+1.每一层递归的处理逻辑是，从当前元素开始累加到target
+2.每个元素可以取0到无数次，截止循环的条件是当前值取了太多次以至于超过target了，这时就该结束了
+3.base case是target已经等于0的话就加入path到结果集中
+4.这里我们是让target减去已经加入路径集的元素
+
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//路径集
+
+    //回溯递归，index代表当前要选取哪个索引对应的元素了
+    void backTracking(vector<int>&candidates,int index,int target){
+        if(target<0)return;//target小于0，代表当前累加和过大了，后面都不需要了，直接剪枝
+
+        if(target==0){//target等于0，代表当前累加和满足要求，加入结果集中，也不需要累加后面的值了，因为都是正数
+            res.push_back(path);
+            return;
+
+        }
+        if(index>candidates.size()-1)return;//越界且累加和还不够，但也无法继续累加了
+
+        //开始累加
+        for(int i=0;i*candidates[index]<=target;i++){
+            for(int count=0;count<i;count++){
+                path.push_back(candidates[index]);
+            }
+            backTracking(candidates,index+1,target-candidates[index]*i);
+            //回溯
+            for(int count=0;count<i;count++){
+                path.pop_back();
+            }
+        }
+    }
+
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        res.clear();
+        path.clear();
+        backTracking(candidates,0,target);
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(nm)  n是candidates大小，m是target/candidates[index]的最大值;
+空间复杂度：O(target)  除答案数组外，空间复杂度取决于递归的栈深度，最坏情况下需要递归target层;
+```
+
