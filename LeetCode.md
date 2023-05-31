@@ -1776,3 +1776,99 @@ public:
 空间复杂度：O(target)  除答案数组外，空间复杂度取决于递归的栈深度，最坏情况下需要递归target层;
 ```
 
+## [40. 组合总和 II](https://leetcode.cn/problems/combination-sum-ii/)
+
+```cpp
+思路：
+本题和上一题的区别在于candidates数组中有重复的元素且每个数字只能使用一次（即不能出现同一下标元素重复添加的情况），解题思路其实和三数之和类似，先排序数组，然后递归
+
+卡点：
+	不知道如何避免重复组合。
+解决方法：
+	换个角度理解，元素的重复次数是该元素的可取次数，相当于在前一题的基础上，每个元素可取无数次变成了有限次，这样就不会出现重复组合了，因为虽然元素值相同，但是意义不同，第一个元素相当于当前元素的代表值，其后面连续相等的元素只是可选的备用值，用于凑数，而不会继续选择相同值元素当作代表值再次递归。举个例子，比如[1,1,2,2,3]，组合成5，每组重复元素的首元素是代表值，绝对不会出现[1(1),2(2),2(3)](小括号是下标)的情况，因为1(1)不可能成为代表值，即意味着不可能出现有1(1)而没有1(0)的情况，所以就避免了[1(0),2(2),2(3)]和[1(1),2(2),2(3)]的重复情况；同理，[2(2),3(4)]和[2(3),3(4)]也不会重复出现
+
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//路径集合
+
+    void backTracking(vector<int>&candidates,int index,int target){
+        if(target==0){
+            res.push_back(path);
+            return;
+        }
+
+        //由于candidates的元素都是正整数，并且升序，所以如果出现以下情况，再怎么处理后面的元素也无法组成target，提前结束（剪枝）
+        if(index==candidates.size()||target<0||candidates[index]>target){//一定要优先判断数组越界情况
+            return;
+        }
+
+        //记录当前元素的备用个数
+        int cnt=1;
+        while(index<candidates.size()-1&&candidates[index]==candidates[index+1]){
+            cnt++;
+            index++;
+        }
+        
+        for(int i=0;i<=cnt&&candidates[index]*i<=target;i++){
+            backTracking(candidates,index+1,target-candidates[index]*i);
+            path.push_back(candidates[index]);//当前的push是用于下一循环的，因为取0次时，不能添加当前元素
+        }
+
+        for(int i=0;i<=cnt&&candidates[index]*i<=target;i++){//回溯，添加了多少次，就删掉多少次
+            path.pop_back();
+        }
+    }
+
+    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
+        res.clear();
+        path.clear();
+        sort(candidates.begin(),candidates.end());//先排序数组
+        backTracking(candidates,0,target);
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(nm)  n是candidates大小，m是cnt的最大值;
+空间复杂度：O(target)  除答案数组外，空间复杂度取决于递归的栈深度，最坏情况下需要递归target层;
+```
+
+## [41. 缺失的第一个正数](https://leetcode.cn/problems/first-missing-positive/)
+
+![image-20230531131547845](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230531131547845.png)
+
+```cpp
+思路：原地交换数组元素
+让数组呈现如下规律，nums[i]=i+1，处理完之后，遍历数组，第一个不符合要求的元素，其对应位置应该出现的元素就是所需要的答案
+1.交换时，当前处理的元素应该∈[1,n]，否则会越界
+2.注意当前元素不能和相同大小的元素交换，否则会陷入死循环
+3.由于我们只需要找到正整数，而下标恰好从0开始，所以刚好像一张映射表，因为如果使用哈希表的话，空间复杂度就是O(n)不符合要求
+
+关键：
+1.交换停止时的规则
+2.把数组当作一个哈希表
+
+class Solution {
+public:
+    int firstMissingPositive(vector<int>& nums) {
+        int n=nums.size();
+        for(int i=0;i<n;i++){
+            while(nums[i]>=1&&nums[i]<=n&&nums[i]!=nums[nums[i]-1]){
+                swap(nums[i],nums[nums[i]-1]);
+            }
+        }
+
+        for(int i=0;i<n;i++){
+            if(nums[i]!=i+1)return i+1;
+        }
+
+        return n+1;
+    }
+};
+
+时空复杂度分析：
+时间复杂度：  O(n)；
+空间复杂度：  O(1);
+```
+
