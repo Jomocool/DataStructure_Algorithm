@@ -1980,3 +1980,65 @@ public:
 ```
 
 ![image-20230601162240316](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230601162240316.png)
+
+[407. 接雨水 II](https://leetcode.cn/problems/trapping-rain-water-ii/)
+
+```cpp
+思路：从外向内，类似BFS
+最外层影响次外层，次外层影响次次外层，影响的方式是木桶效应
+
+1.将最外层的柱子放入优先队列，根节点是外层中最矮的柱子，所以优先队列中的元素要包含高度这个属性
+2.不断的取出最矮的柱子并看其上下左右是否可以灌水，然后标记其上下左右已经灌过水并加入优先队列
+3.如果当前柱子的周围有一个比自己矮的且未被处理过的柱子，在这个柱子上就会有一个凹槽可以灌水，且由于木桶效应，当前柱子就是最矮的那根，所以灌水量也确定了
+
+关键点：为什么遇到比自己矮的柱子就可以灌水，这个较矮的柱子周围难道没有更矮的吗？
+解答：分两种情况
+（1）较矮的柱子在外层，由于我们是按优先队列顺序处理的，所以这个柱子肯定比当前柱子更先处理过，所以不会有水
+（2）较矮的柱子在内层，由于当前柱子已经是外层柱子中最矮的一个了（优先队列堆顶），如果较矮的柱子未被处理过，意味着其周围的柱子都比当前柱子高，因为如果比当前柱子矮的话，由于优先队列的顺序，这个较矮的柱子必然已经被处理过了。
+
+注意，注水之后的柱子高度变了
+
+class Solution {
+public:
+    typedef pair<int,int> point;
+
+    int trapRainWater(vector<vector<int>>& heightMap) {
+        //处理特殊情况
+        if(heightMap.size()<=2||heightMap[0].size()<=2)return 0;
+
+        int m=heightMap.size();
+        int n=heightMap[0].size();
+        priority_queue<point,vector<point>,greater<point>>pq;//优先队列
+        vector<vector<bool>>visit(m,vector<bool>(n,false));//访问记录表
+        for(int i=0;i<m;i++){
+            for(int j=0;j<n;j++){
+                if(i==0||i==m-1||j==0||j==n-1){//最外层
+                    pq.push({heightMap[i][j],i*n+j});
+                    visit[i][j]=true;
+                }
+            }
+        }
+
+        int res=0;
+        int dirs[]={-1,0,1,0,-1};//用于找上下左右
+        while(!pq.empty()){
+            point cur=pq.top();pq.pop();//取柱子
+            for(int k=0;k<4;k++){
+                int x=cur.second/n+dirs[k];
+                int y=cur.second%n+dirs[k+1];
+                if(x>=0&&x<m&&y>=0&&y<n&&!visit[x][y]){//坐标合法且未被访问过
+                    if(heightMap[x][y]<cur.first){
+                        res+=cur.first-heightMap[x][y];
+                    }
+                    visit[x][y]=true;
+                    //如果cur.first更大，说明[x][y]柱子被注水了，需要增加高度
+                    pq.push({max(cur.first,heightMap[x][y]),x*n+y});
+                }
+            }
+        }
+
+        return res;
+    }
+};
+```
+
