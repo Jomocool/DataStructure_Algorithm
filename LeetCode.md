@@ -1869,7 +1869,114 @@ public:
 };
 
 时空复杂度分析：
-时间复杂度：  O(n)；
-空间复杂度：  O(1);
+时间复杂度：O(n)；
+空间复杂度：O(1);
 ```
 
+## [42. 接雨水](https://leetcode.cn/problems/trapping-rain-water/)
+
+```cpp
+思路1：单调栈
+单调栈用于处理“离a最近又比a高（或低）这类问题
+
+1.创建一个单调递减栈，即栈底到栈顶降序，这里往栈里存放元素下标，这样既可以获取高度也可以求出宽度
+2.若当前柱子高度大于栈顶柱子高度，因为是递减栈，所以栈顶柱子处会有一个凹槽，其上放可以形成积水，计算面积
+3.若当前柱子高度小于栈顶柱子高度，不确定后面是否有比当前柱子更高的柱子能够形成凹槽，直接入栈
+这里利用单调栈的原因是可以快速判断是否可以形成凹槽以及凹槽的左右边界
+
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        stack<int>stk;//单调栈
+        int area=0;//雨水面积
+
+        stk.push(0);//先让第一根柱子入栈
+
+        for(int i=1;i<height.size();i++){
+            while(!stk.empty()&&height[i]>height[stk.top()]){
+                int mid=stk.top();stk.pop();//取出中间柱子
+                //再次弹栈，所以要判断栈是否为空，如果是空的，意味着左边没有更高的柱子能够让中间柱子上方形成凹槽
+                if(!stk.empty()){
+                    //计算高度差
+                    int h=min(height[i],height[stk.top()])-height[mid];
+                    //计算宽度
+                    int w=i-stk.top()-1;
+                    //计算面积
+                    area+=h*w;
+                }
+            }
+            stk.push(i);//入栈
+        }
+
+        return area;
+    }
+};
+
+时空复杂度分析：
+时间复杂度：O(n)  每个元素只会出栈入栈各一次；
+空间复杂度：O(n)  单调栈的大小不超过数组长度;
+
+
+思路2：动态规划
+
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        vector<int>left_Max(height.size());//左边柱子最大高度
+        vector<int>right_Max(height.size());//右边柱子最大高度
+
+        for(int i=1;i<height.size();i++){
+            left_Max[i]=max(left_Max[i-1],height[i-1]);
+        }
+        for(int j=height.size()-2;j>=0;j--){
+            right_Max[j]=max(right_Max[j+1],height[j+1]);
+        }
+
+        int area=0;
+        for(int i=1;i<height.size()-1;i++){
+            int h=min(left_Max[i],right_Max[i])-height[i];
+            if(h>0)area+=h;
+        }
+
+        return area;
+    }
+};
+
+时空复杂度分析：
+时间复杂度：O(n)；
+空间复杂度：O(n);
+
+
+思路3：双指针
+优化动态规划的空间复杂度，由于left_Max和right_Max数组每个元素只用到了一次，只需要用两个双指针和两个变量即可。
+维护两个指针left和right，两个变量left_Max和right_Max，left只能向右移，right只能向左移，二者在移动过程中顺便更新left_Max和right_Max
+
+隐形大小关系：
+lRight_Max>=rRight_Max
+lLeft_Max<=rLeft_Max
+
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        int left=0;
+        int right=height.size()-1;
+        int lLeft_Max=0;
+        int rRight_Max=0;
+        int area=0;
+
+        while(left<right){
+            lLeft_Max=max(lLeft_Max,height[left]);
+            rRight_Max=max(rRight_Max,height[right]);
+            if(lLeft_Max<rRight_Max){
+                area+=lLeft_Max-height[left++];
+            }else{
+                area+=rRight_Max-height[right--];
+            }
+        }
+
+        return area;
+    }
+};
+```
+
+![image-20230601162240316](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230601162240316.png)
