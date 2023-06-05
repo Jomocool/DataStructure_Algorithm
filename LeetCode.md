@@ -2042,3 +2042,102 @@ public:
 };
 ```
 
+## [43. 字符串相乘](https://leetcode.cn/problems/multiply-strings/)
+
+![image-20230603222706206](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230603222706206.png)
+
+```cpp
+思路：手算乘法
+tip：int通过+'0'转成char(0的ASCII码后移int大小恰好是int的ASCII码，int得是0~10)，char通过-'0'转成int，因为字符做加减运算时是其ASCII码大小
+
+1.创建数组vec存储乘数，长度最长为num1.length()+num2.length()，预留vec[0]给最高位的进位；eg.99*99=9801
+2.遍历num2，假设遍历到num2[i]，然后依次从num1低位乘，遍历num1，假设遍历到num1[j]，乘数放入vec[i+j]
+3.最后处理进位将vec转成结果字符串res
+
+class Solution {
+public:
+    string multiply(string num1, string num2) {
+        //处理边界条件
+        if(num1[0]=='0'||num2[0]=='0')return "0";
+
+        int m=num1.length();
+        int n=num2.length();
+        vector<int>vec(m+n);
+        
+        //处理乘数
+        for(int i=n-1;i>=0;i--){
+            int a=num2[i]-'0';
+            for(int j=m-1;j>=0;j--){
+                int b=num1[j]-'0';
+                vec[i+j+1]+=a*b;//最高一个vec[0]留给最高的进位
+            }
+        }
+
+        //处理进位，vec[0~vec.size()-1]是高位到低位
+        for(int i=vec.size()-1,carry=0;i>=0;i--){
+            vec[i]+=carry;
+            carry=vec[i]/10;
+            vec[i]%=10;
+        }
+
+        //将数组转成结果字符串
+        string res(vec.size(),'0');
+        for(int i=0;i<vec.size();i++){
+            res[i]=vec[i]+'0';
+        }
+
+        return res[0]=='0'?res.substr(1,res.length()-1):res;//如果最高的进位是0，只需返回后面的内容即可
+    }
+};
+
+时空复杂度分析：
+时间复杂度：O(nm)  m、n分别是num1和num2的长度;
+空间复杂度：O(n+m)  vec的大小
+
+本题的流程主要是从两个字符串的地位相乘，将得到的乘数添加到vec对应位置上，用数组是因为数组可以存放多位数，然后开始处理进位，无非就是把低位多于10的部分传给高一位，然后自身取个位数，关键点在于vec[0]预留最高位的进位，最后转成字符串，但0不能在最高位。
+```
+
+## [44. 通配符匹配](https://leetcode.cn/problems/wildcard-matching/)
+
+```cpp
+思路：动态规划
+1.s仅由小写字母组成
+2.p仅由小写字母、'?'、'*'组成
+  2.1?：匹配任意单个字符
+  2.2*：匹配任意字符串
+3.动态规划表dp：dp[i][j] (s[0~i]能否和p[0~j]匹配)
+  3.1 p[j]!='*'：dp[i][j]=dp[i-1][j-1]&&(s[i]==p[j]||p[j]=='?');
+  3.2 p[j]=='*'：dp[i][j]=dp[i][j-1]||dp[i-1][j-1]||dp[i-2][j-1]……||dp[0][j-1]，即*匹配0、1、2……i个字符
+				 dp[i-1][j]=dp[i-1][j-1]||dp[i-2][j-1]||……||dp[0][j-1]，和dp[i][j]后面部分相同，简化dp[i][j]
+      			 dp[i][j]=dp[i][j-1]||dp[i-1][j];
+
+一开始的弄错的地方是以为碰到了'*'需要往后去匹配，因为我还是没明白dp[i][j]的含义，实际上dp[i][j]的i和j索引，就已经限定了结束索引，即s必须以s[i]结束，p必须以p[j]结束，所以不可能再向后扩展了。而且我需要利用前面得到的结果，必然也是往前找，不可能往后找，因为后面是待处理的
+
+class Solution {
+public:
+    bool isMatch(string s, string p) {
+        int m=s.length();
+        int n=p.length();
+        //两个字符串前都加入一个相同的字符，不影响结果的同时还避免了繁琐的初始化
+        s=' '+s;
+        p=' '+p;
+
+        vector<vector<bool>>dp(m+1,vector<bool>(n+1,false));
+        dp[0][0]=true;
+
+        for(int i=0;i<=m;i++){
+            //dp[i][0](i>=1的情况下，都是false，因为一个空格无法匹配两个字符)
+            for(int j=1;j<=n;j++){
+                if(p[j]!='*'){//额外判断边界，因为递推公式只在边界内成立
+                    dp[i][j]=i>=1&&j>=1&&dp[i-1][j-1]&&(s[i]==p[j]||p[j]=='?');
+                }else{//额外判断边界，因为递推公式只在边界内成立
+                    dp[i][j]=(j>=1&&dp[i][j-1])||(i>=1&&dp[i-1][j]);//二级结论
+                }
+            }
+        }
+
+        return dp[m][n];
+    }
+};
+```
+
