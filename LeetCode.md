@@ -2139,5 +2139,48 @@ public:
         return dp[m][n];
     }
 };
+
+时空复杂度分析：
+时间复杂度：O(nm);
+空间复杂度：O(nm);
+```
+
+## [45. 跳跃游戏 II](https://leetcode.cn/problems/jump-game-ii/)
+
+```cpp
+思路：贪心算法
+1.定义两个变量start和end，标记着可活动范围
+2.在这可活动范围中，找到下一跳的最大可达位置
+3.如果活动范围已经覆盖nums.size()-1的话，说明以当前步数就可以到达最后一格了，又因为每次我们都是位移最大范围，所以必然是最小步数
+
+class Solution {
+public:
+    int jump(vector<int>& nums) {
+        //起始位置在0，还没跳出去，所以还不知道下一跳的最大可达位置在哪里
+        int minStep=0;
+        //当前活动范围是上次活动范围跳出来得到的
+        int start=0;//当前活动范围的起始位置
+        int end=0;//当前活动范围的结束位置
+
+        //如果当前活动范围已经超过最后一格的话，说明从上一个活动范围中的下一跳就可以抵达终点了
+        while(end<nums.size()-1){
+            int maxPos=0;//下一跳最大可达位置，即下一个活动范围的end
+            //从当前活动范围找maxPos
+            for(int i=start;i<=end;i++){//贪心
+                maxPos=max(maxPos,i+nums[i]);
+            }
+            //更新活动范围
+            start=end+1;
+            end=maxPos;
+            minStep++;
+        }
+
+        return minStep;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)  start和end都是一直向后走的，没有重复过;
+空间复杂度：O(1)  只需要常数个变量记录特殊数据;
 ```
 
