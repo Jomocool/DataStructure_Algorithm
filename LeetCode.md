@@ -2090,7 +2090,7 @@ public:
     }
 };
 
-时空复杂度分析：
+时空复杂度分析:
 时间复杂度：O(nm)  m、n分别是num1和num2的长度;
 空间复杂度：O(n+m)  vec的大小
 
@@ -2140,7 +2140,7 @@ public:
     }
 };
 
-时空复杂度分析：
+时空复杂度分析:
 时间复杂度：O(nm);
 空间复杂度：O(nm);
 ```
@@ -2182,5 +2182,111 @@ public:
 时空复杂度分析:
 时间复杂度：O(n)  start和end都是一直向后走的，没有重复过;
 空间复杂度：O(1)  只需要常数个变量记录特殊数据;
+```
+
+## [46. 全排列](https://leetcode.cn/problems/permutations/)
+
+![image-20230606220707452](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230606220707452.png)
+
+```cpp
+思路：DFS
+1.枚举每个位置每个元素都出现一次的所有情况
+2.记录元素使用情况，即不能在同一个组合的不同索引中出现相同的两个元素
+
+class Solution {
+public:
+    vector<vector<int>>res;
+    vector<bool>isUsed;
+    vector<int>path;
+
+    void dfs(vector<int>&nums,int index){
+        if(index>=nums.size()){
+            res.push_back(path);
+            return;
+        }
+
+        for(int i=0;i<nums.size();i++){//枚举所有元素在当前位置出现的情况
+            if(!isUsed[i]){//如果未被用过
+                path.push_back(nums[i]);
+                isUsed[i]=true;
+                dfs(nums,index+1);
+                path.pop_back();//回溯
+                isUsed[i]=false;
+            }
+        }
+    }
+
+    vector<vector<int>> permute(vector<int>& nums) {
+        res.clear();
+        isUsed.clear();
+        path.clear();
+
+        isUsed=vector<bool>(nums.size(),false);
+
+        dfs(nums,0);
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n*n!)  叶子结点个数为n!（第一个位置有n种选择，第二个位置有n-1种选择……），我们需要将O(n)的时间将答案复制到结果数组中;
+空间复杂度：O(n)  递归深度为n;
+```
+
+## [47. 全排列 II](https://leetcode.cn/problems/permutations-ii/)
+
+![image-20230606224947613](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230606224947613.png)
+
+```cpp
+思路：
+与上题基本一致，但是本题给的nums序列中允许重复数字的出现。
+上图中，就是因为1的相对顺序搞反了，导致重复的排列出现。因为会在前面排列不变的基础上，在当前相同位置上重复选择了值相同但下标不同的元素，结果排列只看值不看下标，所以虽然排列并不能说是完全一样，但由于值相同，所以结果排列相同，因此重复了
+1.只要保证所有相同元素的相对顺序不变，就不会出现重复序列了
+
+class Solution {
+public:
+    vector<vector<int>>res;
+    vector<int>path;
+    vector<bool>isUsed;
+
+    //index当前选择数字的位置
+    void dfs(vector<int>&nums,int index){
+        if(index==nums.size()){
+            res.push_back(path);
+            return;
+        }
+
+        //枚举所有数字
+        for(int i=0;i<nums.size();i++){
+            if(!isUsed[i]){//如果未出现
+                //以相同元素的相对顺序查重，即在前面排列不变的情况下，假设当前位置已经选择过i号位的1，那么就不能再继续选择i+1号位的1了
+                if(i!=0&&nums[i]==nums[i-1]&&!isUsed[i-1])continue;
+                path.push_back(nums[i]);
+                isUsed[i]=true;
+                dfs(nums,index+1);
+                path.pop_back();
+                isUsed[i]=false;
+            }
+        }
+    }
+
+    vector<vector<int>> permuteUnique(vector<int>& nums) {
+        res.clear();
+        path.clear();
+        isUsed.clear();
+        
+        sort(nums.begin(),nums.end());//排序数组，让相同元素扎堆
+        isUsed=vector<bool>(nums.size(),false);
+
+        dfs(nums,0);
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n*n!)  叶子结点个数为n!（第一个位置有n种选择，第二个位置有n-1种选择……），我们需要将O(n)的时间将答案复制到结果数组中;
+空间复杂度：O(n)  递归深度为n;
 ```
 
