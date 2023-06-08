@@ -2290,3 +2290,108 @@ public:
 空间复杂度：O(n)  递归深度为n;
 ```
 
+## [48. 旋转图像](https://leetcode.cn/problems/rotate-image/)
+
+![image-20230608113701435](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230608113701435.png)
+
+```cpp
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+        int n=matrix.size();
+        //左上角
+        pair<int,int>leftUp{0,0};
+        //右下角
+        pair<int,int>rightDown{n-1,n-1};
+        
+        //由于是正方形，所以左上角和右下角在处理完时只有两种情况，一是在同一个位置，二是在相邻对角，且左上角在下方
+        while(leftUp.first<rightDown.first&&leftUp.second<rightDown.second){
+            int left=leftUp.first;
+            int up=leftUp.second;
+            int right=rightDown.first;
+            int down=rightDown.second;
+			
+            //处理时，把上下左右各当作一个独立块，所以会发现循环中矩阵变化的值中总有一个轴是不变的
+            for(int i=0;i<right-left;i++){
+                int tmp=matrix[up][left+i];
+                matrix[up][left+i]=matrix[down-i][left];//up轴不变，对应上
+                matrix[down-i][left]=matrix[down][right-i];//left轴不变，对应左
+                matrix[down][right-i]=matrix[up+i][right];//down轴不变，对应下
+                matrix[up+i][right]=tmp;//right轴不变，对应右
+            }
+			
+            //内缩
+            leftUp.first+=1;
+            leftUp.second+=1;
+            rightDown.first-=1;
+            rightDown.second-=1;
+        }
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n^2) n是矩阵的边长，因为每个格子都遍历了一遍;
+空间复杂度：O(1) 只用了常数个变量存储必要的信息，对角;
+```
+
+## [49. 字母异位词分组](https://leetcode.cn/problems/group-anagrams/)
+
+```cpp
+思路：
+本题的要求是将字母异位词分到同一个组中，（字母异位词 是由重新排列源单词的所有字母得到的一个新单词。），通俗一点讲就是只要两个不相同的单词的字母出现频率相同，那它们就是字母异位词
+
+关键点：字母异位词排序的结果都是一样的，比如[abc,bac,cba]各字符串排完序的结果都是abc，所以可以创建一张哈希表，key是排完序对应的字符串，value是排完序的字符串等于key的字符串
+
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        unordered_map<string,vector<string>>record;
+        
+        for(int i=0;i<strs.size();i++){
+            string key=strs[i];
+            sort(key.begin(),key.end());//排序字符串
+            record[key].push_back(strs[i]);//如果哈希表中不存在key，则会先创建对应关系后，再添加字符串
+        }
+
+        vector<vector<string>>res;
+        for(auto it:record){//遍历哈希表，获取到每一项的字符串集合
+            vector<string>vec;
+            for(string& str:it.second){//遍历当前字符串集合，它们属于同一组
+                vec.push_back(str);
+            }
+            res.push_back(vec);
+        }
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(nklogk)  n是strs的大小，k是最长字符串的长度，klogk是排序时间;
+空间复杂度：O(nk)  哈希表大小;
+```
+
+## [50. Pow(x, n)](https://leetcode.cn/problems/powx-n/)
+
+```cpp
+思路：快速幂
+把n看作2进制数，假设计算2^5，5的2进制是101，2^5=2^(101)，2^(2^2+2^0)=2(2^2)*2(2^0)=16*2=32
+
+class Solution {
+public:
+    double myPow(double x, int n) {
+        long N=n;//如果n小于0，需要先转成正数，但可能会越界，所以用long接收
+        if(N<0)N=-N;
+
+        double res=1.0;
+        while(N>0){
+            if(N&1==1)res*=x;
+            x*=x;//x^(2^0) -> x^(2^1) -> x^(2^2) -> x^(2^3)，恰好对应着每一位的2进制数大小
+            N>>=1;
+        }
+
+        return n<0?1.0/res:res;//如果n小于0，需要返回倒数
+    }
+};
+```
+
