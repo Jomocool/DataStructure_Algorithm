@@ -2395,3 +2395,167 @@ public:
 };
 ```
 
+## [51. N 皇后](https://leetcode.cn/problems/n-queens/)
+
+```cpp
+思路：回溯法
+class Solution {
+public:
+    vector<string>chessBoard;//棋盘
+    vector<vector<string>>res;//有效棋盘集合
+
+    bool isValid(int row,int col){
+        //第0行无论放哪一列都是合法的，因为后面行都还没放皇后，必然不会冲突
+        if(row==0)return true;
+
+        //只需要判断是否和上方几行冲突，因为下面几行都还没有放置皇后
+
+        //同一列不能有皇后
+        for(int i=row-1;i>=0;i--){
+            if(chessBoard[i][col]=='Q')return false;
+        }
+
+        //左上斜线
+        int k=1;
+        while(row-k>=0&&col-k>=0){
+            if(chessBoard[row-k][col-k]=='Q')return false;
+            k++;
+        }
+        k=1;
+        //右上斜线
+        while(row-k>=0&&col+k<chessBoard.size()){
+            if(chessBoard[row-k][col+k]=='Q')return false;
+            k++;
+        }
+
+        return true;
+    }
+
+    void backTracking(int row){
+        //如果能超过棋盘最后一行，说明最后一行的皇后也放置了且合法，就代表当前棋盘摆放皇后有效，加入结果集
+        if(row==chessBoard.size()){
+            res.push_back(chessBoard);
+            return;
+        }
+
+        //遍历当前行所有列，找到一个适合放置皇后的位置
+        for(int j=0;j<chessBoard.size();j++){
+            if(isValid(row,j)){
+                chessBoard[row][j]='Q';//放置皇后
+                backTracking(row+1);
+                chessBoard[row][j]='.';//回溯
+            }
+        }
+    }
+
+    vector<vector<string>> solveNQueens(int n) {
+        res.clear();
+        chessBoard.clear();
+        chessBoard=vector<string>(n,string(n,'.'));
+
+        backTracking(0);
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n!)  n是皇后的数量，第一行有n个格子放置皇后，第二行有n-1个格子放置皇后……，总情况数量是n*(n-1)*(n-2)……=n!
+空间复杂度：O(n^2)   递归深度不超过n，chessBoard的大小为n^2
+```
+
+## [52. N 皇后 II](https://leetcode.cn/problems/n-queens-ii/)
+
+```cpp
+思路：回溯法
+本题的做法和上题完全相同，只不过是加入有效棋盘变成了记录有效棋盘数
+
+class Solution {
+public:
+    vector<string>chessBoard;//棋盘
+    int count;
+
+    bool isValid(int row,int col){
+        //第0行无论放哪一列都是合法的，因为后面行都还没放皇后，必然不会冲突
+        if(row==0)return true;
+
+        //只需要判断是否和上方几行冲突，因为下面几行都还没有放置皇后
+
+        //同一列不能有皇后
+        for(int i=row-1;i>=0;i--){
+            if(chessBoard[i][col]=='Q')return false;
+        }
+
+        //左上斜线
+        int k=1;
+        while(row-k>=0&&col-k>=0){
+            if(chessBoard[row-k][col-k]=='Q')return false;
+            k++;
+        }
+        k=1;
+        //右上斜线
+        while(row-k>=0&&col+k<chessBoard.size()){
+            if(chessBoard[row-k][col+k]=='Q')return false;
+            k++;
+        }
+
+        return true;
+    }
+
+    void backTracking(int row){
+        //如果能超过棋盘最后一行，说明最后一行的皇后也放置了且合法，就代表当前棋盘摆放皇后有效，加入结果集
+        if(row==chessBoard.size()){
+            count++;
+            return;
+        }
+
+        //遍历当前行所有列，找到一个适合放置皇后的位置
+        for(int j=0;j<chessBoard.size();j++){
+            if(isValid(row,j)){
+                chessBoard[row][j]='Q';//放置皇后
+                backTracking(row+1);
+                chessBoard[row][j]='.';//回溯
+            }
+        }
+    }
+
+    int totalNQueens(int n) {
+        chessBoard.clear();
+        chessBoard=vector<string>(n,string(n,'.'));
+        count=0;
+        backTracking(0);
+
+        return count;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n!)  n是皇后的数量，第一行有n个格子放置皇后，第二行有n-1个格子放置皇后……，总情况数量是n*(n-1)*(n-2)……=n!
+空间复杂度：O(n^2)   递归深度不超过n，chessBoard的大小为n^2
+```
+
+## [53. 最大子数组和](https://leetcode.cn/problems/maximum-subarray/)
+
+```cpp
+思路：动态规划
+dp[i]：以nums[i]结尾的子数组的最大和，如果dp[i-1]即以nums[i-1]结尾的最大子数组和大于0，则可以连接dp[i-1]涉及的子数组，加上正数必然比自身更大，如果其小于0，那么就不能连接了，因为和会更小
+
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        if(nums.size()==1)return nums[0];//边界情况
+
+        vector<int>dp(nums.size(),0);
+        dp[0]=nums[0];
+        int maxSum=dp[0];
+        for(int i=1;i<nums.size();i++){
+            //如果前面子数组最大和大于0，则连接，否则自成一个子数组
+            dp[i]=dp[i-1]>0?dp[i-1]+nums[i]:nums[i];
+            maxSum=max(maxSum,dp[i]);
+        }
+
+        return maxSum;
+    }
+};
+```
+
