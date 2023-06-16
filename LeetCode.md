@@ -2557,5 +2557,92 @@ public:
         return maxSum;
     }
 };
+
+时空复杂度分析:
+时间复杂度：O(n)
+空间复杂度：O(n)
+
+优化空间复杂度至O(1)：
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int maxSum=INT_MIN;
+        int cur=0;
+
+        for(int i=0;i<nums.size();i++){
+            cur>0?cur+=nums[i]:cur=nums[i];
+            maxSum=max(cur,maxSum);
+        }
+
+        return maxSum;
+    }
+};
+```
+
+## [54. 螺旋矩阵](https://leetcode.cn/problems/spiral-matrix/)
+
+```cpp
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        int m=matrix.size();
+        int n=matrix[0].size();
+
+        pair<int,int>leftUp{0,0};//左上角
+        pair<int,int>rightDown{m-1,n-1};//右下角
+        
+        vector<int>res(m*n,0);
+        int cur=0;
+        while(leftUp.first<=rightDown.first&&leftUp.second<=rightDown.second){
+            int up=leftUp.first;//上边界
+            int left=leftUp.second;//左边界
+            int down=rightDown.first;//下边界
+            int right=rightDown.second;//右边界
+
+            //避免只剩最后一个中心格导致重复打印的情况，用else if，避免重复处理，且其他情况下同一行或同一列不可能同时发生
+            if(up==down){//只剩一行
+                for(int i=left;i<=right;i++){
+                    res[cur++]=matrix[up][i];
+                }
+                break;//及时退出循环，避免下面又重复打印
+            }
+            else if(left==right){//只剩一列
+                for(int i=up;i<=down;i++){
+                    res[cur++]=matrix[i][left];
+                }
+                break;//及时退出循环，避免下面又重复打印
+            }
+
+            //注意不要涉及其他边界的打印，例如上边界不涉及右边界，右边界不涉及下边界，下边界不涉及左边界，左边界不涉及上边界，不然可能会重复打印
+            //上边界从左到右打印
+            for(int i=left;i<right;i++){
+                res[cur++]=matrix[up][i];
+            }
+            //右边界从上到下打印
+            for(int i=up;i<down;i++){
+                res[cur++]=matrix[i][right];
+            }
+            //下边界从右到左打印
+            for(int i=right;i>left;i--){
+                res[cur++]=matrix[down][i];
+            }
+            //左边界从下到上打印
+            for(int i=down;i>up;i--){
+                res[cur++]=matrix[i][left];
+            }
+
+            leftUp.first++;
+            leftUp.second++;
+            rightDown.first--;
+            rightDown.second--;
+        }
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m*n)  矩阵的每个元素都被扫描了一遍;
+空间复杂度：O(1)  只用了常数个变量记录两个角的一些信息;
 ```
 
