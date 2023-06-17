@@ -2734,3 +2734,127 @@ compare函数作为类内成员函数时一定需要static修饰，这是因为�
 error: reference to non-static member function must be called
 
 而static静态类成员函数是不需要this指针的，因此改为静态成员函数即可通过
+
+## [57. 插入区间](https://leetcode.cn/problems/insert-interval/)
+
+```cpp
+思路：
+本题和前一题不同，因为本题给的范围集合是不重叠的，所以不需要考虑区间之间范围重叠，只可能是新插入区间会和其他区间重叠
+
+1.先找到第一个重叠的区间
+2.如果没有，说明新插入区间可以直接放在最后。否则需要找出最小起点，然后找到新插入区间覆盖到的其他区间，将它们合并成一个区间
+
+class Solution {
+public:
+    vector<vector<int>> insert(vector<vector<int>>& intervals, vector<int>& newInterval) {
+        vector<vector<int>>res;
+        int n=intervals.size(),index=0;
+
+        //新插入区间没有涉及的区间，直接加入结果集中
+        while(index<n&&intervals[index][1]<newInterval[0]){
+            res.push_back(intervals[index++]);
+        }
+
+        //新插入区间有覆盖到的范围
+        if(index<n){
+            int start=min(intervals[index][0],newInterval[0]);
+            int end=newInterval[1];//一开始的结束边界是新插入区间的结束边界，中途如果有延伸，再更新
+            while(index<n&&intervals[index][0]<=newInterval[1]){
+                end=max(newInterval[1],intervals[index][1]);
+                index++;
+            }
+            res.push_back({start,end});
+
+            //将剩余的未被覆盖的区间加入到结果集中
+            while(index<n){
+                res.push_back(intervals[index++]);
+            }
+        }else{//说明没有被覆盖的区间，直接加到最后
+            res.push_back(newInterval);
+        }
+
+        return res;
+    }
+};
+```
+
+## [58. 最后一个单词的长度](https://leetcode.cn/problems/length-of-last-word/)
+
+```cpp
+思路：
+从后向前扫描
+
+class Solution {
+public:
+    int lengthOfLastWord(string s) {
+        //从后向前扫描
+        int index=s.length()-1;
+        //找到第一个不为空格的字符，也是最后一个单词的最后一个字母
+        while(index>=0&&s[index]==' '){
+            index--;
+        }
+
+        int end=index;
+        while(index>=0&&s[index]!=' '){
+            index--;
+        }
+		//结束循环后，index指向最后一个单词的第一个字母的前一个下标
+        
+        return end-index;
+    }
+};
+```
+
+## [59. 螺旋矩阵 II](https://leetcode.cn/problems/spiral-matrix-ii/)
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> generateMatrix(int n) {
+        vector<vector<int>>res(n,vector<int>(n,0));//结果集合
+
+        pair<int,int>leftUp{0,0};
+        pair<int,int>rightDown{n-1,n-1};
+        int count=1;//计数
+
+        while(leftUp.first<=rightDown.first&&leftUp.second<=rightDown.second){
+            int up=leftUp.first;//上边界
+            int left=leftUp.second;//左边界
+            int down=rightDown.first;//下边界
+            int right=rightDown.second;//右边界
+
+            //n为奇数时，两对角缩到中心点
+            if(up==down&&left==right){
+                res[left][up]=count;
+                break;
+            }
+
+            //上边界从左到右
+            for(int i=left;i<right;i++){
+                res[up][i]=count++;
+            }
+            //右边界从上到下
+            for(int i=up;i<down;i++){
+                res[i][right]=count++;
+            }
+            //下边界从右到左
+            for(int i=right;i>left;i--){
+                res[down][i]=count++;
+            }
+            //左边界从下到上
+            for(int i=down;i>up;i--){
+                res[i][left]=count++;
+            }
+
+            //向对角缩
+            leftUp.first++;
+            leftUp.second++;
+            rightDown.first--;
+            rightDown.second--;
+        }
+
+        return res;
+    }
+};
+```
+
