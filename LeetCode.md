@@ -2646,3 +2646,91 @@ public:
 空间复杂度：O(1)  只用了常数个变量记录两个角的一些信息;
 ```
 
+## [55. 跳跃游戏](https://leetcode.cn/problems/jump-game/)
+
+```cpp
+思路：
+本题的思路和45.跳跃游戏II类似，用贪心算法，找出下一步的可达最大终点
+
+class Solution {
+public:
+    bool canJump(vector<int>& nums) {
+        for(int i=0,maxPos=0;i<nums.size();i++){
+            //不断地拓展右边界，如果右边界一直不变，说明当前右边界左边的格子都无法跳到右边界后面，也就无法到达最后一个格子了
+            if(i>maxPos)return false;
+            maxPos=max(maxPos,i+nums[i]);
+            //如果已经超过最后一个格子了，后面都不用看了，因为至少都有一种方法可以到达最后一个下标了
+            if(maxPos>=nums.size()-1)break;
+        }
+
+        return true;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)
+空间复杂度：O(1)
+```
+
+## [56. 合并区间](https://leetcode.cn/problems/merge-intervals/)
+
+```cpp
+思路：
+分析清楚两个范围之间的覆盖情况，可能是当前范围的结束点只能够覆盖下一个范围的起始点，也可能是一个范围无法覆盖，也可能把所有范围的结束点都覆盖了，所以我们要记录最大结束点。同时，开始先将范围集合按起始点从小到大排序，这样我们的上述算法才成立，且固定住了范围的起点，即第一个范围的起始点，因为它的起始点必然是最小的。
+
+class Solution {
+public:
+    static bool compare(const vector<int>&vec1,const vector<int>&vec2){
+        return vec1[0]==vec2[0]?vec1[1]<vec2[1]:vec1[0]<vec2[0];
+    }
+
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        vector<vector<int>>res;//结果集合
+
+        //intervals按起点从小到大排序
+        sort(intervals.begin(),intervals.end(),compare);
+
+        int index=0;
+        while(index<intervals.size()){
+            int start=index++;
+            int maxEnd=intervals[start][1];//当前涉及范围的最大结束点
+            while(index<intervals.size()&&maxEnd>=intervals[index][0]){
+                maxEnd=max(maxEnd,intervals[index][1]);//更新最大结束点
+                index++;
+            }
+
+            res.push_back({intervals[start][0],maxEnd});//添加覆盖后的范围集合元素到结果集合中
+        }
+
+        return res;
+    }
+};
+
+时间复杂度分析：
+时空复杂度分析:
+时间复杂度：O(nlogn)  排序时间复杂度为nlogn，遍历范围集合的时间复杂度是n;
+空间复杂度：O(logn)  排序所需空间复杂度（递归栈空间大小）;
+```
+
+**调用标准库sort函数的第三个参数：**
+一开始我的比较函数如下：
+
+> bool compare(const vector<int>&vec1,const vector<int>&vec2){
+>     return vec1[0]==vec2[0]?vec1[1]<vec2[1]:vec1[0]<vec2[0];
+> }
+
+但是出现报错：error: reference to non-static member function must be called
+
+**原因如下：**
+
+compare函数作为类内成员函数时一定需要static修饰，这是因为所有在类内定义的非static成员函数在经过编译后隐式地为它们添加了一个this指针，变成了
+
+> bool compare(Solution*this,vector<int>&vec1,const vector<int>&vec2){
+>     return vec1[0]==vec2[0]?vec1[1]<vec2[1]:vec1[0]<vec2[0];
+> }
+
+而标准库的sort()函数的第三个compare函数指针参数中并没有这样this指针参数，因此会出现输入的compare参数和sort()要求的参数不匹配，从而导致了：
+
+error: reference to non-static member function must be called
+
+而static静态类成员函数是不需要this指针的，因此改为静态成员函数即可通过
