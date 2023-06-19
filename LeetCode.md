@@ -2856,5 +2856,366 @@ public:
         return res;
     }
 };
+
+时空复杂度分析:
+时间复杂度：O(n^2)
+空间复杂度：O(1)
+```
+
+## [60. 排列序列](https://leetcode.cn/problems/permutation-sequence/)
+
+![image-20230618123403784](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230618123403784.png)
+
+```cpp
+思路：剪枝法
+因为题目要求返回的是第k个序列，不需要dfs找到所有序列
+
+eg.n=3,k=4
+{[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]}
+第一个数字是1时，所有的排列情况是前(n-1)!个排列，即2!，我们需要找的是第4个排列，前两个排列我们不需要，直接剪枝掉。接下来就需要找到剩余排列中的前(k-(n-1)!)个，下一个数字选择也如此，就把总问题转换成了相同逻辑的子问题
+
+class Solution {
+public:
+    string getPermutation(int n, int k) {
+        //记录阶乘的数组
+        vector<int>fact(n+1,1);
+        for(int i=1;i<=n;i++){
+            fact[i]=fact[i-1]*i;
+        }
+
+        //记录数字使用情况
+        vector<bool>isUsed(n+1,false);
+        string res;//结果字符串
+        for(int i=0;i<n;i++){//确定第i个位置的数字
+            //确定第i个数字后还剩下几种可能
+            int cnt=fact[n-i-1];
+            for(int j=1;j<=n;j++){//找到第i个位置的数字
+                if(isUsed[j])continue;//如果当前数字被使用过，直接下一个数字
+                if(k>cnt)k-=cnt;//k大于当前数字确定后的所有可能情况数，说明当前数字不是当前的j，减去相应范围后，看下一个j是否符合
+                else{//说明当前数字如果是当前的j的话，它的所有情况数包含了k
+                    res.push_back(j+'0');
+                    isUsed[j]=true;
+                    break;//确定后退出当前循环
+                }
+            }
+        }
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n^2)  每个位置只需要遍历n个数字，找出包含k的范围，n*n=n^2;
+空间复杂度：O(n)  需要一个长度为n的数组来记录每个数字的使用情况，和一个记录n个数字的阶乘的数组;
+```
+
+## [61. 旋转链表](https://leetcode.cn/problems/rotate-list/)
+
+```cpp
+思路：哈希表
+用一张哈希表记录每个节点当前的前驱节点，因为移动链表时，主要是变动头尾节点，而尾节点变动时，需要让其前驱节点变成新的尾节点，所以需要记录，同时每移动一次便更新一次。关键在于理清头尾节点的处理顺序，时刻验证当前需要用到的变量是更新前还是更新后的
+
+class Solution {
+public:
+    ListNode* rotateRight(ListNode* head, int k) {
+        if(k==0||head==nullptr||head->next==nullptr){//不移动
+            return head;
+        }
+
+        //记录前驱节点
+        unordered_map<ListNode*,ListNode*>record;
+        record[head]=nullptr;
+        ListNode*pre=head;
+        ListNode*cur=head->next;
+        int size=1;//记录链表节点个数，后面需要用到
+        while(cur!=nullptr){
+            record[cur]=pre;
+            pre=cur;
+            cur=cur->next;
+            size++;
+        }
+
+        //记录当前链表头尾节点，因为右移时主要变动的就是头尾节点
+        ListNode*curTail=pre;
+        ListNode*curHead=head;
+        k%=size;//k过大时没有意义，链表最终的移动次数取决于k%size
+        while(k--){
+            curTail->next=curHead;//将尾节点的next指针指向头节点
+            pre=record[curTail];//找到尾节点的前驱节点
+            pre->next=nullptr;//前驱节点指向空，因为要作为新的尾节点
+            record[curHead]=curTail;//更新头结点的前驱节点为尾节点
+            record[curTail]=nullptr;//更新尾节点的前驱节点为空
+            curHead=curTail;//更新头结点
+            curTail=pre;//更新尾节点
+        }
+
+        //返回当前链表的头节点
+        return curHead;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)  完善表，移动次数为k%size;
+空间复杂度：O(n)  表存储前驱节点;
+```
+
+## [62. 不同路径](https://leetcode.cn/problems/unique-paths/)
+
+```cpp
+思路：DFS
+class Solution {
+public:
+    int dfs(int i,int j,int m,int n){
+        //到达了终点，说明当前路径有效，返回1
+        if(i==m&&j==n){
+            return 1;
+        }
+        
+        //越界，无效
+        if(i>m||j>n){
+            return 0;
+        }
+
+        //返回向右和向下走的有效路径总和
+        return dfs(i,j+1,m,n)+dfs(i+1,j,m,n);
+    }
+
+    int uniquePaths(int m, int n) {
+        return dfs(1,1,m,n);
+    }
+};
+超出时间限制
+
+优化：由于DFS重复计算了很多路径，所以浪费了很多时间
+思路：动态规划
+除了左边界和上边界的格子已外，每个格子可以从其上边和左边格子过来
+
+class Solution {
+public:
+    int uniquePaths(int m, int n) {
+        //dp[i][j]，到达(i-1,j-1)格子的方法数，多加一行一列，可以在完善dp的过程中顺便初始化，代码结构更加整洁
+        vector<vector<int>>dp(m+1,vector<int>(n+1,0));
+        dp[1][1]=1;//起始点初始化为1
+
+        //完善dp
+        for(int i=1;i<=m;i++){
+            for(int j=1;j<=n;j++){
+                dp[i][j]+=dp[i-1][j]+dp[i][j-1];//可以从上边来，也可以从左边来
+            }
+        }
+
+        return dp[m][n];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m*n)
+空间复杂度：O(m*n)
+
+进一步优化空间复杂度：
+因为每个元素只需要其左边和上边的值，所以不需要二维表。dp[i][j]=dp[i-1][j]+dp[i][j-1]，dp[i-1][j]就是当前未更新过的dp[j]，而dp[i][j-1]是左边刚更新过的dp[j-1]，所以是等效的
+class Solution {
+public:
+    int uniquePaths(int m, int n) {
+        vector<int>dp(n+1,1);
+        dp[0]=0;
+        for(int i=2;i<=m;i++){
+            for(int j=1;j<=n;j++){
+                dp[j]=dp[j]+dp[j-1];
+            }
+        }
+        return dp[n];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m*n)
+空间复杂度：O(n)
+```
+
+## [63. 不同路径 II](https://leetcode.cn/problems/unique-paths-ii/)
+
+```cpp
+思路：动态规划
+本题思路大体和上一题类似，但是本题会有障碍物，所以需要额外考虑一下
+
+class Solution {
+public:
+    int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+        int m=obstacleGrid.size();
+        int n=obstacleGrid[0].size();
+        vector<vector<int>>dp(m+1,vector<int>(n+1,0));
+        dp[1][1]=1;//起点
+
+        for(int i=1;i<=m;i++){
+            for(int j=1;j<=n;j++){
+                //当前遇到障碍物，此路不通，是0
+                if(obstacleGrid[i-1][j-1]==1){//注意这里判断原格子是否为障碍物时的下标是(i-1,j-1)
+                    dp[i][j]=0;
+                }else{
+                    dp[i][j]+=dp[i-1][j]+dp[i][j-1];
+                }
+            }
+        }
+
+        return dp[m][n];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m*n)
+空间复杂度：O(m*n)
+
+优化空间复杂度：
+class Solution {
+public:
+    int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+        int m=obstacleGrid.size();
+        int n=obstacleGrid[0].size();
+        //因为不能保证第一行没有障碍物，所以不能一开始就初始化成1
+        vector<int>dp(n+1,0);
+        dp[1]=1;
+
+        for(int i=1;i<=m;i++){
+            for(int j=1;j<=n;j++){
+                if(obstacleGrid[i-1][j-1]==1){//当前遇到障碍物，此路不通，是0
+                    dp[j]=0;
+                }else{
+                    dp[j]=dp[j]+dp[j-1];
+                }
+            }
+        }
+
+        return dp[n];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m*n)
+空间复杂度：O(n)
+```
+
+## [64. 最小路径和](https://leetcode.cn/problems/minimum-path-sum/)
+
+```cpp
+思路：动态规划
+
+class Solution {
+public:
+    int minPathSum(vector<vector<int>>& grid) {
+        int m=grid.size();
+        int n=grid[0].size();
+        //dp[i][j]到达(i,j)的最小路径和
+        vector<vector<int>>dp(m,vector<int>(n,0));
+
+        //初始化dp
+        dp[0][0]=grid[0][0];
+        for(int i=1;i<m;i++){//左边界的只能从其上方来
+            dp[i][0]=grid[i][0]+dp[i-1][0];
+        }
+        for(int j=1;j<n;j++){//上边界的只能从其左方来
+            dp[0][j]=grid[0][j]+dp[0][j-1];
+        }
+
+        //完善dp
+        for(int i=1;i<m;i++){
+            for(int j=1;j<n;j++){
+                dp[i][j]=grid[i][j]+min(dp[i-1][j],dp[i][j-1]);
+            }
+        }
+
+        return dp[m-1][n-1];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m*n)
+空间复杂度：O(n^2)
+
+优化空间复杂度：每个元素只需要其上一行和左边的元素推得
+class Solution {
+public:
+    int minPathSum(vector<vector<int>>& grid) {
+        int m=grid.size();
+        int n=grid[0].size();
+
+        vector<int>dp(n,0);
+        dp[0]=grid[0][0];
+        for(int j=1;j<n;j++){
+            dp[j]=grid[0][j]+dp[j-1];
+        }
+
+        for(int i=1;i<m;i++){
+            for(int j=0;j<n;j++){
+                if(j==0){
+                    dp[j]+=grid[i][j];
+                }else{
+                    dp[j]=grid[i][j]+min(dp[j],dp[j-1]);
+                }
+            }
+        }
+
+        return dp[n-1];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m*n)
+空间复杂度：O(n)
+```
+
+## [65. 有效数字](https://leetcode.cn/problems/valid-number/)
+
+```cpp
+思路：看懂规则
+有效数字：
+1.小数：(+/-)(连续数字).数字可以有带e/E的，括号表示可选
+2.整数：(+/-)连续数字
+3.科学计算法：(+/-)一连串数字e/E(+/-)一连串数字
+
+class Solution {
+public:
+    bool check(string&s,int start,int end,bool mustInt){
+        //符号
+        if(s[start]=='+'||s[start]=='-')start++;
+        //判断是否遇到过小数点和数字
+        bool point=false;
+        bool digit=false;
+        for(int i=start;i<=end;i++){
+            if(s[i]=='.'){
+                //如果前面已经遇到小数点或者要求是整数，返回false
+                if(point||mustInt)return false;
+                point=true;
+            }else if(isdigit(s[i])){
+                digit=true;
+            }else{//遇到其他特殊字符，说明既不是小数，也不是整数
+                return false;
+            }
+        }
+        return digit;//如果只有一个小数点，digit=false，无效，返回false
+    }
+
+    bool isNumber(string s) {
+        //找到是否有e/E，并记录位置
+        int index=-1;
+        for(int i=0;i<s.length();i++){
+            if(s[i]=='e'||s[i]=='E'){
+                if(index==-1)index=i;
+                else return false;//说明不止一个e/E
+            }
+        }
+
+        //没有e，那小数、整数都可以
+        if(index==-1){
+            return check(s,0,s.length()-1,false);
+        }
+
+        //如果有e/E，其前面小数、整数都可以，后面必须是整数
+        return check(s,0,index-1,false)&&check(s,index+1,s.length()-1,true);
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)
+空间复杂度：O(1)
 ```
 
