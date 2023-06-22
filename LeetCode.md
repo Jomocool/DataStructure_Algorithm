@@ -3219,3 +3219,249 @@ public:
 空间复杂度：O(1)
 ```
 
+## [66. 加一](https://leetcode.cn/problems/plus-one/)
+
+```cpp
+思路：
+从最低位开始加1，有进位就传给高一位，没有就结束遍历。结束遍历后，如果遍历完了并且进位是1，说明需要在最高位补1
+
+class Solution {
+public:
+    vector<int> plusOne(vector<int>& digits) {
+        vector<int>res=digits;//拷贝原数组
+        int index=res.size()-1;//当前遍历到的数位下标
+        int carry=0;//进位
+        res[index]+=1;//先加1
+        while(index>=0){
+            int sum=res[index]+carry;
+            res[index]=sum%10;
+            carry=sum/10;
+            if(carry==0)break;//如果进位是0，后面就没必要再处理了，因为不会变动
+            index--;
+        }
+
+        //结束循环后，如果进位是1，说明需要在最高位补1
+        if(carry==1){
+            res.insert(res.begin(),1);
+        }
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)
+空间复杂度：O(1)
+```
+
+## [67. 二进制求和](https://leetcode.cn/problems/add-binary/)
+
+```cpp
+class Solution {
+public:
+    string addBinary(string a, string b) {
+        string res;//结果字符串
+        int index1=a.length()-1;
+        int index2=b.length()-1;
+        int carry=0;
+
+        while(index1>=0||index2>=0||carry){
+            //计算和
+            if(index1>=0)carry+=a[index1--]-'0';
+            if(index2>=0)carry+=b[index2--]-'0';
+            //更新结果字符串
+            res=to_string(carry%2)+res;
+            carry/=2;
+        }
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)
+空间复杂度：O(1)
+```
+
+## [68. 文本左右对齐](https://leetcode.cn/problems/text-justification/)
+
+```cpp
+思路：模拟
+1.当前行是最后一行：单词左对齐，且单词之间不能有额外的空格，剩余的空格在最后面补充
+2.当前行不是最后一行，且只有一个单词：该单词左对齐在行末填充空格
+3.当前行不是最后一行，且不止一个单词：设当前行单词数为numWords，空格数为numSpaces，需要将空格均匀分配在单词之间，则单词之间至少有avgSpaces=numSpaces/(numWords-1)个空格，对于多出来的空格数extraSpaces=numSpaces mod (numWords-1)，应填在前extraSpaces个单词之间。因此，前extraSpaces+1个单词之间填充avgSpaces+1个空格，其余单词之间填充avgSpaces个空格。因为左侧放置的空格数要多于右侧的
+
+class Solution {
+    //blank返回长度为n的由空格组成的字符串
+    string blank(int n){
+        return string(n,' ');
+    }
+
+    //join返回用seq拼接[left,right]范围内的words组成的字符串
+    string join(vector<string>&words,int left,int right,string seq){
+        string s=words[left];
+        for(int i=left+1;i<=right;i++){
+            s+=seq+words[i];
+        }
+        return s;
+    }
+public:
+    vector<string> fullJustify(vector<string>& words, int maxWidth) {
+        vector<string>res;
+        int right=0,n=words.size();
+        while(true){
+            int left=right;//当前行第一个单词在words的位置
+            int sumLen=0;//统计当前行的单词长度之和
+            //循环确定当前行可以放多少单词，单词之间至少有一个空格
+            while(right<n&&sumLen+words[right].length()+right-left<=maxWidth){
+                sumLen+=words[right++].length();
+            }
+
+            //当前行是最后一行
+            if(right==n){
+                string s=join(words,left,n-1," ");
+                res.emplace_back(s+blank(maxWidth-s.length()));
+                break;
+            }
+
+            int numWords=right-left;//单词数
+            int numSpaces=maxWidth-sumLen;//需要填充的空格数
+
+            //当前行只有一个单词：左对齐，并在最后填充空格
+            if(numWords==1){
+                res.emplace_back(words[left]+blank(numSpaces));
+                continue;
+            }
+
+            //当前行不止最后一个单词，左右对齐，即开始和结尾都不能是空格，只有中间能够填充空格，所以要平均分配到中间
+            int avgSpaces=numSpaces/(numWords-1);//平均每个单词之间需填充的空格数
+            int extraSpaces=numSpaces%(numWords-1);//即使每个单词之间都填充了平均空格数后，还需要填充的总空格数，平均补到前面的单词
+            string s1=join(words,left,left+extraSpaces,blank(avgSpaces+1));//前extraSpaces+1个单词之间填充avgSpaces+1个空格
+            string s2=join(words,left+extraSpaces+1,right-1,blank(avgSpaces));//后面的单词填充avgSpaces个空格
+            res.emplace_back(s1+blank(avgSpaces)+s2);//两填充空格的字符串之间填充avgSpaces个空格
+        }
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)  n是words字符串数组所有字符串的长度和;
+空间复杂度：O(n)
+```
+
+## [69. x 的平方根 ](https://leetcode.cn/problems/sqrtx/)
+
+```cpp
+思路：二分法
+class Solution {
+public:
+    int mySqrt(int x) {
+        int left=0;
+        int right=x;
+        int res=0;
+        while(left<=right){
+            int mid=left+((right-left)>>1);
+            if((long long)mid*mid<=x){
+                res=mid;
+                left=mid+1;
+            }else{
+                right=mid-1;
+            }
+        }
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(logn)
+空间复杂度：O(1)
+```
+
+## [70. 爬楼梯](https://leetcode.cn/problems/climbing-stairs/)
+
+```cpp
+思路：动态规划
+class Solution {
+public:
+    int climbStairs(int n) {
+        //dp[i]：到达第i阶台阶的方法数，从0阶开始计算
+        vector<int>dp(n+1,0);
+        //初始化dp
+        dp[0]=1;
+        dp[1]=1;
+        //完善dp
+        for(int i=2;i<=n;i++){
+            dp[i]=dp[i-1]+dp[i-2];//一次可以爬1或2个台阶，所以既可以从前1个台阶上来，也可以从前2个台阶上来
+        }
+
+        return dp[n];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)
+空间复杂度：O(n)
+
+优化空间复杂度：发现我们只需要知道前两个值就可以推导出当前值，所以只需要3个值记录即可
+class Solution {
+public:
+    int climbStairs(int n) {
+        if(n<=1)return 1;
+        int a=1;
+        int b=1;
+        int c=0;
+        while(n-2>=0){
+            c=a+b;
+            a=b;
+            b=c;
+            n--;
+        }
+        return c;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)
+空间复杂度：O(1)
+```
+
+## [71. 简化路径](https://leetcode.cn/problems/simplify-path/)
+
+```cpp
+思路：模拟
+class Solution {
+public:
+    string simplifyPath(string path) {
+        string res;
+        int index=0;
+        while(index<path.size()){
+            //获取文件名
+            while(index<path.size()&&path[index]=='/')index++;
+            int left=index;
+            while(index<path.size()&&path[index]!='/')index++;
+            int right=index-1;
+            string fileName=path.substr(left,right-left+1);
+            
+            if(fileName=="."){//如果是".""，继续在当前目录
+                continue;
+            }else if(fileName==".."){//如果是".."
+                if(res=="/")continue;//如果当前是根目录，继续在当前目录
+                else{//删去最后一个目录
+                    int lastFile=res.rfind('/');
+                    res=res.substr(0,lastFile);
+                }
+            }else{//如果是正常目录名，添加到当前目录路径
+                if(fileName.length()>0)res=res+"/"+fileName;
+            }
+        }
+		
+        //如果最终目录路径为空，则至少返回根目录
+        return res.length()==0?"/":res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)
+空间复杂度：O(1)
+```
+
