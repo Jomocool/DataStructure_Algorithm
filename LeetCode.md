@@ -3465,3 +3465,51 @@ public:
 空间复杂度：O(1)
 ```
 
+## [72. 编辑距离](https://leetcode.cn/problems/edit-distance/)
+
+```cpp
+思路：动态规划
+dp[i][j]：以word1[i-1]结尾的字符串转成以word2[j-1]结尾的字符串的最少操作数
+比较word1[i-1]和word2[j-1]:
+	1.相同：不需要做任何操作，dp[i][j]=dp[i-1][j-1]
+    2.不同：可以删除也可以替换，但需要最少操作数
+        2.1删除：删除word1[i-1]，意味着要取以word1[i-2]结尾的字符串转成以word2[j-1]结尾的字符串的最少操作数
+        2.2替换：替换word1[i-1]为word2[j-1]，则要取以word1[i-1]结尾的字符串转成以word2[j-1]结尾的字符串的最少操作数
+        2.3插入：插入word2[j-1]字符到word1字符串，则要取以word1[i-1]结尾的字符串转成以word2[j-2]结尾的字符串的最少操作数
+        最终：dp[i][j]=min(dp[i-1][j],min(dp[i-1][j-1],dp[i][j-1]))+1
+
+class Solution {
+public:
+    int minDistance(string word1, string word2) {
+        //dp[i][j]：以word1[i-1]结尾的字符串转成以word2[j-1]结尾的字符串的最少操作数
+        int n=word1.length();
+        int m=word2.length();
+        vector<vector<int>>dp(n+1,vector<int>(m+1,0));//多一行一列方便初始化
+
+        //初始化dp，首行和首列，因为每一个dp值需要从左上方推导而得
+        for(int j=0;j<=m;j++){//dp[0][j]需要插入j个字母才能转换
+            dp[0][j]=j;
+        }
+        for(int i=0;i<=n;i++){//dp[i][0]需要删去i个字母才能转换
+            dp[i][0]=i;
+        }
+
+        for(int i=1;i<=n;i++){
+            for(int j=1;j<=m;j++){
+                if(word1[i-1]==word2[j-1]){
+                    dp[i][j]=dp[i-1][j-1];
+                }else{
+                    dp[i][j]=min(dp[i-1][j],min(dp[i-1][j-1],dp[i][j-1]))+1;//删除,(替换,插入)
+                }
+            }
+        }
+
+        return dp[n][m];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n*m)
+空间复杂度：O(n*m)
+```
+
