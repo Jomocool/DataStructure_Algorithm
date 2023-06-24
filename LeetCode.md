@@ -3513,3 +3513,117 @@ public:
 空间复杂度：O(n*m)
 ```
 
+## [73. 矩阵置零](https://leetcode.cn/problems/set-matrix-zeroes/)
+
+```cpp
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+        int n=matrix.size(),m=matrix[0].size();
+        //记录第0行和第0列是否有0
+        bool rowZero=false,colZero=false;
+
+        //遍历矩阵
+        for(int i=0;i<n;i++){
+            for(int j=0;j<m;j++){
+                //因为需要通过标记每行每列的首元素为0来判断当前行或列是否需要置为0，所以需要额外判断首行首列是否原本就有0
+                if(matrix[i][j]==0){
+                    matrix[i][0]=0;
+                    matrix[0][j]=0;
+                    if(i==0)rowZero=true;
+                    if(j==0)colZero=true;
+                }
+            }
+        }
+
+        for(int i=1;i<n;i++){
+            for(int j=1;j<m;j++){
+                //当前行或列的首元素是0，代表该元素需要被置为0
+                if(matrix[i][0]==0||matrix[0][j]==0){
+                    matrix[i][j]=0;
+                }
+            }
+        }
+
+        for(int j=0;rowZero&&j<m;j++)matrix[0][j]=0;//首行有0
+        for(int i=0;colZero&&i<n;i++)matrix[i][0]=0;//首列有0
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n*m)
+空间复杂度：O(1)
+```
+
+## [74. 搜索二维矩阵](https://leetcode.cn/problems/search-a-2d-matrix/)
+
+```cpp
+思路：
+两次二分查找，第一次找到行，第二次找到列
+
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int n=matrix.size();
+        int m=matrix[0].size();
+        
+        //找到对应行号
+        int rowUp=0;
+        int rowDown=n-1;
+        while(rowUp<rowDown){
+            int mid=rowUp+((rowDown-rowUp)>>1);
+            if(matrix[mid][m-1]>=target)rowDown=mid;
+            else rowUp=mid+1;
+        }
+		//结束循环后，rowDown行的最后一个元素必然是>=target的
+        
+        //找到对应列
+        int colLeft=0;
+        int colRight=m-1;
+        while(colLeft<colRight){
+            int mid=colLeft+((colRight-colLeft)>>1);
+            if(matrix[rowDown][mid]>=target)colRight=mid;
+            else colLeft=mid+1;
+        }
+        //结束循环后，colRight列的元素必然是>=target的，所以还需要再额外判断一下是否相等
+
+        return matrix[rowDown][colRight]==target;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(max(logn,logm))
+空间复杂度：O(1)
+```
+
+## [75. 颜色分类](https://leetcode.cn/problems/sort-colors/)
+
+```cpp
+思路：计数
+class Solution {
+public:
+    void sortColors(vector<int>& nums) {
+        //count[0]：红球个数
+        //count[1]：白球个数
+        //count[2]：蓝球个数
+        vector<int>count(3,0);//记录0、1、2的个数
+        for(int i=0;i<nums.size();i++){
+            count[nums[i]]++;
+        }
+
+        //从前往后填入0、1、2
+        int index=0;
+        for(int i=0;i<=2;i++){
+            while(count[i]>0){
+                nums[index++]=i;
+                count[i]--;
+            }
+        }
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)
+空间复杂度：O(1)
+```
+
