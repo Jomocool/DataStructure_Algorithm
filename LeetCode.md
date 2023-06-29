@@ -3627,3 +3627,46 @@ public:
 空间复杂度：O(1)
 ```
 
+## [76. 最小覆盖子串](https://leetcode.cn/problems/minimum-window-substring/)
+
+```cpp
+思路：滑动窗口
+使用双指针i、j，i是窗口右边界（寻找以j为左边界的满足条件的最小窗口），j是窗口左边界（寻找以i为右边界的满足条件的最小窗口）。整个过程就是i向右扩展，找到符合条件的窗口，j向右缩小窗口，找到符合条件的最小窗口，所以满足条件的最短字符串就是我们需要的结果
+
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        //记录s的词频和t的词频
+        unordered_map<char,int>sRecord,tRecord;
+        for(char&c:t)tRecord[c]++;
+
+        string res;//结果子串，即最小覆盖子串
+
+        //开始移动窗口[j,i]
+        for(int i=0,j=0,cnt=0;i<s.length();i++){
+            //如果t中只有2个a，但是窗口中已经有3个a了，此时a不再是有效字符，因为a的数量已经达标了
+            //需要的字符：t中有的，且窗口中数量不达标的
+            //不需要的字符：t中没有的和t中有但是窗口中数量已经达标的
+            if(sRecord[s[i]]<tRecord[s[i]])cnt++;//如果当前要加入的字符是所需要的，有效字符加1
+            sRecord[s[i]]++;//窗口新加入一个字符，词频加1
+
+            //右移窗口左边界直至有效字符不达标，t中所需要的某个字符数量不对即意味着不达标
+            while(j<=i&&sRecord[s[j]]>tRecord[s[j]])sRecord[s[j++]]--;//删去多余字符同时词频减1
+
+            //缩小窗口后，如果有效字符达标，则要判断最小子串
+            if(cnt==t.length()){
+                if(res.empty()||res.length()>i-j+1){
+                    res=s.substr(j,i-j+1);
+                }
+            }
+        }
+
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m+n)  i和j都在向右移动，i移动m，j移动n;
+空间复杂度：O(m+n)  哈希表存词频;
+```
+
