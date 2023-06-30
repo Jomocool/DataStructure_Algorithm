@@ -3670,3 +3670,47 @@ public:
 空间复杂度：O(m+n)  哈希表存词频;
 ```
 
+## [77. 组合](https://leetcode.cn/problems/combinations/)
+
+![](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230630170045391.png)
+
+```cpp
+思路：DFS(回溯)
+[1,2]和[2,1]是相同的组合，不能重复计算，所以只需要向后看就行了
+
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//路径集
+
+    //curNum：当前待被使用数字
+    void dfs(int curNum,int n,int k){
+        //越界
+        if(path.size()>k)return;
+
+        //满足k个数的组合
+        if(path.size()==k){
+            res.push_back(path);
+            return;
+        }
+
+        for(int i=curNum;i<=n-(k-path.size())+1;i++){
+            path.push_back(i);
+            dfs(i+1,n,k);
+            path.pop_back();//回溯
+        }
+    }
+
+    vector<vector<int>> combine(int n, int k) {
+        res.clear();
+        path.clear();
+        dfs(1,n,k);
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(C(n,k)*k)  在n个数中选择k个数形成组合;
+空间复杂度：O(n+k)  递归栈和path数组;
+```
+
