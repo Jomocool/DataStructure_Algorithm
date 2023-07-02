@@ -3714,3 +3714,119 @@ public:
 空间复杂度：O(n+k)  递归栈和path数组;
 ```
 
+## [78. 子集](https://leetcode.cn/problems/subsets/)
+
+```cpp
+思路：DFS(回溯)
+子集相当于对个数没有要求的组合，所以直接加入结果集即可
+对于数组中的DFS，递归函数的参数列表中十分有必要创建一个参数以记录当前遍历到的下标，这样可以清楚目前递归函数处于的层数以及方便我们实现当前层的逻辑
+
+class Solution {
+public:
+    vector<vector<int>>res;//结果集
+    vector<int>path;//当前子集
+
+    void dfs(vector<int>&nums,int index){
+        res.push_back(path);
+
+        if(index>=nums.size())return;
+		//第一层递归，path大小为0，所以实际上是在确认起始下标
+        //后面的递归都是在path的基础上，处理[index,nums.size()-1]的元素，然后交给下一层继续处理
+        for(int i=index;i<nums.size();i++){
+            path.push_back(nums[i]);
+            dfs(nums,i+1);
+            path.pop_back();//回溯
+        }
+    }
+
+    vector<vector<int>> subsets(vector<int>& nums) {
+        res.clear();
+        path.clear();
+        dfs(nums,0);
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n*2^n)  一共有2^n个子集,每个子集需要O(n)的时间构造;
+空间复杂度：O(n)  临时数组path大小;
+```
+
+## [79. 单词搜索](https://leetcode.cn/problems/word-search/)
+
+```cpp
+思路：DFS(回溯)
+class Solution {
+public:
+    vector<vector<bool>>isVisited;//记录已被访问格子
+
+    //index是当前word待匹配的字符下标
+    bool dfs(vector<vector<char>>&board,string word,int index,int row,int col){
+        if(index==word.length())return true;//word都已经被匹配完了
+        if(row<0||row>board.size()-1||col<0||col>board[0].size()-1||isVisited[row][col])return false;//越界或已被访问
+        isVisited[row][col]=true;//设置为已被访问
+        if(board[row][col]!=word[index]){//如果当前格子的字符不匹配，说明当前路径行不通
+            isVisited[row][col]=false;//重置访问情况
+            return false;//返回false
+        }
+        //上下左右找路径，因为只需要找到一条行得通的路径，所以用或连接
+        bool res = dfs(board,word,index+1,row-1,col)||dfs(board,word,index+1,row+1,col)
+                ||dfs(board,word,index+1,row,col-1)||dfs(board,word,index+1,row,col+1);
+		
+        isVisited[row][col]=false;
+        return res;
+    }
+
+    bool exist(vector<vector<char>>& board, string word) {
+        isVisited=vector<vector<bool>>(board.size(),vector<bool>(board[0].size(),false));
+        //枚举起点
+        for(int i=0;i<board.size();i++){
+            for(int j=0;j<board[0].size();j++){
+                if(board[i][j]==word[0]&&dfs(board,word,0,i,j))return true;
+            }
+        }
+        return false;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(nm*3^l)  nm是格子数，3是(4-1)个方向(除了第一次有4个方向，其余都只有3个方向，因为从哪个格子来的，就不能再回去了)，l是word的长度;
+空间复杂度：O(nm)  记录访问情况的二维数组，开辟栈的大小为(O(min(l,nm)));
+
+优化空间复杂度：在原board上记录访问情况，把已被访问过的格子设置成'.'
+class Solution {
+public:
+    //index是当前word待匹配的字符下标
+    bool dfs(vector<vector<char>>&board,string word,int index,int row,int col){
+        if(index==word.length())return true;//word都已经被匹配完了
+        if(row<0||row>board.size()-1||col<0||col>board[0].size()-1||board[row][col]=='.')return false;//越界或已被访问
+        char tmp=board[row][col];
+        board[row][col]='.';//设置为已被访问
+        if(tmp!=word[index]){//如果当前格子的字符不匹配，说明当前路径行不通
+            board[row][col]=tmp;//重置访问情况
+            return false;//返回false
+        }
+        //上下左右找路径，因为只需要找到一条行得通的路径，所以用或连接
+        bool res = dfs(board,word,index+1,row-1,col)||dfs(board,word,index+1,row+1,col)
+                ||dfs(board,word,index+1,row,col-1)||dfs(board,word,index+1,row,col+1);
+		
+        board[row][col]=tmp;
+        return res;
+    }
+
+    bool exist(vector<vector<char>>& board, string word) {
+        //枚举起点
+        for(int i=0;i<board.size();i++){
+            for(int j=0;j<board[0].size();j++){
+                if(board[i][j]==word[0]&&dfs(board,word,0,i,j))return true;
+            }
+        }
+        return false;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(nm*3^l)  nm是格子数，3是(4-1)个方向(除了第一次有4个方向，其余都只有3个方向，因为从哪个格子来的，就不能再回去了)，l是word的长度;
+空间复杂度：O(min(l,nm))
+```
+
