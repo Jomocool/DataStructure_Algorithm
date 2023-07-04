@@ -3830,3 +3830,225 @@ public:
 空间复杂度：O(min(l,nm))
 ```
 
+## [80. 删除有序数组中的重复项 II](https://leetcode.cn/problems/remove-duplicates-from-sorted-array-ii/)
+
+```cpp
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        int index=0;
+        //每次开始时，j要比i多1，因为如果j每次开始时都指向新元素的第一个，会出现j一直不动的情况，因为新元素的第一个必定不等于前一个元素的最后一个，所以不会进入while
+        //i=j++，一是让i指向新元素的第一个，开始处理下一个元素
+        /*
+        j++：
+        1.如果新元素有>=2个相同的，j则指向新元素的第二个
+        2.如果新元素只有1个，j则指向第二个新元素
+        上述情况下，结束while循环后，j总能指向我们预期中的下一个新元素，所以j++很关键
+        */
+        for(int i=0,j=1;i<nums.size();i=j++){
+            //由于j是向后移的，所以和前面的比较是否相同更加合适，同时结束while循环后，j指向下一个新元素的第一个
+            while(j<nums.size()&&nums[j]==nums[j-1]){
+                j++;
+            }
+            if(j-i>=2){//超过两个相等的元素只出现两次
+                nums[index++]=nums[i];
+                nums[index++]=nums[i];
+            }else{
+                nums[index++]=nums[i];
+            }
+        }
+
+        return index;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+## [81. 搜索旋转排序数组 II](https://leetcode.cn/problems/search-in-rotated-sorted-array-ii/)
+
+```cpp
+思路：二分查找
+和33题类似，但是多了对nums[left]=nums[mid]=nums[right]的判断，因为有重复元素，所以很可能出现这种情况。这种情况下，我们无法判断[left,mid]和[mid+1,right]哪个是有序的，只能缩小范围，left++,right--
+
+关键：
+通过nums[left]和nums[mid]的比较来找到当前[left,right]涵盖的区域情况如何，只能在有序区域二分查找，所以需要找到是有左半部分的有序区域还是右半部分的有序区域
+
+class Solution {
+public:
+    bool search(vector<int>& nums, int target) {
+        int n=nums.size();
+        if(n==0)return false;
+        if(n==1)return nums[0]==target;
+        int left=0;
+        int right=n-1;
+        while(left<=right){
+            int mid=left+((right-left)>>1);
+            if(nums[mid]==target)return true;
+            if(nums[left]==nums[mid]&&nums[mid]==nums[right]){//缩小范围到有序区域
+                left++;
+                right--;
+            }else if(nums[left]<=nums[mid]){//[left,mid]一定是有序区域
+                //如果target处于有序区域，那么就在这之间二分查找。不在的话就说明target过大，在右边。（本从左来，不回左去）
+                if(nums[left]<=target&&target<nums[mid]){//target在[left,mid]有序区域中
+                    right=mid-1;
+                }else{//无序区域
+                    left=mid+1;
+                }
+            }else{//只有nums[left]>nums[mid]的情况才进入这个分支，因为这样才能确保mid在右半有序区域
+                //[mid,right]一定是有序区域，因为只有当mid处于右半部分有序区域时，num[left]才会大于nums[mid]
+                //如果target处于有序区域，那么就在这之间二分查找，不在的话说明target过小，在左边。（本从右来，不回右去）
+                if(nums[mid]<target&&target<=nums[n-1]){//target在[mid+1,right]有序区域中
+                    left=mid+1;
+                }else{//无序区域
+                    right=mid-1;
+                }
+            }
+        }
+        return false;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)  最坏的情况下，所有元素都不等于target，我们需要访问nums的所有元素;
+空间复杂度：O(1);
+```
+
+## [82. 删除排序链表中的重复元素 II](https://leetcode.cn/problems/remove-duplicates-from-sorted-list-ii/)
+
+```cpp
+class Solution {
+public:
+    ListNode* deleteDuplicates(ListNode* head) {
+        ListNode*dummy=new ListNode(0);//定义虚拟头节点，防止链表头丢失
+        ListNode*pre=dummy;//前驱节点
+        dummy->next=head;
+        while(pre->next){//pre之前包括pre都是处理好的
+            ListNode*cur=pre->next;
+            while(cur->next&&cur->val==cur->next->val)cur=cur->next;
+            if(cur==pre->next)pre=pre->next;//cur不动，无相同元素
+            else pre->next=cur->next;//cur动，有相同元素，pass
+        }
+
+        return dummy->next;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+## [83. 删除排序链表中的重复元素](https://leetcode.cn/problems/remove-duplicates-from-sorted-list/)
+
+```cpp
+class Solution {
+public:
+    ListNode* deleteDuplicates(ListNode* head) {
+        ListNode*dummyHead=new ListNode(0);
+        ListNode*pre=dummyHead;
+        dummyHead->next=head;
+        while(pre->next){
+            ListNode*cur=pre->next;
+            //到每个元素的最后一个，如果有相同元素就会一直next，直到最后一个元素
+            while(cur->next&&cur->val==cur->next->val)cur=cur->next;
+            pre->next=cur;//前驱节点next直接指向当前cur
+            pre=cur;//前驱节点是每个元素的第一个节点的前一个节点
+        }
+
+        return dummyHead->next;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+
+82&83总结：
+对于链表中的重复元素，我认为有两点十分关键
+1.虚拟头节点：作用是防止链表头丢失
+2.pre：前驱节点十分重要。因为要判断下一组节点是否是连续相同的元素，pre不应参与其中，应该让cur遍历，之后pre->next指向下一节点，就可以把中间重复的元素在原链表截断了，而如果pre参与到判断这组元素是否为连续相同的元素，则链表必然不会被截断，因为每个元素的第一个节点都不会被截断，所以还是完整的链表。
+个人认为，pre十分重要
+```
+
+## [84. 柱状图中最大的矩形](https://leetcode.cn/problems/largest-rectangle-in-histogram/)
+
+```cpp
+思路：单调栈
+栈底到栈顶：单调递增，因为需要找的是左右两边第一个小于自己的柱子。
+相当于从一根柱子向左拓展到第一个小于自己的柱子，向右拓展到第一个小于自己的柱子，意味着左右两柱子中间都是比自己高的，所以可以以自己为高，左右两柱子之间的距离为宽
+
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        //在数组前后都插入0，避免柱子单调递增而没有计算最大面积就结束了
+        heights.insert(heights.begin(),0);
+        heights.push_back(0);
+        int maxArea=0;
+        stack<int>stk;//单调栈
+        stk.push(0);
+
+        for(int i=1;i<heights.size();i++){
+            while(!stk.empty()&&heights[i]<heights[stk.top()]){//i是stk.top()柱子右边第一个比其小的
+                int h=heights[stk.top()];stk.pop();
+                if(!stk.empty()){//此时的stk.top()是前柱子左边第一个比其小的
+                    int w=i-stk.top()-1;
+                    maxArea=max(maxArea,h*w);
+                }
+            }
+            stk.push(i);
+        }
+
+        return maxArea;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n)  每个元素出栈入栈各一次;
+空间复杂度：O(n);
+
+思路：空间换时间
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        vector<int>leftFirstLess(heights.size());//leftFirstLess[i]：i左边第一个比其小的柱子下标
+        vector<int>rightFirstLess(heights.size());//rightFirstLess[i]：i右边第一个比其小的柱子下标
+        int maxArea=0;
+
+        leftFirstLess[0]=-1;
+        rightFirstLess[heights.size()-1]=heights.size();
+        for(int i=1;i<heights.size();i++){
+            int t=i-1;
+            //[leftFirst[t],t]之间必定都是大于t柱子的，所以也大于i柱子，因此直接跳转到可能会比i柱子小的下标即可
+            //考虑全面：i-1是离i最近的可能比i小的柱子，其次是leftFirstLess[i-1],leftFirstLess[leftFirstLess[i-1]]……
+            //因为一开始我们也不知道到底是哪个柱子是第一个比其小的，所以从最近的开始考虑，然后加速寻找(t=leftFirst[t])
+            //利用了前面已经找到的结果，不用再做重复计算，加速
+            while(t>=0&&heights[i]<=heights[t])t=leftFirstLess[t];
+            leftFirstLess[i]=t;
+        }
+        for(int i=heights.size()-2;i>=0;i--){
+            int t=i+1;
+            while(t<heights.size()&&heights[i]<=heights[t])t=rightFirstLess[t];
+            rightFirstLess[i]=t;
+        }
+
+        for(int i=0;i<heights.size();i++){
+            int h=heights[i];
+            int w=rightFirstLess[i]-leftFirstLess[i]-1;
+            maxArea=max(maxArea,h*w);
+        }
+
+        return maxArea;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+本题关键：
+找到每个柱子左右第一个比其矮的柱子下标
+```
+
