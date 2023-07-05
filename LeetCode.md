@@ -4052,3 +4052,127 @@ public:
 找到每个柱子左右第一个比其矮的柱子下标
 ```
 
+## [85. 最大矩形](https://leetcode.cn/problems/maximal-rectangle/)
+
+![image-20230705103151636](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230705103151636.png)
+
+```cpp
+思路：
+本题是84题的拓展，以每一行为底时，画出柱状图（如上图），找出每行的柱状图中的最大矩形。
+
+class Solution {
+public:
+    int largestRectangleArea(vector<int>heights){
+        heights.insert(heights.begin(),0);//方便计算最左边的柱子
+        heights.push_back(0);//方便计算最右边的柱子，同时防止柱子一路递增导致最大面积无法计算
+        stack<int>stk;//单调栈
+        stk.push(0);
+        int maxArea=0;
+
+        for(int i=1;i<heights.size();i++){
+            //找到栈顶柱子两边第一个比其矮的柱子
+            while(!stk.empty()&&heights[i]<heights[stk.top()]){
+                int h=heights[stk.top()];stk.pop();
+                //确保左边有比h矮的柱子
+                if(!stk.empty()){
+                    int w=i-stk.top()-1;
+                    maxArea=max(maxArea,h*w);
+                }
+            }
+            stk.push(i);
+        }
+
+        return maxArea;
+    }
+    
+    int largestRectangleArea(vector<int>&heights){
+        vector<int>leftFirstLess(heights.size());
+        vector<int>rightFirstLess(heights.size());
+        int maxArea=0;
+
+        leftFirstLess[0]=-1;
+        rightFirstLess[heights.size()-1]=heights.size();
+
+        for(int i=1;i<heights.size();i++){
+            //需要考虑到所有情况，但是可以加速
+            //可能比i低的左边最近的柱子i-1，其次是leftFirstLess[i-1] -> leftFirstLess[leftFirstLess[i-1]]……
+            int t=i-1;
+            while(t>=0&&heights[i]<=heights[t])t=leftFirstLess[t];
+            leftFirstLess[i]=t;
+        }
+
+        for(int i=heights.size()-2;i>=0;i--){
+            //需要考虑到所有情况，但是可以加速
+            //可能比i低的右边最近的柱子i+1，其次是rightFirstLess[i+1] -> rightFirstLess[rightFirstLess[i+1]]……
+            int t=i+1;
+            while(t<=heights.size()-1&&heights[i]<=heights[t])t=rightFirstLess[t];
+            rightFirstLess[i]=t;
+        }
+
+        for(int i=0;i<heights.size();i++){
+            int h=heights[i];
+            int w=rightFirstLess[i]-leftFirstLess[i]-1;
+            maxArea=max(maxArea,h*w);
+        }
+
+        return maxArea;
+    }
+
+    int maximalRectangle(vector<vector<char>>& matrix) {
+        vector<int>heights(matrix[0].size(),0);
+        int maxArea=0;
+        for(int i=0;i<matrix.size();i++){
+            for(int j=0;j<matrix[0].size();j++){
+                int h=matrix[i][j]-'0';
+                if(h==1)heights[j]+=1;
+                else heights[j]=0;
+            }
+            maxArea=max(maxArea,largestRectangleArea(heights));
+        }
+
+        return maxArea;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+## [86. 分隔链表](https://leetcode.cn/problems/partition-list/)
+
+```cpp
+思路：
+定义左右链表，遇到小于x的就拼接到左链表后面，遇到大于等于x的就拼接到右链表后面，最后将两链表拼接起来，同时让右链表的最后一个节点next指向空
+
+class Solution {
+public:
+    ListNode* partition(ListNode* head, int x) {
+        ListNode*leftHead=new ListNode(0),*left=leftHead;
+        ListNode*rightHead=new ListNode(0),*right=rightHead;
+        
+        //for还可以这样用
+        for(ListNode*cur=head;cur!=nullptr;cur=cur->next){
+            if(cur->val<x){//小于x的节点拼接到左链表后面
+                left->next=cur;
+                left=left->next;
+            }else{//大于等于x的节点拼接到右链表后面
+                right->next=cur;
+                right=right->next;
+            }
+        }
+
+        left->next=rightHead->next;//拼接
+        right->next=nullptr;//中断
+
+        return leftHead->next;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+
+一开始的做法是不断copy节点，即生成新节点，值相同。因为搞不清原链表各节点next指向，害怕搞乱了。但实际上只需要有两个新头节点统领着，然后强行改变遍历节点的next指向，最后就成了两链表。但是出循环后要继续改变两链表最后一个节点的next指针指向，因为中间节点的next指向已经被强行改过了，但是尾节点的next指针指向还没有改变，可能会出问题，所以需要让它们指向预期目标。完成拼接和中断
+```
+
