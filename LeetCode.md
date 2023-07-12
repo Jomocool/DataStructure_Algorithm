@@ -4176,3 +4176,306 @@ public:
 一开始的做法是不断copy节点，即生成新节点，值相同。因为搞不清原链表各节点next指向，害怕搞乱了。但实际上只需要有两个新头节点统领着，然后强行改变遍历节点的next指向，最后就成了两链表。但是出循环后要继续改变两链表最后一个节点的next指针指向，因为中间节点的next指向已经被强行改过了，但是尾节点的next指针指向还没有改变，可能会出问题，所以需要让它们指向预期目标。完成拼接和中断
 ```
 
+## [87. 扰乱字符串](https://leetcode.cn/problems/scramble-string/)
+
+![image-20230707200307784](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230707200307784.png)
+
+```cpp
+思路：动态规划
+dp[i][j][k]：s1的子串s1[i,i+k-1]是否可通过扰乱得到s2的子串s2[j,j+k-1]
+完善dp表的过程中，需要在这k个字符中，找到一个下标来分割s1子串，所以需要枚举k-1次
+
+class Solution {
+public:
+    bool isScramble(string s1, string s2) {
+        int n=s1.length();
+        vector<vector<vector<bool>>>dp(n,vector<vector<bool>>(n,vector<bool>(n+1,false)));
+
+        for(int k=1;k<=n;k++){//层
+            for(int i=0;i+k-1<n;i++){//行
+                for(int j=0;j+k-1<n;j++){//列
+                    if(k==1){//长度是1，匹配首字符即可
+                        dp[i][j][k]=s1[i]==s2[j];
+                    }else{
+                        for(int u=1;u<=k-1;u++){
+                            bool res1=dp[i][j][u]&&dp[i+u][j+u][k-u];
+                            bool res2=dp[i][j+k-u][u]&&dp[i+u][j][k-u];
+                            if(res1||res2){
+                                dp[i][j][k]=true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return dp[0][0][n];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n^4)  dp表是三维的，并且u需要从1遍历到k-1;
+空间复杂度：O(n^3)  三维dp表;
+```
+
+## [88. 合并两个有序数组](https://leetcode.cn/problems/merge-sorted-array/)
+
+```cpp
+思路：双指针
+归并排序的单次操作
+
+class Solution {
+public:
+    void merge(vector<int>& nums1, int m, vector<int>& nums2, int n) {
+        vector<int>tmp(m+n);
+        int index1=0;//遍历nums1
+        int index2=0;//遍历nums2
+        int index=0;//遍历tmp
+        
+        //直到某一个数组全部被遍历过
+        while(index1<m&&index2<n){
+            tmp[index++]=nums1[index1]<nums2[index2]?nums1[index1++]:nums2[index2++];
+        }
+
+        //如果是nums1未被全部包含，tmp后面直接拼接nums1
+        while(index1<m){
+            tmp[index++]=nums1[index1++];
+        }
+
+        //如果是nums2未被全部包含，tmp后面直接拼接nums2
+        while(index2<n){
+            tmp[index++]=nums2[index2++];
+        }
+
+        for(int i=0;i<tmp.size();i++){
+            nums1[i]=tmp[i];
+        }
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m+n);
+空间复杂度：O(m+n)  辅助数组tmp;
+
+优化空间复杂度：
+选择辅助数组的原因是，题目要求要存储在nums1中，如果不用辅助数组，在归并过程中会覆盖掉nums1的数据，但是如果按谁大谁先放在后面的话，就不用担心覆盖问题了，因为被覆盖的肯定都是已经使用过的了，即已经放到nums1尾部的元素。
+
+class Solution {
+public:
+    void merge(vector<int>& nums1, int m, vector<int>& nums2, int n) {
+        int index1=m-1;
+        int index2=n-1;
+        int index=m+n-1;
+
+        while(index1>=0&&index2>=0){
+            nums1[index--]=nums1[index1]>nums2[index2]?nums1[index1--]:nums2[index2--];
+        }
+
+        while(index1>=0){
+            nums1[index--]=nums1[index1--];
+        }
+
+        while(index2>=0){
+            nums1[index--]=nums2[index2--];
+        }
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(m+n);
+空间复杂度：O(1);
+
+正确思路过程：
+从前向后会覆盖原数组的元素，如果能够先利用nums1后半部分的无效区域，就可以暂时先储存一些元素。那么什么元素可以先到nums1的尾部，就想到越大的元素就越接近尾部，然后就想到可以先处理最大的元素，从后向前填充元素。
+```
+
+## [89. 格雷编码](https://leetcode.cn/problems/gray-code/)
+
+```cpp
+思路：公式法
+格雷码的定义：n位格雷码序列的第i个格雷码是（i>>1）^i
+
+class Solution {
+public:
+    vector<int> grayCode(int n) {
+        vector<int>res(1<<n);
+        for(int i=0;i<res.size();i++){
+            res[i]=(i>>1)^i;//定义
+        }
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(2^n);
+空间复杂度：O(1);
+```
+
+## [90. 子集 II](https://leetcode.cn/problems/subsets-ii/)
+
+```cpp
+思路：回溯
+path：数组，用于建立子集
+isAdded：数组，用于判断每个元素被添加到path的情况
+去重的关键：在连续的相等元素序列中，假如现在遍历到该序列的第二个元素，如果第一个元素没有被添加到path中，说明不是第一次考虑该元素了，这是如果再加入到path中，就会出现重复子集了，因为会做相同的事了
+换句话说，对于当前选择的数a1，如果前面有和它相等的数a0没有被选择，那么此时包含a1的子集，必然会出现在包含a0的子集中
+
+eg.找[1,2(1),2(2),3]的子集
+如果没有去重的步骤，则会出现两个[1,2,3]子集，但这两个子集的意义不完全相同，一个是[1,2(1),3]，另一个是[1,2(2),3]，这里出现重复的原因是，在path准备加入第二个2时，并未考虑到之前其实已经做过类似的步骤了
+
+class Solution {
+public:
+    vector<int>path;
+    vector<bool>isAdded;
+    vector<vector<int>>res;
+
+    void backTracking(vector<int>&nums,int index){
+        res.push_back(path);//由于是子集，所以对集合的元素个数没有要求
+
+        for(int i=index;i<nums.size();i++){
+            if(i>0&&nums[i]==nums[i-1]&&!isAdded[i-1])continue;
+            path.push_back(nums[i]);
+            isAdded[i]=true;
+            backTracking(nums,i+1);
+            //回溯
+            path.pop_back();
+            isAdded[i]=false;
+        }
+    }
+
+    vector<vector<int>> subsetsWithDup(vector<int>& nums) {
+        path.clear();
+        isAdded.clear();
+        res.clear();
+
+        sort(nums.begin(),nums.end());//注意要先排序，让相同元素连在一起
+
+        isAdded=vector<bool>(nums.size(),false);
+        backTracking(nums,0);
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n*2^n)  最坏情况下没有重复元素，需要2^n个子集，每次把子集path加入res需要拷贝n个元素;
+空间复杂度：O(n);
+```
+
+## [91. 解码方法](https://leetcode.cn/problems/decode-ways/)
+
+```cpp
+思路：动态规划
+dp[i]：s的子串s[0,i-1]的解码方法数
+
+递推公式：
+1.如果s[i-2]=='1'，则dp[i]=dp[i-1]+dp[i-2];因为可以把s[i-1]当作一个整体，也可以把s[i-2]和s[i-1]当作一个整体
+2.如果s[i-2]=='2'，只有当'0'<=s[i-1]<='6'，dp[i]=dp[i-1]+dp[i-2]
+3.其余情况，dp[i]=dp[i-1]
+所以，总体就是看当前数字能否和前一位组成一个可解码整体
+
+class Solution {
+public:
+    int numDecodings(string s) {
+        int n=s.length();
+        vector<int>dp(n+1,0);
+        dp[0]=1;//空字符串可以有一种解码方法，解码出一个空字符串
+        for(int i=1;i<=n;i++){
+            if(s[i-1]!='0')dp[i]=dp[i-1];
+            bool isCombine=i>1&&(s[i-2]=='1'||(s[i-2]=='2'&&(s[i-1]<='6')));
+            if(isCombine)dp[i]+=dp[i-2];
+        }
+
+        return dp[n];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+优化空间复杂度：只需要3个数
+class Solution {
+public:
+    int numDecodings(string s) {
+        int n=s.length();
+        int a=0;//dp[i-2]
+        int b=1;//dp[i-1]
+        int c=0;//dp[i]
+        for(int i=1;i<=n;i++){
+            c=0;//每次都要重置c为0，因为每个dp[i]都初始化为0
+            if(s[i-1]!='0')c=b;
+            bool isCombine=i>1&&(s[i-2]=='1'||(s[i-2]=='2'&&(s[i-1]<='6')));
+            if(isCombine)c+=a;
+            a=b;
+            b=c;
+        }
+
+        return c;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+## [92. 反转链表 II](https://leetcode.cn/problems/reverse-linked-list-ii/)
+
+```cpp
+思路：
+整体思路就是将待反转的部分和两边切开，然后当作一个完整链表去反转，之后再和原来的部分拼接
+
+class Solution {
+public:
+    //反转链表的常规操作
+    ListNode*reverseList(ListNode*head){
+        ListNode*reverseHead=new ListNode(0);
+        ListNode*cur=head;
+        ListNode*next=cur->next;
+        while(cur){
+            next=cur->next;
+            cur->next=reverseHead->next;
+            reverseHead->next=cur;
+            cur=next;
+        }
+        return reverseHead->next;
+    }
+
+    ListNode* reverseBetween(ListNode* head, int left, int right) {
+        ListNode*dummyHead=new ListNode(0);//虚拟头节点，防止head可能被反转后，整个链表丢失
+        dummyHead->next=head;
+		
+        //找到left节点，并使其和左半部分断开
+        ListNode*cur=head;
+        ListNode*pre=dummyHead;
+        int count=1;
+        while(count<left){
+            pre=cur;
+            cur=cur->next;
+            count++;
+        }
+        pre->next=nullptr;
+		
+        //找到right节点，并使其和右半部分断开
+        ListNode*newHead=cur;//待反转链表的头节点
+        while(count<right){
+            cur=cur->next;
+            count++;
+        }
+        ListNode*rightHead=cur->next;
+        cur->next=nullptr;
+		
+        //现在中间相当于有一个独立链表
+        pre->next=reverseList(newHead);//和左半部分拼接
+        newHead->next=rightHead;//反转后，newHead在尾部，和右半部分拼接
+
+        return dummyHead->next;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
