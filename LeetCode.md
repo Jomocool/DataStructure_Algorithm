@@ -4479,3 +4479,69 @@ public:
 空间复杂度：O(1);
 ```
 
+## [93. 复原 IP 地址](https://leetcode.cn/problems/restore-ip-addresses/)
+
+```cpp
+思路：DFS
+将数字字符串拆分成四个数字，如果四个数字的大小都符合要求并且字符串也拆分完了，说明当前拆分结果有效，加入结果数组
+
+class Solution {
+public:
+    vector<string>res;//结果数组
+    vector<int>path;//将每个整数记录在int数组中，这样方便回溯
+
+    //idx表示现在正在处理第几个整数，start表示当前小数点后的第一位是哪个数字字符
+    void dfs(string&s,int idx,int start){
+        //处理完4个整数了，并且字符串也全部转换完了，此时可以加入结果数组了
+        if(idx==5&&start==s.length()){
+            string ip=to_string(path[0]);
+            for(int i=1;i<path.size();i++){
+                ip+="."+to_string(path[i]);
+            }
+            res.push_back(ip);
+        }
+
+        //处理第idx个整数，num表示s[start,i]的整数大小
+        for(int i=start,num=0;i<s.length();i++){
+            num=num*10+(s[i]-'0');
+            if(num>255)break;//超出范围，直接break
+            path.push_back(num);
+            dfs(s,idx+1,i+1);
+            path.pop_back();//回溯，如果这里用字符串，回溯十分麻烦
+            if(num==0)break;//不能有前导0，所以单独处理完0之后，就可以结束循环了
+        }
+    }
+
+    vector<string> restoreIpAddresses(string s) {
+        res.clear();
+        path.clear();
+        dfs(s,1,0);
+        return res;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(3^4*n)  每段不超过3位数，递归层数不超过4，最后把path拷贝进结果数组需要O(n);
+空间复杂度：O(4)  递归层数和path数组的大小相同，都是4;
+```
+
+## [94. 二叉树的中序遍历](https://leetcode.cn/problems/binary-tree-inorder-traversal/)
+
+```cpp
+class Solution {
+public:
+    void inorder(vector<int>&vec,TreeNode*node){
+        if(!node)return;
+        inorder(vec,node->left);
+        vec.push_back(node->val);
+        inorder(vec,node->right);
+    }
+
+    vector<int> inorderTraversal(TreeNode* root) {
+        vector<int>res;
+        inorder(res,root);
+        return res;
+    }
+};
+```
+
