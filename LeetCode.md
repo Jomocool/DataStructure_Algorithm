@@ -4418,6 +4418,8 @@ public:
 时空复杂度分析:
 时间复杂度：O(n);
 空间复杂度：O(1);
+
+本题实际上是类似于跳台阶的（动态规划基础题），只不过跳的方式有条件的，对于跳一个台阶（只有当前字符不是0时才可），对于跳两个台阶（只有当前字符能够和前一个字符组成整数在10~26之间才可），所以可以用动态规划。一开始总是下意识地要用递归回溯，但这样处理起来十分麻烦，一是对于连续的可组成有效两位数的不好判断，二是递归过程是否复杂，会超出时间限制，就是不好想到用动态规划
 ```
 
 ## [92. 反转链表 II](https://leetcode.cn/problems/reverse-linked-list-ii/)
@@ -4543,5 +4545,217 @@ public:
         return res;
     }
 };
+
+时空复杂度分析:
+时间复杂度：O(n)  n为二叉树节点个数;
+空间复杂度：O(n)  最坏情况下，二叉树是一条链表，此时要开辟n个栈空间;
+```
+
+## [95. 不同的二叉搜索树 II](https://leetcode.cn/problems/unique-binary-search-trees-ii/)
+
+```cpp
+思路：回溯
+关键函数：
+vector<TreeNode*>generate(int start,int end)，返回从start到end可以组成的二叉搜索树根节点集合
+遍历start到end，依次选择根节点为i，因为二叉搜索树左边的值都小于根节点的值，右边的值都大于根节点的值，所以start~i-1可以组成i左边的节点集合，i+1~end可以组成i右边的节点集合，然后让其递归，最后可以得到i左边二叉搜索树的所有根节点集合和i右边的二叉搜索树的根节点集合，然后拼接左右根节点到i节点，就得到了以i为根节点的二叉搜索树了，遍历完start~end后，就得到了由start~end这些值组成的二叉搜索树根节点集合了
+
+只有比i小的值才能在左边，其实就已经是在考虑二叉搜索树了
+
+class Solution {
+public:
+    vector<TreeNode*>generate(int start,int end){
+        if(start>end)return {nullptr};
+
+        vector<TreeNode*>allTrees;
+        for(int i=start;i<=end;i++){
+            //获取左边的可行二叉搜索树根节点集合
+            vector<TreeNode*>leftTrees=generate(start,i-1);
+            //获取右边的可行二叉搜索树根节点集合
+            vector<TreeNode*>rightTrees=generate(i+1,end);
+            //拼接
+            for(auto left:leftTrees){
+                for(auto right:rightTrees){
+                    TreeNode*curRoot=new TreeNode(i);
+                    curRoot->left=left;
+                    curRoot->right=right;
+                    allTrees.push_back(curRoot);
+                }
+            }
+        }
+
+        return allTrees;
+    }
+
+    vector<TreeNode*> generateTrees(int n) {
+        return generate(1,n);
+    }
+};
+```
+
+## [96. 不同的二叉搜索树](https://leetcode.cn/problems/unique-binary-search-trees/)
+
+![image-20230716120228484](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230716120228484.png)
+
+```cpp
+只有比i小的值才能在左边，其实就已经是在考虑二叉搜索树了。并且左右子树的节点个数是有要求的，这都是在考虑二叉搜索树
+
+树的结构只有那么多，n个节点组成的二叉搜索树和普通二叉树的区别是普通二叉树可以随意给值，但是二叉搜索树不行，给值必须符合规定，并且对于不同的根节点值，给值都是唯一的，所以只需要找有几种树结构即可。
+换句话说，就是有多少种树结构，就有多少种二叉搜索树结构
+
+class Solution {
+public:
+    int numTrees(int n) {
+        //dp[i]：节点个数为i的二叉搜索树结构数
+        vector<int>dp(n+1);
+        //初始化dp
+        dp[0]=1;
+        dp[1]=1;
+        for(int i=2;i<=n;i++){//整棵树节点个数
+            for(int j=0;j<=i-1;j++){//左子树节点个数
+                dp[i]+=dp[j]*dp[i-j-1];
+            }
+        }
+        return dp[n];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n^2);
+空间复杂度：O(n);
+
+对于树结构种数，无法就两个方面，一是树的结构有几种类型，二是树的节点值顺序。
+```
+
+## [97. 交错字符串](https://leetcode.cn/problems/interleaving-string/)
+
+```cpp
+思路：动态规划
+dp[i][j]：s1[0,i-1]和s2[0,j-1]能否交错组成s3[0,i+j-1]
+对于s3[i+j-1]只能和s1[i-1]或s2[j-1]匹配，这是确定的。因为s3的最后一个字符必然是s1[i-1]或s2[j-1]。将匹配的字符“取出”后，看剩下的s1和s2可否交错组成剩下的s3
+如果s1[i-1]==s3[i+j-1]，dp[i][j]=dp[i-1][j]
+如果s2[j-1]==s3[i+j-1]，dp[i][j]=dp[i][j-1]
+所以，可以得出推导公式：
+dp[i][j]=(s1[i-1]==s3[i+j-1]&&dp[i-1][j])||(s2[j-1]==s3[i+j-1]&&dp[i][j-1])
+
+class Solution {
+public:
+    bool isInterleave(string s1, string s2, string s3) {
+        int n=s1.length();
+        int m=s2.length();
+        if(n+m!=s3.length())return false;//长度不匹配
+
+        //dp[i][j]：s1[0,i-1],s2[0,j-1]可否交错组成s3[0,i+j-1]
+        vector<vector<bool>>dp(n+1,vector<bool>(m+1,false));
+        dp[0][0]=true;//空字符串可以匹配
+
+        //首行首列表示s1或s2可否独自组成s3，也是一种交错组成
+        for(int i=0;i<=n;i++){
+            for(int j=0;j<=m;j++){
+                if(i>0)dp[i][j]=s1[i-1]==s3[i+j-1]&&dp[i-1][j];
+                //前面处理可能已经是true了
+                if(j>0)dp[i][j]=dp[i][j]||(s2[j-1]==s3[i+j-1]&&dp[i][j-1]);
+            }
+        }
+
+        return dp[n][m];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(nm);
+空间复杂度：O(nm);
+
+优化空间效率：滚动数组
+class Solution {
+public:
+    bool isInterleave(string s1, string s2, string s3) {
+        int n=s1.length();
+        int m=s2.length();
+
+        if(n+m!=s3.length())return false;
+
+        vector<bool>dp(m+1,false);
+        dp[0]=true;
+        for(int i=0;i<=n;i++){
+            for(int j=0;j<=m;j++){
+                if(i>0)dp[j]=dp[j]&&s1[i-1]==s3[i+j-1];
+                //前面处理完可能已经是true了
+                if(j>0)dp[j]=dp[j]||(dp[j-1]&&s2[j-1]==s3[i+j-1]);
+            }
+        }
+
+        return dp[m];
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(nm);
+空间复杂度：O(m);
+```
+
+## [98. 验证二叉搜索树](https://leetcode.cn/problems/validate-binary-search-tree/)
+
+```cpp
+思路：中序遍历
+按中序遍历将二叉搜索树的节点值加入到数组中，遍历数组，如果数组不是严格升序，说明就不是有效的二叉搜索树
+
+class Solution {
+public:
+    vector<int>inorderVec;
+
+    void inorder(TreeNode*node){
+        if(!node)return;
+        inorder(node->left);
+        inorderVec.push_back(node->val);
+        inorder(node->right);
+    }
+
+    bool isValidBST(TreeNode* root) {
+        inorderVec.clear();
+        inorder(root);
+        for(int i=0;i<inorderVec.size()-1;i++){
+            if(inorderVec[i]>=inorderVec[i+1])return false;
+        }
+        return true;
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+## [99. 恢复二叉搜索树](https://leetcode.cn/problems/recover-binary-search-tree/)
+
+![image-20230717095628873](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230717095628873.png)
+
+```cpp
+思路：Morris遍历算法
+x的前驱节点（即中序遍历的情况下，x前一个遍历到的节点）是x左子树的最右节点（即中序遍历的最后一个节点）
+
+
+```
+
+## [100. 相同的树](https://leetcode.cn/problems/same-tree/)
+
+```cpp
+class Solution {
+public:
+    //比较分别以p和q为根节点的树是否相同，需要判断两节点p、q不是空后，才可以取其值和左右指针
+    bool compare(TreeNode*p,TreeNode*q){
+        if(!p&&!q)return true;//两节点都是空
+        if((!p&&q)||(p&&!q))return false;//两节点其中一个为空，另一个不为空，结构不相同
+        //两节点都不为空并且值相同，且左右子树相同，左子树和左子树比较，右子树和右子树比较
+        return p->val==q->val&&compare(p->left,q->left)&&compare(p->right,q->right);
+    }
+
+    bool isSameTree(TreeNode* p, TreeNode* q) {
+        return compare(p,q);
+    }
+};
+
+时空复杂度分析:
+时间复杂度：O(min(m,n));
+空间复杂度：O(min(m,n));
 ```
 
