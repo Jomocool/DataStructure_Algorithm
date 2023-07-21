@@ -68,6 +68,111 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [605. 种花问题](https://leetcode.cn/problems/can-place-flowers/)
+
+```cpp
+class Solution {
+public:
+    bool canPlaceFlowers(vector<int>& flowerbed, int n) {
+        //给flowerbed前后各添加一个地块，简洁化代码，且不会影响种植
+        flowerbed.insert(flowerbed.begin(),0);
+        flowerbed.push_back(0);
+        int size=flowerbed.size();
+
+        int i=1;
+        while(i<=size-2){
+            //当前地块已经种了花，相邻地块就不能种花了，所以跳转到下下个地块
+            if(flowerbed[i]==1)i+=2;
+            else{//当前地块没种花，如果相邻地块也没有花，则可以种下一朵花
+                if(flowerbed[i-1]==0&&flowerbed[i+1]==0){
+                    n--;
+                    i+=2;
+                }else{
+                    i++;
+                }
+            }
+        }
+
+        //n<=0说明可以种下n朵花
+        return n<=0;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [628. 三个数的最大乘积](https://leetcode.cn/problems/maximum-product-of-three-numbers/)
+
+```cpp
+方法一：排序
+先将数组排序，排完序后，最大值要么是最后三个最大值乘积，要么是前两个最小值（负数）相乘后再和最大值相乘的乘积，且必须选两个负数，偶数个负数相乘才能得到正数，这些绝对值最大的数相乘后才有可能得到最大值乘积。关键思路就是，让三个绝对值最大的去相乘，看谁的乘积更大，如果没有负数，那必然就是最后三个最大值相乘的乘积最大，只有一个负数的情况也是如此，大于等于两个负数的情况下比较才有悬念
+
+class Solution {
+public:
+    int maximumProduct(vector<int>& nums) {
+        sort(nums.begin(),nums.end());
+        
+        int n=nums.size();
+        int res1=nums[n-3]*nums[n-2]*nums[n-1];
+        int res2=nums[n-1]*nums[0]*nums[1];
+
+        return max(res1,res2);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(logn)  主要是快排的额外空间开销;
+
+方法二：线性扫描
+从上面的方法可以看出，其实我们只需要知道前三个最大的数，而前两个最小的数，用五个数记录即可
+
+class Solution {
+public:
+    int maximumProduct(vector<int>& nums) {
+        int firstMaxVal=INT_MIN;
+        int secondMaxVal=INT_MIN;
+        int thirdMaxVal=INT_MIN;
+        int firstMinVal=INT_MAX;
+        int secondMinVal=INT_MAX;
+
+        //即使是相同的值也可以重复利用
+		/*
+		因此，当n=1000，fitstMaxVal=1000，secondMaxVal=thirdMaxVal=INT_MIN时，此时意味着有两个1000，这两个1000都可以用到乘积
+        中，所以secondMaxVal=1000
+        */
+        //最小值也同理
+        for(auto&n:nums){
+            if(n>firstMaxVal){
+                thirdMaxVal=secondMaxVal;
+                secondMaxVal=firstMaxVal;
+                firstMaxVal=n;
+            }else if(n>secondMaxVal){
+                thirdMaxVal=secondMaxVal;
+                secondMaxVal=n;
+            }else if(n>thirdMaxVal){
+                thirdMaxVal=n;
+            }
+
+            if(n<firstMinVal){
+                secondMinVal=firstMinVal;
+                firstMinVal=n;
+            }else if(n<secondMinVal){
+                secondMinVal=n;
+            }
+        }
+
+        int res1=firstMaxVal*secondMaxVal*thirdMaxVal;
+        int res2=firstMaxVal*firstMinVal*secondMinVal;
+
+        return max(res1,res2);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
