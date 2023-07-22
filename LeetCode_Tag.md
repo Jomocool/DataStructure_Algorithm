@@ -173,6 +173,41 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [643. 子数组最大平均数 I](https://leetcode.cn/problems/maximum-average-subarray-i/)
+
+```cpp
+方法一：滑动窗口
+
+class Solution {
+public:
+    double findMaxAverage(vector<int>& nums, int k) {
+        int left=0;//窗口左边界
+        int right=k-1;//窗口右边界
+        double maxAvg=INT_MIN;//最大平均数
+
+        double sum=0;//第一个窗口的和
+        for(int i=0;i<k;i++){
+            sum+=nums[i];
+        }
+
+
+        while(right<nums.size()){
+            maxAvg=max(maxAvg,sum/k);
+            //如果此时窗口右边界在最后一个元素，则直接break，否则会越界访问
+            if(right==nums.size()-1)break;
+            //右移窗口的同时，把窗口和计算了
+            sum-=nums[left++];
+            sum+=nums[++right];
+        }
+
+        return maxAvg;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
@@ -219,6 +254,48 @@ public:
 
         //right==-1，说明nums已经是升序数组了
         return right==-1?0:right-left+1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [665. 非递减数列](https://leetcode.cn/problems/non-decreasing-array/)
+
+```cpp
+方法一：贪心算法
+
+eg.大致可以分为以下3种情况，隐藏条件是nums[i]>nums[i-1]
+例1（i-2<0）:[4,2,5]，可以把4调小到<=2，或者把2调大到4、5
+例2（nums[i]>=nums[i-2]）:[1,4,2,5]，可以把4调小到1、2，或者把2调大到4、5
+例3（nums[i]<nums[i-2]）:[3,4,2,5]，只能把2调大到4、5，因为4前面是3，所以不能把4调小到<=2
+总结：
+当nums[i]破坏了数组递增时，即nums[i]>nums[i-1]
+由于不清楚i之后的值是多少，所以尽量让i的值更小，因此修改i-1的值让其更小
+例如对于[4,2,3]，如果修改了2的值为4，则遍历到3时，发现其比前面的4更小，又要修改一次值，总共两次；而如果让4修改为2，则只有调整一次值。所以修改nums[i]为更大的值，很可能会造成不必要的影响，结论就是尽可能的修改i-1的值，而不是i的值，让i值越小越好，这样递增的概率也会更大
+1.i==1（例1）：nums[i-1]=nums[i]
+2.nums[i]>=nums[i-2]：nums[i-1]=nums[i]
+3.nums[i]<nums[i-2]：nums[i]=nums[i-1]，只能调整nums[i]了，但也尽可能小，调成和nums[i-1]一样大即可，对后面的影响尽可能小
+
+尽量修改前面的值，即nums[i-1]和nums[i]，不要动后面的值，因为后面的始终会遍历到，会去处理的
+
+class Solution {
+public:
+    bool checkPossibility(vector<int>& nums) {
+        int cnt=0;
+        for(int i=1;i<nums.size();i++){
+            if(nums[i]<nums[i-1]){//nums[i-1]可能是前面修改过的，前面修改过的就是这样影响后面的判断
+                if(i==1||nums[i]>=nums[i-2]){
+                    nums[i-1]=nums[i];
+                }else{
+                    nums[i]=nums[i-1];
+                }
+                cnt++;
+            }
+        }
+
+        return cnt<=1;
     }
 };
 时空复杂度分析:
