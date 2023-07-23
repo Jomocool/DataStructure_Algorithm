@@ -181,31 +181,142 @@ public:
 class Solution {
 public:
     double findMaxAverage(vector<int>& nums, int k) {
-        int left=0;//窗口左边界
-        int right=k-1;//窗口右边界
-        double maxAvg=INT_MIN;//最大平均数
+        double sum=0;
+        double maxSum=INT_MIN;//窗口值最大和
 
-        double sum=0;//第一个窗口的和
         for(int i=0;i<k;i++){
             sum+=nums[i];
         }
 
+        maxSum=sum;
 
-        while(right<nums.size()){
-            maxAvg=max(maxAvg,sum/k);
-            //如果此时窗口右边界在最后一个元素，则直接break，否则会越界访问
-            if(right==nums.size()-1)break;
-            //右移窗口的同时，把窗口和计算了
-            sum-=nums[left++];
-            sum+=nums[++right];
+        for(int right=k;right<nums.size();right++){
+            sum-=nums[right-k];
+            sum+=nums[right];
+            maxSum=max(maxSum,sum);
         }
 
-        return maxAvg;
+        return maxSum/k;
     }
 };
 时空复杂度分析:
 时间复杂度：O(n);
 空间复杂度：O(1);
+```
+
+#### [674. 最长连续递增序列](https://leetcode.cn/problems/longest-continuous-increasing-subsequence/)
+
+```cpp
+方法一：一次遍历
+
+class Solution {
+public:
+    int findLengthOfLCIS(vector<int>& nums) {
+        int maxLen=INT_MIN;
+        int start=0;//每个递增序列的起始下标
+        while(start<nums.size()){
+            int index=start;
+            //遍历递增序列
+            while(index+1<nums.size()&&nums[index]<nums[index+1]){
+                index++;
+            }
+            maxLen=max(maxLen,index-start+1);//计算最大长度
+            //由于是连续递增序列，只要出现了nums[index]<nums[index+1]，前面的连续递增序列就被断开了，新的起点就是index+1
+            start=index+1;
+        }
+
+        return maxLen;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [697. 数组的度](https://leetcode.cn/problems/degree-of-an-array/)
+
+```cpp
+方法一：哈希表
+题目翻译过来实际上就是，找到包含所有（数组中出现频次最高的数）的最短连续子数组，比如说出现频次最高的数是2，那就找到包含所有2的最短连续子数组
+
+class Solution {
+public:
+    int findShortestSubArray(vector<int>& nums) {
+        unordered_map<int,int>counts;
+        for(int i=0;i<nums.size();i++){
+            counts[nums[i]]++;
+        }
+
+        int maxCount=0;//度
+
+        for(const auto&pair:counts){
+            maxCount=max(maxCount,pair.second);
+        }
+
+        int minLen=INT_MAX;
+        for(const auto&pair:counts){//可以有多个满足maxCount频次的元素
+            if(pair.second==maxCount){
+                int maxCountNum=pair.first;
+                int left=0;
+                int right=nums.size()-1;
+                while(nums[left]!=maxCountNum)left++;
+                while(nums[right]!=maxCountNum)right--;
+                minLen=min(minLen,right-left+1);
+            }
+        }
+        
+        return minLen;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n^2)  最坏情况下，每个元素出现频次都一样;
+空间复杂度：O(n);
+
+优化：
+上面代码可优化的地方：
+1.找maxCount，可以在计算频次时就记录了
+2.两个while循环可以省略，因为可以看作是寻找出现频次最高的数的第一次出现的位置和最后一次出现的位置
+
+关键：
+1.记录元素的频次：用于判断该元素是否为定义数组度的关键元素
+2.记录元素第一次和最后一次出现的位置：用于计算连续子数组最多可缩小到的范围，因为子数组必须至少包含所有关键元素
+
+class Solution {
+public:
+    int findShortestSubArray(vector<int>& nums) {
+        //key:元素
+        //value[0]:频次
+        //value[1]:第一次出现的位置
+        //value[2]:最后一次出现的位置
+        unordered_map<int,vector<int>>map;
+        int maxCount=INT_MIN;
+
+        for(int i=0;i<nums.size();i++){
+            //如果已经在map中了，只需更新频次和最后一次出现的位置
+            if(map.count(nums[i])){
+                map[nums[i]][0]++;
+                map[nums[i]][2]=i;
+            }else{//第一次进入map中，初始化
+                map[nums[i]]={1,i,i};
+            }
+            //记录最大频次，也就是数组的度
+            maxCount=max(maxCount,map[nums[i]][0]);
+        }
+
+        int minLen=INT_MAX;//最短连续子数组长度
+        for(auto &pair:map){
+            //如果当前元素的频次等于数组的度，则是符合要求的元素，计算最短子数组长度
+            if(pair.second[0]==maxCount){
+                minLen=min(minLen,pair.second[2]-pair.second[1]+1);
+            }
+        }
+
+        return minLen;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
 ```
 
 
@@ -265,36 +376,25 @@ public:
 
 ```cpp
 方法一：贪心算法
-
-eg.大致可以分为以下3种情况，隐藏条件是nums[i]>nums[i-1]
-例1（i-2<0）:[4,2,5]，可以把4调小到<=2，或者把2调大到4、5
-例2（nums[i]>=nums[i-2]）:[1,4,2,5]，可以把4调小到1、2，或者把2调大到4、5
-例3（nums[i]<nums[i-2]）:[3,4,2,5]，只能把2调大到4、5，因为4前面是3，所以不能把4调小到<=2
-总结：
-当nums[i]破坏了数组递增时，即nums[i]>nums[i-1]
-由于不清楚i之后的值是多少，所以尽量让i的值更小，因此修改i-1的值让其更小
-例如对于[4,2,3]，如果修改了2的值为4，则遍历到3时，发现其比前面的4更小，又要修改一次值，总共两次；而如果让4修改为2，则只有调整一次值。所以修改nums[i]为更大的值，很可能会造成不必要的影响，结论就是尽可能的修改i-1的值，而不是i的值，让i值越小越好，这样递增的概率也会更大
-1.i==1（例1）：nums[i-1]=nums[i]
-2.nums[i]>=nums[i-2]：nums[i-1]=nums[i]
-3.nums[i]<nums[i-2]：nums[i]=nums[i-1]，只能调整nums[i]了，但也尽可能小，调成和nums[i-1]一样大即可，对后面的影响尽可能小
-
-尽量修改前面的值，即nums[i-1]和nums[i]，不要动后面的值，因为后面的始终会遍历到，会去处理的
+经过自己的理解后，想到的另一个解决问题的角度：
+对于nums[i]>nums[i+1]：（要么调小nums[i]，要么调大nums[i+1]，尽可能调小而不是调大影响后面的）
+其实nums[i]的修改范围属于[nums[i-1],nums[i+1]]，可以根据这两个值的大小来选择修改哪个值
+1.当nums[i+1]>=nums[i-1]时，nums[i]有可选择的值修改，就尽量修改nums[i]的值，减少对后面的影响
+2.当nums[i+1]<nums[i-1]时，nums[i]没有可选择的值修改，就只能修改nums[i+1]，并令其尽可能小，但最小也要等于nums[i]
+在有可选择范围的时候就调小nums[i]，调小到最小值否则调大nums[i+1]，但也只能调大到最小值
 
 class Solution {
 public:
     bool checkPossibility(vector<int>& nums) {
         int cnt=0;
-        for(int i=1;i<nums.size();i++){
-            if(nums[i]<nums[i-1]){//nums[i-1]可能是前面修改过的，前面修改过的就是这样影响后面的判断
-                if(i==1||nums[i]>=nums[i-2]){
-                    nums[i-1]=nums[i];
-                }else{
-                    nums[i]=nums[i-1];
-                }
-                cnt++;
+        for(int i=0;i<nums.size()-1;i++){
+            if(nums[i]>nums[i+1]){
+                if(i==0)nums[i]=nums[i+1];
+                else if(nums[i+1]>=nums[i-1])nums[i]=nums[i-1];
+                else if(nums[i+1]<nums[i-1])nums[i+1]=nums[i];
+                cnt++;//进入当前if分支后，必然会修改一次值，修改次数加1
             }
         }
-
         return cnt<=1;
     }
 };
