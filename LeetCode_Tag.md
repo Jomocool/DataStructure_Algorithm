@@ -371,6 +371,77 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [747. 至少是其他数字两倍的最大数](https://leetcode.cn/problems/largest-number-at-least-twice-of-others/)
+
+```cpp
+方法一：一次遍历
+找最大和次大的数的下标，判断最大的数是否大于等于次大的数的两倍
+
+class Solution {
+public:
+    int dominantIndex(vector<int>& nums) {
+        //只有一个数，没有其他数，直接返回该数下标即可，确保后面两个下标值都不为-1
+        if(nums.size()==1)return 0;
+		
+        //引入最大值和次大值是为了方便先初始化最大值和次大值的下标，否则等于-1时，不好处理越界
+        int firstMaxVal=INT_MIN;//最大值
+        int secondMaxVal=INT_MIN;//次大值
+        int firstMaxIndex=-1;//最大值下标
+        int secondMaxIndex=-1;//次大值下标
+		
+        for(int i=0;i<nums.size();i++){
+            if(nums[i]>firstMaxVal){
+                secondMaxVal=firstMaxVal;
+                secondMaxIndex=firstMaxIndex;
+                firstMaxVal=nums[i];
+                firstMaxIndex=i;
+            }
+            else if(nums[i]>secondMaxVal){
+                secondMaxVal=nums[i];
+                secondMaxIndex=i;
+            }
+        }
+
+        //如果最大值大于等于次大值的两倍，则返回其坐标，否则返回-1
+        return firstMaxVal>=secondMaxVal*2?firstMaxIndex:-1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [830. 较大分组的位置](https://leetcode.cn/problems/positions-of-large-groups/)
+
+```cpp
+方法一：一次遍历
+从左到右遍历，如果出现连续3个及以上相同的字符，就将该[start,end]加入到结果集中，遍历的顺序其实也是起始下标的顺序，所以无需再排序
+
+class Solution {
+public:
+    vector<vector<int>> largeGroupPositions(string s) {
+        vector<vector<int>>res;//结果集
+        int start=0;//起始下标
+
+        while(start<s.length()){
+            //定义结束下标，从起始下标开始遍历
+            int end=start;
+            //有相同的字符就往后走，注意越界
+            while(end+1<s.length()&&s[end]==s[end+1])end++;
+            //如果有3个及以上相同的连续字符，将起始下标和结束下标加入结果集
+            if(end-start+1>=3)res.push_back({start,end});
+            //重新定义下一个起始下标
+            start=end+1;
+        }
+        
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
