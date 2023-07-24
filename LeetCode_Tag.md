@@ -319,6 +319,58 @@ public:
 空间复杂度：O(n);
 ```
 
+#### [717. 1 比特与 2 比特字符](https://leetcode.cn/problems/1-bit-and-2-bit-characters/)
+
+```cpp
+发现规律，1总是要和后面一个数字组成2比特字符，而0只能自己组成1比特字符，所以遍历bits数组，如果遇到1，则跳2个下标；遇到0，则只跳1个下标。待该组成的字符都组成完毕后，是否能够留下最后一个0独自组成1比特字符，判断标志是能否到达最后一个0所在下标
+
+class Solution {
+public:
+    bool isOneBitCharacter(vector<int>& bits) {
+        int i=0;
+        while(i<bits.size()){
+            //如果能够处于最后一个0，说明可以使其独自组成第一种字符，符合要求，返回true
+            if(i==bits.size()-1)return true;
+            if(bits[i]==1)i+=2;//如果是1，必须和后面的0或1组成第二种字符，所以跳两个下标
+            else i++;//如果是0，只能组成第一种字符，跳一个下标
+        }
+        return false;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [724. 寻找数组的中心下标](https://leetcode.cn/problems/find-pivot-index/)
+
+```cpp
+方法一：一次遍历
+
+class Solution {
+public:
+    int pivotIndex(vector<int>& nums) {
+        //记录数组总和后，就不需要再遍历去计算右边元素总和了，直接减去左边元素总和即可
+        int sum=0;//数组总和
+        for(int i=0;i<nums.size();i++){
+            sum+=nums[i];
+        }
+
+        int leftSum=0;//左侧所有元素相加和
+        for(int i=0;i<nums.size();i++){
+            //i的左侧元素和等于右侧元素和，则i是中心坐标
+            if(leftSum==sum-leftSum-nums[i])return i;
+            leftSum+=nums[i];
+        }
+
+        return -1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
