@@ -526,6 +526,174 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [840. 矩阵中的幻方](https://leetcode.cn/problems/magic-squares-in-grid/)
+
+![image-20230725115449164](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230725115449164.png)
+
+```cpp
+方法一：找规律
+3阶幻方的解是固定的，有以上8种
+共同点：
+1.中间元素都是5
+2.角上都是偶数
+3.中点都是奇数
+同一行的解可以通过旋转得到，第一行镜像，可以得到第二行，也就是说，3阶幻方本质上只有一个解，其余都是旋转镜像的结果
+
+步骤：
+1.遍历中间的部分，只有是5的时候，才判断以它为中心的3阶矩阵是否为幻方
+2.由于5已经比对过了，只需要对比其他元素，由于解的旋转不变特性，将8个元素按顺序存放，方便后面比较
+3.解的编码，将前面部分的放在后面就达到了旋转效果；镜像只需反向迭代即可
+4.输入的数组首位元素和8、6、2、4逐个比较决定可能的解，从编码的数组中取出正向镜像两个解比较是否其一，就可以确定是否为幻方
+
+class Solution {
+public:
+    vector<int>m{8,1,6,7,2,9,4,3,8,1,6,7,2,9,4,3};
+
+    bool isMagic(vector<int>&vec){
+        //因为只有偶数会在角落，所以只需遍历偶数和vec[0]比较即可
+        //如果vec[0]不是偶数，说明不是幻方，因为幻方的左上角必定是偶数
+        for(int i=0;i<8;i+=2){
+            if(m[i]==vec[0]){
+                //判断是否为以m[i]为左上角元素的幻方，正向遍历是旋转，逆向遍历是镜像，二者只要是其一即可
+                //因为无论是旋转还是镜像，都是幻方解的一种体现
+                return vec==vector<int>(m.begin()+i,m.begin()+i+8)||
+                       vec==vector<int>(m.rbegin()+7-i,m.rbegin()+15-i);
+            }
+        }
+        return false;
+    }
+
+    int numMagicSquaresInside(vector<vector<int>>& grid) {
+        //方便在以某个坐标为中心的情况下，计算其四周的坐标
+        //k∈[0,7]：di[k]和dj[k]一起使用，比如di[0]、dj[0]，以中心坐标向左和上各移动一格，获取到左上角的坐标，以此类推
+        int di[8]={-1,-1,-1,0,1,1,1,0};
+        int dj[8]={-1,0,1,1,1,0,-1,-1};
+        int count=0;
+
+        //i<grid.size()-1而不是i<=grid.size()-2
+        //因为grid.size()是unsigned int，当其等于1时，grid.size()-2不会是负数，不方便和int类型的i作比较，会出现异常
+        for(int i=1;i<grid.size()-1;i++){
+            for(int j=1;j<grid[0].size()-1;j++){
+                if(grid[i][j]==5){
+                    vector<int>around(8);//以[i][j]为中心的四周元素，共8个
+                    for(int k=0;k<8;k++){
+                        around[k]=grid[i+di[k]][j+dj[k]];
+                    }
+                    if(isMagic(around))count++;
+                }
+            }
+        }
+        return count;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n*m);
+空间复杂度：O(1);
+
+方法二：暴力法
+1.网格的总和是45，因为是1到9的不同数字
+2.每列每行的和都是15，因为有3行，45/3=15
+3.对角线的和也是15，因为和行列一样
+4.总共有4个穿过中心的线，和为4*15=60，整个网格的和为45，而中心值被额外加了3次，其余值只被加了一次，所以中心值=(60-45)/3=5
+减少额外时间，即如果中心值不等于5，则肯定不是幻方
+
+class Solution {
+public:
+    bool isMagic(vector<int>&vec){
+        //1~9每个数必须出现一次，且只能出现一次
+        vector<int>record(16,0);
+        for(int i=0;i<9;i++){
+            record[vec[i]]++;
+        }
+        //只需考虑1~9
+        for(int i=1;i<10;i++){
+            if(record[i]!=1)return false;
+        }
+		
+        //各行各列各对角线和必须为15
+        vector<int>row(3);//各行和
+        vector<int>col(3);//各列和
+        vector<int>diagonal(2);//各对角线和
+
+        for(int i=0;i<3;i++){
+            row[i]=vec[i*3]+vec[i*3+1]+vec[i*3+2];
+            if(row[i]!=15)return false;
+        }
+
+        for(int i=0;i<3;i++){
+            col[i]=vec[i]+vec[i+3]+vec[i+6];
+            if(col[i]!=15)return false;
+        }
+
+        diagonal[0]=vec[0]+vec[4]+vec[8];
+        diagonal[1]=vec[2]+vec[4]+vec[6];
+        if(diagonal[0]!=15||diagonal[1]!=15)return false;
+
+        return true;
+    }
+
+    int numMagicSquaresInside(vector<vector<int>>& grid) {
+        int count=0;
+        int di[9]={-1,-1,-1,0,0,0,1,1,1};
+        int dj[9]={-1,0,1,-1,0,1,-1,0,1};
+
+        for(int i=1;i<grid.size()-1;i++){
+            for(int j=1;j<grid.size()-1;j++){
+                if(grid[i][j]==5){
+                    vector<int>around(9);
+                    for(int k=0;k<9;k++){
+                        around[k]=grid[i+di[k]][j+dj[k]];
+                    }
+                    if(isMagic(around))count++;
+                }
+            }
+        }
+
+        return count;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n*m);
+空间复杂度：O(1);
+```
+
+#### [849. 到最近的人的最大距离](https://leetcode.cn/problems/maximize-distance-to-closest-person/)
+
+```cpp
+方法一：双指针
+1.找到两个中间只有0的1，且距离要最远，然后坐在它们中间即可，最大距离要除2
+2.特殊情况，坐在边界，最大距离不用除2
+
+class Solution {
+public:
+    int maxDistToClosest(vector<int>& seats) {
+        //由于是找两个相距最远的相邻1，先把特殊情况考虑了，即第一个1左边全是0和最后一个1右边全是0的情况
+        int left=0;
+        while(seats[left]==0)left++;
+        int right=seats.size()-1;
+        while(seats[right]==0)right--;
+
+        int maxDis1=max(left,(int)seats.size()-1-right);//特殊情况的最大距离
+
+        int maxDis2=INT_MIN;//两个相邻1的最大距离
+        //此时left是第一个1，right是第二个1
+        while(left<right){
+            //找到下一个空位置
+            while(left<right&&seats[left]==1)left++;
+            int i=left;
+            //找到下一个相邻1，然后才可以计算中间的距离
+            while(left<right&&seats[left]==0)left++;
+            maxDis2=max(maxDis2,left-(i-1));
+        }
+
+        return max(maxDis1,maxDis2/2);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Hard
