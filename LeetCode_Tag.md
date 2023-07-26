@@ -442,6 +442,70 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [888. 公平的糖果交换](https://leetcode.cn/problems/fair-candy-swap/)
+
+![image-20230726121723195](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230726121723195.png)
+
+```cpp
+方法一：哈希表（列方程）
+只用交换一个糖果盒
+关键：sumA-x+y=sumB+x-y => x=y+(sumA-sumB)/2
+
+class Solution {
+public:
+    vector<int> fairCandySwap(vector<int>& aliceSizes, vector<int>& bobSizes) {
+        vector<int>res;
+        int sumA=accumulate(aliceSizes.begin(),aliceSizes.end(),0);
+        int sumB=accumulate(bobSizes.begin(),bobSizes.end(),0);
+        int delta=(sumA-sumB)/2;
+
+        //记录alice各盒的糖果数，方便以O(1)的时间复杂度获取
+        unordered_set<int>s(aliceSizes.begin(),aliceSizes.end());
+        for(auto&y:bobSizes){
+            int x=y+delta;
+            if(s.count(x)){
+                res=vector<int>{x,y};
+                break;
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n+m);
+空间复杂度：O(m);
+```
+
+#### [914. 卡牌分组](https://leetcode.cn/problems/x-of-a-kind-in-a-deck-of-cards/)
+
+```cpp
+方法一：最大公约数
+各组相同元素的个数为count，则需要找到各组count的最大公约数，确保有一个x能够使各组元素平均分配，且x>=2
+
+class Solution {
+public:
+    bool hasGroupsSizeX(vector<int>& deck) {
+        int cnt[10000]={0};
+        int x=0;
+        for(auto&n:deck)cnt[n]++;
+
+        //找所有count的最大公约数x，如果x是1了，则已经不符合要求了
+        for(auto&n:cnt){
+            if(n){
+                x=gcd(n,x);
+                if(x==1)return false;
+            }
+        }
+
+        return true;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogc)  n是deck的大小，logc是数组中数的范围，;
+空间复杂度：O(n);
+```
+
 
 
 ### Medium
@@ -672,7 +736,8 @@ public:
         while(seats[left]==0)left++;
         int right=seats.size()-1;
         while(seats[right]==0)right--;
-
+		
+        //seats.size()是unsigned int类型，而max()函数必须是两个同类型的值比较，所以需要先转为int类型
         int maxDis1=max(left,(int)seats.size()-1-right);//特殊情况的最大距离
 
         int maxDis2=INT_MIN;//两个相邻1的最大距离
