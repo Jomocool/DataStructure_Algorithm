@@ -502,8 +502,88 @@ public:
     }
 };
 时空复杂度分析:
-时间复杂度：O(nlogc)  n是deck的大小，logc是数组中数的范围，;
+时间复杂度：O(nlogc)  n是deck的大小，logc是数组中数的范围;
 空间复杂度：O(n);
+```
+
+#### [941. 有效的山脉数组](https://leetcode.cn/problems/valid-mountain-array/)
+
+```cpp
+方法一：爬坡
+
+class Solution {
+public:
+    bool validMountainArray(vector<int>& arr) {
+        int n=arr.size();
+        //arr.length()<3就不是山脉数组了
+        if(n<3)return false;
+
+        //先到山顶
+        int i=0;
+        while(i+1<n&&arr[i]<arr[i+1])i++;
+        //如果山顶在第一个下标，则只有下坡没有上坡，无效的山脉数组
+        //如果山顶在最后一个下标，则只有上坡没有下坡，也是无效的山脉数组
+        if(i==n-1||i==0)return false;
+
+        //下山
+        while(i+1<n&&arr[i]>arr[i+1])i++;
+        
+        //最终如果都是下坡，则可以到达最后一个下标，那么就是有效的山脉数组
+        return i==n-1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [989. 数组形式的整数加法](https://leetcode.cn/problems/add-to-array-form-of-integer/)
+
+```cpp
+方法一：逐位相加
+class Solution {
+public:
+    vector<int> addToArrayForm(vector<int>& num, int k) {
+        int carry=0;//进位
+        int i=num.size()-1;//遍历num
+        int digit=0;//k各个数位位上的数
+        int sum=0;
+        while(i>=0){
+            if(k==0&&carry==0)break;//k=0并且进位也是0，就没有继续逐位相加的必要了
+            digit=k%10;//获取k当前数位上的数
+            sum=num[i]+digit+carry;//计算和
+            num[i]=sum%10;//将结果存入num中
+            carry=sum/10;//计算进位
+            k/=10;//k除10，方便获取下一个数位上的数
+            i--;//方便获取num下一个数位上的数
+        }
+
+        //出循环后还需要考虑以下三种情况
+        //1.二者都加完了，但是进位没处理
+        //2.k未加完：在num前面插入
+        //3.num未加完：不用做处理，因为本来就是在num原地上相加
+        //2必须在1之前处理，这样就不需要在后面额外又处理一次最高的进位了
+
+        //第二种情况
+        while(k>0){
+            digit=k%10;
+            sum=digit+carry;
+            num.insert(num.begin(),sum%10);
+            carry=sum/10;
+            k/=10;
+        }
+
+        //第一种情况，前面两个循环已经把num和k都加完了
+        if(carry){
+            num.insert(num.begin(),carry);
+        }
+
+        return num;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(max(n,logk));
+空间复杂度：O(1);
 ```
 
 
