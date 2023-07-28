@@ -586,7 +586,71 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [1128. 等价多米诺骨牌对的数量](https://leetcode.cn/problems/number-of-equivalent-domino-pairs/)
 
+```cpp
+方法一：哈希表
+class Solution {
+public:
+    int iterativeAdd(int n){
+        //等差数列求和公式
+        return (n*(n-1))/2;
+    }
+
+    int numEquivDominoPairs(vector<vector<int>>& dominoes) {
+        //key:多米诺骨牌
+        //value:多米诺骨牌出现的次数，[1,2],[2,1]看作同一组多米诺骨牌
+        map<vector<int>,int>mp;
+        int count=0;
+        for(auto&vec:dominoes){
+            //当前二元对的逆序对，可能已经存在于mp中，不用重复另开一组多米诺骨牌
+            vector<int>tmp={vec[1],vec[0]};
+            if(mp.count(tmp))mp[tmp]++;
+            else{
+                mp[vec]++;
+            }
+        }
+
+        for(auto&pair:mp){
+            //如果一组多米诺骨牌出现n次，就会有(n-1)+(n-2)+...+1种(i,j)组合
+            count+=iterativeAdd(pair.second);
+        }
+
+        return count;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+方法二：二元组表示+计数（更节省时间和空间的哈希表表示法）
+将二元对用统一的格式表示，换算成二位数，因为都是0~9的数，因此不会超过100，比如[1,2],[2,1]可以用12表示，这样就不用哈希表了
+class Solution {
+public:
+    int numEquivDominoPairs(vector<vector<int>>& dominoes) {
+        vector<int>counts(100,0);
+        int val=0;
+        int res=0;
+        for(auto&vec:dominoes){
+            val=vec[0]<vec[1]?vec[0]*10+vec[1]:vec[1]*10+vec[0];
+            res+=counts[val];//这样加的恰好是(n-1)+(n-2)+...+1
+            counts[val]++;
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+方法一开始用的是unordered_map，出现如下问题：
+
+> error: call to implicitly-deleted default constructor of ‘unordered_map＜vector<int>, int＞‘ m；
+
+`unordered_map`中用`std::hash`来计算`key`，但是C++中没有给`vector<int>`做**Hash**的函数，所以不能用`vector<int>`作为`unordered_map`的key。
+
+但是`map`可以，`map`里面是通过操作符`<`来比较大小，而`vector<int>`是可以比较大小的，所以，`map`在这里用是可以的
 
 ### Medium
 
