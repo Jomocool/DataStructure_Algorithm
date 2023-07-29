@@ -956,7 +956,9 @@ class Solution {
 public:
     vector<int> constructArr(vector<int>& a) {
         int mul=1;
-        vector<int>b(a.size(),1);//初始化为全1，这样在*=时不会影响乘积
+        //初始化为全1，这样在*=时不会影响乘积
+        //主要是不影响b[0]的计算，因为第一个for循环不处理b[0]，而第二个for循环必须*=，如果b数组初始化为0，则b[0]必然等于0
+        vector<int>b(a.size(),1);
 
         for(int i=1;i<a.size();i++){
             mul*=a[i-1];
@@ -1028,6 +1030,7 @@ eg.(-5)%3=-2：(-5)=(-3)*1+(-2)，也可以是
 class Solution {
 public:
     bool canArrange(vector<int>& arr, int k) {
+        //(x,y)x要找到匹配的y，使得(x+y)%k==0 => x%k+y%k=k||(x%k==0&&y%k==0)
         //下标是0~k-1，恰好对应余数
         vector<int>remainder(k,0);
         //统计余数
@@ -1058,6 +1061,145 @@ public:
 ## 字符串
 
 ### Easy
+
+#### [13. 罗马数字转整数](https://leetcode.cn/problems/roman-to-integer/)
+
+```cpp
+方法一：复合字符匹配
+class Solution {
+public:
+    int romanToInt(string s) {
+        //映射表
+        unordered_map<string,int>mp={
+            {"I",1},{"IV",4},
+            {"V",5},{"IX",9},
+            {"X",10},{"XL",40},
+            {"L",50},{"XC",90},
+            {"C",100},{"CD",400},
+            {"D",500},{"CM",900},
+            {"M",1000}
+        };
+
+        int i=0;
+        int res=0;
+        while(i<s.length()){
+            if(i==s.length()-1){//最后一个字母，肯定是加
+                res+=mp[string(1,s[i++])];
+            }else{
+                //只需判断当前字符s[i]是独自匹配还是和s[i+1]匹配，后者优先级更高，所以优先判断
+                string valStr=s.substr(i,2);
+                if(mp.count(valStr)){
+                    res+=mp[valStr];
+                    i+=2;
+                }else{
+                    res+=mp[string(1,s[i++])];
+                }
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+
+方法二：单独字符匹配
+逻辑更加清晰，如果下一个字符比当前字符大，说明当前字符是需要被减去的
+
+class Solution {
+public:
+    int romanToInt(string s) {
+        //映射表
+        unordered_map<char,int>mp={
+            {'I',1},
+            {'V',5},
+            {'X',10},
+            {'L',50},
+            {'C',100},
+            {'D',500},
+            {'M',1000}
+        };
+
+        int i=0;
+        int res=0;
+        while(i<s.length()){
+            //最后一个字符，肯定是加，因为后面没有多余字符和它搭配
+            if(i==s.length()-1){
+                res+=mp[s[i++]];
+                break;//及时break，不要继续往下面去判断了，有异常
+            }
+
+            if(mp[s[i]]<mp[s[i+1]]){
+                //前小后大，就要和后面的字符搭配，值要减去前面小的对应值
+                res-=mp[s[i++]];
+            }else{
+                res+=mp[s[i++]];
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [67. 二进制求和](https://leetcode.cn/problems/add-binary/)
+
+```cpp
+方法一：模拟求和
+class Solution {
+public:
+    string addBinary(string a, string b) {
+        //翻转字符串a、b，从低位相加，同时方便计算结果
+        reverse(a.begin(),a.end());
+        reverse(b.begin(),b.end());
+        string res;
+
+        int sum=0;//数位上的数相加和
+        int carry=0;//进位
+        int aIdx=0;//遍历a
+        int bIdx=0;//遍历b
+        int aDigit=0;//a[aIdx]对应数值
+        int bDigit=0;//b[bIdx]对应数值
+
+        while(aIdx<a.length()&&bIdx<b.length()){
+            aDigit=a[aIdx++]-'0';
+            bDigit=b[bIdx++]-'0';
+            sum=aDigit+bDigit+carry;
+            res.push_back(sum%2+'0');
+            carry=sum/2;
+        }
+
+        while(aIdx<a.length()){
+            aDigit=a[aIdx++]-'0';
+            sum=aDigit+carry;
+            res.push_back(sum%2+'0');
+            carry=sum/2;
+        }
+
+        while(bIdx<b.length()){
+            bDigit=b[bIdx++]-'0';
+            sum=bDigit+carry;
+            res.push_back(sum%2+'0');
+            carry=sum/2;
+        }
+
+        //如果还有进位，最高位添1
+        if(carry)res.push_back('1');
+        
+        //翻转结果字符串
+        reverse(res.begin(),res.end());
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(max(m,n))  其中m是a的长度，n是b的长度;
+空间复杂度：O(1);
+```
 
 
 
