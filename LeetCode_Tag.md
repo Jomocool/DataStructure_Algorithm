@@ -903,6 +903,152 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [剑指 Offer 66. 构建乘积数组](https://leetcode.cn/problems/gou-jian-cheng-ji-shu-zu-lcof/)
+
+```cpp
+方法一：一次遍历
+先求a数组的总乘积allMul，然后b[i]=allMul/a[i]，但是有问题，因为如果a[i]=0，不好处理
+
+解决方法：
+记录0的个数zeroCnt，分情况讨论：
+1.zeroCnt==0：求A数组的总乘积allMul，然后B[i]=allMul/A[i]
+2.zeroCnt==1：求A数组删掉该0之后的总乘积allMul，还要记录0的下标zeroIdx，最后b[zeroIdx]=allMul，其它都是0
+3.zeroCnt>1：b数组全为0
+
+class Solution {
+public:
+    vector<int> constructArr(vector<int>& a) {
+        vector<int>b(a.size(),0);//返回的b数组
+        int zeroCnt=0;//0的个数
+        int zeroIdx=-1;//唯一0的下标
+        int allMul=1;//总乘积
+
+        for(int i=0;i<a.size();i++){
+            if(a[i]==0){
+                //记录0的个数和下标
+                zeroCnt++;
+                zeroIdx=i;
+            }else{
+                allMul*=a[i];
+            }
+        }
+        
+        if(zeroCnt==0){//没有0，普通处理
+            for(int i=0;i<a.size();i++){
+                b[i]=allMul/a[i];
+            }
+        }
+        else if(zeroCnt==1){//有一个0，单独处理zeroIdx上的乘积即可，其余全是0
+            b[zeroIdx]=allMul;
+        }
+        //0的个数大于1个，则不需要额外处理，直接返回全0即可
+
+        return b;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+
+方法二：正反遍历
+由于b[i]抛弃的是a[i]，所以只需要正序遍历（从左到右）得到a[0]~a[i-1]的乘积，再反序遍历（从右到左）得到a[i+1]~a[a.size()-1]的乘积
+class Solution {
+public:
+    vector<int> constructArr(vector<int>& a) {
+        int mul=1;
+        vector<int>b(a.size(),1);//初始化为全1，这样在*=时不会影响乘积
+
+        for(int i=1;i<a.size();i++){
+            mul*=a[i-1];
+            b[i]*=mul;
+        }
+
+        //重置mul
+        mul=1;
+        for(int i=a.size()-2;i>=0;i--){
+            mul*=a[i+1];
+            b[i]*=mul;//注意是*=，而不是=，不然就覆盖掉前面的乘积了
+        }
+
+        return b;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [11. 盛最多水的容器](https://leetcode.cn/problems/container-with-most-water/)
+
+```cpp
+方法一：双指针（贪心算法）
+left、right指针移动规则：
+1. height[left]<=height[right]：left++
+2. height[left]>height[right]:right--
+谁矮移动谁
+解释：
+面积=min(height[left],height[right])*(right-left)
+假设此时height[left]<height[right1]，假设移动指向高的柱子那个指针，移动right1至right2，会出现以下情况
+1. height[right1]<=height[right2]，此时宽度一定是缩小了，而高度不变，依旧是height[left]，所以面积缩小
+2. height[right1]>height[right2]
+  2.1 height[right2]<=height[left]：此时高度是更小的height[right2]，面积肯定也更小了
+  2.2 height[right2]>height[left]：此时宽度一定是缩小了，而高度不变，依旧是height[left]，所以面积缩小
+综上，移动指向高的那个指针，只会让面积更小，而移动矮的那个指针，可能可以使下一个柱子的高度更高，然后更加充分地利用原先那个高柱子的优势
+
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int left=0;
+        int right=height.size()-1;
+        int max_Area=INT_MIN;
+
+        while(left<right){
+            int h=height[left]<=height[right]?height[left++]:height[right--];//谁矮谁移动
+            int w=right-left+1;//此时的left或right已经指向了下一个柱子，而不是当前计算面积的柱子，所以宽度要加1
+            max_Area=max(max_Area,h*w);
+        }
+
+        return max_Area;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [1497. 检查数组对是否可以被 k 整除](https://leetcode.cn/problems/check-if-array-pairs-are-divisible-by-k/)
+
+```cpp
+方法一：按余数统计
+关键点1：x、y的和如果能够被k整除，说明x%k+y%k==k，所以需要余数为x%k的需要和余数为y%k的搭配
+关键点2：如何让负数取模k的余数处于[0,k-1]的范围？xk=(x%k+k)%k即可，x是正数也可以这样计算，不影响余数
+eg.(-5)%3=-2：(-5)=(-3)*1+(-2)，也可以是
+   ((-5)%3+3)%3=1：(-5)=(-3)*2+1
+
+class Solution {
+public:
+    bool canArrange(vector<int>& arr, int k) {
+        //下标是0~k-1，恰好对应余数
+        vector<int>remainder(k,0);
+        //统计余数
+        for(auto&x:arr){
+            remainder[(x%k+k)%k]++;
+        }
+
+        for(int i=1;i<k;i++){
+            //余数i要和余数k-i搭配，这样才能被k整除，所以它们数量要相同
+            if(remainder[i]!=remainder[k-i])return false;
+        }
+        
+        //余数0只能和余数0搭配，因为余数k取模k之后就是余数0，所以余数0的数量必须是偶数
+        return remainder[0]%2==0;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
 
 
 ### Hard
