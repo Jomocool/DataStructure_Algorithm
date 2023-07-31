@@ -1201,6 +1201,69 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [434. 字符串中的单词数](https://leetcode.cn/problems/number-of-segments-in-a-string/)
+
+```cpp
+方法一：一次遍历
+
+class Solution {
+public:
+    int countSegments(string s) {
+        int i=0;
+        int res=0;
+        while(i<s.length()){
+            //找到下一个字母
+            while(i<s.length()&&s[i]==' ')i++;
+            int tmp=i;//记录当前下标
+            //找到下一个空格
+            while(i<s.length()&&s[i]!=' ')i++;
+            //如果i!=tmp，意味着i和tmp间有一个单词
+            if(i!=tmp)res++;
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [680. 验证回文串 II](https://leetcode.cn/problems/valid-palindrome-ii/)
+
+```cpp
+方法一：模拟
+要丢掉的那一个字符必然是导致左右两边不对称的那一对字符的其中之一，然后只需判断丢掉字符后，剩余的字符串是否为回文串即可
+
+class Solution {
+public:
+    bool isPalindrome(string s,int left,int right){
+        while(left<right){
+            if(s[left]!=s[right])return false;
+            left++;
+            right--;
+        }
+        return true;
+    }
+
+    bool validPalindrome(string s) {
+        int left=0;
+        int right=(int)s.length()-1;
+        while(left<right&&s[left]==s[right]){
+            left++;
+            right--;
+        }
+        //当前s[left]!=s[right]
+        //1.删掉s[left]之后是回文串
+        //2.删除s[right]之后是回文串
+        //因为已经删掉了一个字符了，所以删掉之后的字符串必须是回文串，不能够再删除了
+        return isPalindrome(s,left+1,right)||isPalindrome(s,left,right-1);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
