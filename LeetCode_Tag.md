@@ -1236,7 +1236,7 @@ public:
 
 class Solution {
 public:
-    bool isPalindrome(string s,int left,int right){
+    bool isPalindrome(string& s,int left,int right){
         while(left<right){
             if(s[left]!=s[right])return false;
             left++;
@@ -1264,9 +1264,100 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [819. 最常见的单词](https://leetcode.cn/problems/most-common-word/)
+
+```cpp
+方法一：哈希表
+步骤：
+1.禁用列表转放入set：O(1)时间判断word是否存在于禁用列表中
+2.哈希表mp记录词频
+3.遍历paragraph，找到每个单词，注意单词都是由字母组成的，不是字母的字符直接pass，用ASCII码判断是否为26位大小写字母
+4.将单词word转成小写，因为最终的结果都要是小写，比如ball实际上等价于BALL
+
+class Solution {
+public:
+    void strToLower(string&s){
+        for(auto&c:s){
+            c=tolower(c);
+        }
+    }
+
+    string mostCommonWord(string paragraph, vector<string>& banned) {
+        //为了通过O(1)时间就能够判断当前单词是否在禁用列表中
+        unordered_set<string>bannedSet(banned.begin(),banned.end());
+        //记录词频
+        unordered_map<string,int>mp;
+
+        string resWord;//出现次数最多且不在禁用列表的单词
+
+        int i=0;
+        int n=paragraph.length();
+        while(i<n){
+            //不是字母都pass
+            while(i<n&&!((paragraph[i]>='a'&&paragraph[i]<='z')||(paragraph[i]>='A'&&paragraph[i]<='Z')))i++;
+            int start=i;
+            //单词必须都是由字母组成的
+            while(i<n&&((paragraph[i]>='a'&&paragraph[i]<='z')||(paragraph[i]>='A'&&paragraph[i]<='Z')))i++;
+            
+            //确保有单词
+            if(i!=start){
+                string word=paragraph.substr(start,i-start);
+                strToLower(word);//全部转成小写字母
+                if(!bannedSet.count(word)){//不在禁用列表中
+                    mp[word]++;//词频加1
+                    if(mp[word]>mp[resWord])resWord=word;//如果当前单词词频超过词频最高的单词，那么当前单词才是词频最高的单词
+                }
+            }
+        }
+
+        return resWord;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n+m);
+空间复杂度：O(n+m);
+```
+
 
 
 ### Medium
+
+#### [686. 重复叠加字符串匹配](https://leetcode.cn/problems/repeated-string-match/)
+
+```cpp
+方法一：模拟
+通过长度来确定叠加次数的上下界，假设a和b的长度分别是m、n
+下界：m/n（比如，abcd和abcdabcdabcd）
+上界：m/n+1（比如，cdabcdabcdab）
+
+class Solution {
+public:
+    int repeatedStringMatch(string a, string b) {
+        if(a.empty())return -1;
+
+        //aMul是a的叠加字符串
+        string aMul=a;
+        int res=1;
+
+        while(aMul.size()<b.size()){
+            aMul.append(a);
+            res++;
+        }
+        //下界：如果当前aMul中已经能找到b了，直接返回当前叠加次数
+        if(aMul.find(b)!=string::npos)return res;
+
+        //上界：下界找不到，就再叠加一次
+        aMul.append(a);
+        res++;
+        if(aMul.find(b)!=string::npos)return res;
+
+        return -1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(m+n);
+空间复杂度：O(m);
+```
 
 
 
