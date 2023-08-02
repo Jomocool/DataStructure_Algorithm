@@ -1278,6 +1278,8 @@ class Solution {
 public:
     void strToLower(string&s){
         for(auto&c:s){
+            //tolower函数原型：int tolower(int c)
+            //tolower函数的参数是值拷贝构造，返回参数转为小写后的字母，所以需要准备转为小写的字母去接收。toupper函数同理
             c=tolower(c);
         }
     }
@@ -1316,6 +1318,62 @@ public:
 时空复杂度分析:
 时间复杂度：O(n+m);
 空间复杂度：O(n+m);
+```
+
+#### [859. 亲密字符串](https://leetcode.cn/problems/buddy-strings/)
+
+```cpp
+方法一：一次遍历
+长度不同，直接返回false，因为无论怎么交换都无法相同
+cnt：记录s与goal不相同的字符个数
+idx1：记录s与goal第一个不相同字符的下标
+idx2：记录s与goal第二个不相同字符的下标
+遍历一次后，有以下4种情况：
+1. cnt>2：只能交换两个字符的情况下，s与goal必然无法相同，返回false
+2. cnt==2：返回(s[idx1]==goal[idx2]&&s[idx2]==goal[idx1])
+3. cnt==1：假设idx1与s中另一个下标为idx的字符交换
+  3.1 s[idx1]==s[idx]：s[idx]仍然不等于goal[idx1]
+  3.2 s[idx1]!=s[idx]：s[idx1]不等于goal[idx]
+4. cnt==0：说明s和goal交换前就相同了，所以需要s中两个相同的字符交换即可，因为相同字符交换后，不影响二者的等价关系，所以需要一个记录词频的表，由于都是小写字母，所以用一个大小为26的数组记录即可
+
+class Solution {
+public:
+    bool buddyStrings(string s, string goal) {
+        //长度不同，无论怎么交换都没用
+        if(s.length()!=goal.length())return false;
+
+        vector<int>record(26);//记录词频
+        int cnt=0;//记录不相同的地方有多少处
+        int idx1=-1;//记录第一处不相同的下标
+        int idx2=-1;//记录第二处不相同的下标
+
+        //开始遍历
+        for(int i=0;i<s.length();i++){
+            record[s[i]-'a']++;
+            if(s[i]!=goal[i]){
+                cnt++;
+                if(cnt==1)idx1=i;
+                else if(cnt==2)idx2=i;
+            }
+        }
+
+        if(cnt>2||cnt==1)return false;
+        if(cnt==2)return s[idx1]==goal[idx2]&&s[idx2]==goal[idx1];
+
+        //cnt==0的情况，看是否能够有两个相同的字符交换从而不影响二者的等价关系
+        for(int i=0;i<26;i++){
+            if(record[i]>=2)return true;
+        }
+
+        //s中没有两个相同的字符
+        return false;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+
+总结：关键在于记录有几处不相同的地方，然后以2为分界线，分析各情况下交换两字符是否能够使二者相同
 ```
 
 
@@ -1357,6 +1415,51 @@ public:
 时空复杂度分析:
 时间复杂度：O(m+n);
 空间复杂度：O(m);
+```
+
+#### [6. N 字形变换](https://leetcode.cn/problems/zigzag-conversion/)
+
+```cpp
+方法一：模拟
+
+class Solution {
+public:
+    string convert(string s, int numRows) {
+        vector<string>vec(numRows);//用于存储N字形排列的字符串s
+        bool down=true;//当前移动趋势，N字形有两种运动趋势：下或上
+        string res;
+
+        int i=0;
+        while(i<s.length()){
+            if(down){//从上到下处理各行字符串
+                //对于从上到下就处理所有行，刚好是一条竖线
+                for(int row=0;row<=numRows-1;row++){
+                    if(i<s.length())vec[row].push_back(s[i++]);
+                }
+                //改变运动趋势
+                down=!down;
+            }else{//从下到上处理各行字符串
+                //对于从下到上，就处理两竖线中间部分的斜线
+                for(int row=numRows-2;row>0;row--){
+                    if(i<s.length())vec[row].push_back(s[i++]);
+                }
+                //改变运动趋势
+                down=!down;
+            }
+        }
+
+        for(auto&str:vec){
+            res.append(str);
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+总结：本题的关键在于如何合理分配s[i]给从上到下和从下到上这两种趋势，既不能少插入s[i]，也不能多添加s[i]，所以需要一个合适的轨迹让二者配合，而轨迹的体现就在两个for循环的行分配上
 ```
 
 
