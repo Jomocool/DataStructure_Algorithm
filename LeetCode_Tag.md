@@ -1344,12 +1344,14 @@ public:
 
         vector<int>record(26);//记录词频
         int cnt=0;//记录不相同的地方有多少处
+        int maxCnt=INT_MIN;//最高词频
         int idx1=-1;//记录第一处不相同的下标
         int idx2=-1;//记录第二处不相同的下标
 
         //开始遍历
         for(int i=0;i<s.length();i++){
             record[s[i]-'a']++;
+            maxCnt=max(maxCnt,record[s[i]-'a']);
             if(s[i]!=goal[i]){
                 cnt++;
                 if(cnt==1)idx1=i;
@@ -1361,12 +1363,7 @@ public:
         if(cnt==2)return s[idx1]==goal[idx2]&&s[idx2]==goal[idx1];
 
         //cnt==0的情况，看是否能够有两个相同的字符交换从而不影响二者的等价关系
-        for(int i=0;i<26;i++){
-            if(record[i]>=2)return true;
-        }
-
-        //s中没有两个相同的字符
-        return false;
+        return maxCnt>=2;
     }
 };
 时空复杂度分析:
@@ -1460,6 +1457,168 @@ public:
 空间复杂度：O(n);
 
 总结：本题的关键在于如何合理分配s[i]给从上到下和从下到上这两种趋势，既不能少插入s[i]，也不能多添加s[i]，所以需要一个合适的轨迹让二者配合，而轨迹的体现就在两个for循环的行分配上
+```
+
+#### [8. 字符串转换整数 (atoi)](https://leetcode.cn/problems/string-to-integer-atoi/)
+
+```cpp
+方法一：模拟
+按照题目给的步骤一步步实现，然后注意字符串s中可能出现的字符以及应对这些字符的方式
+
+class Solution {
+public:
+    int myAtoi(string s) {
+        //空字符串返回0
+        if(s.length()==0)return 0;
+        int i=0;
+
+        //1.丢弃无用的前导空格
+        while(s[i]==' ')i++;
+
+        //2.检查正负号
+        int flag=1;//默认正号，因为正负号都没有的情况下就假定结果为正
+        if(s[i]=='+')i++;
+        else if(s[i]=='-'){
+            i++;
+            flag=-1;
+        }
+
+        //3.一直读入数字字符，直到非数字字符或字符串结尾
+        int res=0;
+        for(;i<s.length();i++){
+            //非数字字符，结束读入
+            if(!(s[i]>='0'&&s[i]<='9'))break;
+            //读入前导0
+            if(res==0&&s[i]=='0')continue;
+            //在计算值之前，先预判是否会溢出（必须在计算值之前检测）
+            bool isOvermin=res<INT_MIN/10||(res==INT_MIN/10&&s[i]>'8');
+            bool isOvermax=res>INT_MAX/10||(res==INT_MAX/10&&s[i]>'7');
+            //溢出的话就截断
+            if(isOvermin)return INT_MIN;
+            else if(isOvermax)return INT_MAX;
+            //计算值
+            res=res*10+flag*(s[i]-'0');
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [17. 电话号码的字母组合](https://leetcode.cn/problems/letter-combinations-of-a-phone-number/)
+
+```cpp
+方法一：回溯
+class Solution {
+public:
+    vector<string>res;//结果集
+    unordered_map<char,string>mp;//数字到字母的映射
+    string path;//路径字符串
+    
+    void dfs(string&digits,int idx){
+        //digits所有数字都处理完毕
+        if(idx==digits.length()){
+            res.push_back(path);
+            return;
+        }
+
+        //处理当前数字digits[idx]的所有情况，即映射的所有字母都需要考虑一遍
+        string str=mp[digits[idx]];//当前数字映射字母集合
+        for(int i=0;i<str.length();i++){
+            path.push_back(str[i]);
+            dfs(digits,idx+1);//处理下一个数字
+            path.pop_back();//回溯
+        }
+    }
+
+    vector<string> letterCombinations(string digits) {
+        if(digits.length()==0)return {};
+        //初始化
+        res.clear();
+        mp.clear();
+        path.clear();
+        mp={
+            {'2',"abc"},
+            {'3',"def"},
+            {'4',"ghi"},
+            {'5',"jkl"},
+            {'6',"mno"},
+            {'7',"pqrs"},
+            {'8',"tuv"},
+            {'9',"wxyz"}
+        };
+
+        dfs(digits,0);
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(3^m × 4^n)  m是3个字母的数字个数，n是4个字母的数字个数，需要遍历每一种字母组合;
+空间复杂度：O(m+n)  m+n是digits总长度，也是开辟的栈空间大小，哈希表可看作常数空间大小;
+
+总结：
+把每遍历一个数字，看成开辟一个新的栈，意味着树向下延伸一层。最后，有多少个叶子节点就代表着有多少种情况，而每种情况都是需要遍历的，所以这就是时间复杂度。有多少层就代表着最多要同时开辟多少个栈空间，所以这就是空间复杂度
+
+综上，对于回溯算法，叶子节点个数（情况数）就是时间复杂度，树的高度（同时开辟栈空间大小）就是空间复杂度
+```
+
+#### [1513. 仅含 1 的子串数](https://leetcode.cn/problems/number-of-substrings-with-only-1s/)
+
+> **选择10^9+7取模的原因**
+
+![image-20230805095818798](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230805095818798.png)
+
+> **虽然结果没有溢出，但是防止过程中的值溢出**
+
+![image-20230805101428993](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230805101428993.png)
+
+```cpp
+方法一：找全1子串
+
+对于字符串"11111"，可以按以下情况分析：
+1.长度为1的全1子串数：有几个1则就有几个全1子串，即字符串长度
+2.长度为2的全1子串数：可以看作以每个1为起点时，后面跟着一个1即可看作是一个长度为2的全1子串，且起点不同所以这些全1子串也不同，不会重复计数，但对于最后一个1，其后面没有多余的1，所以长度为2的全1子串数是字符串长度-1
+3.长度为3的全1子串数：和上面同理，是字符串长度-2
+4.长度为4的全1子串数：和上面同理，是字符串长度-3
+5.长度为5的全1子串数：和上面同理，是字符串长度-4
+综上，对于一个长度为n的全1字符串，其仅含1的子串数是n+(n-1)+(n-2)+...+1=(n*(n+1))/2
+
+eg.字符串"0110111"
+1.全1子串"11"：仅含1的子串数为3
+2.全1子串"111"：仅含1的子串数为6
+所以字符串"0110111"仅含1的子串数是9
+
+class Solution {
+public:
+    //科学计数法转int
+    static constexpr int P=int(1E9)+7;
+
+    int numSub(string s) {
+        int i=0;
+        long long res=0;
+        while(i<s.length()){
+            while(i<s.length()&&s[i]=='0')i++;
+            int tmp=i;
+            while(i<s.length()&&s[i]=='1')i++;
+            int n=i-tmp;//全1子串长度
+            //1LL会在运算时把后面的临时数据扩容成long long类型，再在赋值给左边时转回int型
+            res+=((1LL+n)*n)>>1;
+            res%=P;
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+
+总结知识点：
+1.科学技术法转int：int(1E9)
+2.1LL：在运算时将后面的临时数据扩容成long long类型
 ```
 
 
