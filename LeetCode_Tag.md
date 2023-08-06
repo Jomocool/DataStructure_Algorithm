@@ -1631,9 +1631,93 @@ public:
 
 ### Easy
 
+#### [21. 合并两个有序链表](https://leetcode.cn/problems/merge-two-sorted-lists/)
+
+```cpp
+方法一：双指针
+
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        ListNode*newHead=new ListNode(-1);
+        ListNode*cur=newHead;
+
+        while(list1&&list2){
+            //谁小谁先插入新链表
+            if(list1->val<=list2->val){
+                cur->next=list1;
+                list1=list1->next;
+            }else{
+                cur->next=list2;
+                list2=list2->next;
+            }
+            cur=cur->next;
+        }
+
+        //哪个链表还有多余节点，直接让其接到新链表后面
+        if(list1)cur->next=list1;
+        else if(list2)cur->next=list2;
+
+        return newHead->next;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [206. 反转链表](https://leetcode.cn/problems/reverse-linked-list/)
+
+```cpp
+方法一：模拟
+
+class Solution {
+public:
+    ListNode* reverseList(ListNode* head) {
+        if(!head)return nullptr;
+        
+        ListNode*reverseHead=new ListNode(-1);
+        ListNode*cur=head;
+        ListNode*next=cur->next;
+        while(cur){
+            next=cur->next;
+            cur->next=reverseHead->next;
+            reverseHead->next=cur;
+            cur=next;
+        }
+        return reverseHead->next;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
+
+#### [237. 删除链表中的节点](https://leetcode.cn/problems/delete-node-in-a-linked-list/)
+
+```cpp
+方法一：和下一个节点值交换
+
+class Solution {
+public:
+    void deleteNode(ListNode* node) {
+        //将要删掉的节点值改为其下一个节点值，因为node不会是最后一个节点，所以放心修改
+        node->val=node->next->val;
+        //然后跳过node->next直接跳到node->next->next即可
+        node->next=node->next->next;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(1);
+空间复杂度：O(1);
+
+总结：
+一开始想的是将后面节点的值一个一个往前拷贝，然后最后让尾节点的前一个节点的next指向nullptr，但实际上不用这样，只需要让不需要的节点的前一个节点的next指向其后一个节点，这道题无法一开始就这样做的原因是没办法获取到node的前一个节点，但是node后面的所有节点都可以这样做了，都可以获取到其前面的一个节点
+```
 
 
 
