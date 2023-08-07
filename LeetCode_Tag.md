@@ -1701,6 +1701,7 @@ public:
 
 ```cpp
 方法一：和下一个节点值交换
+关键：把要删去的节点变成能获取到其前驱节点的节点即可（即node之后的任意节点都行）
 
 class Solution {
 public:
@@ -1728,6 +1729,54 @@ public:
 ## 数学
 
 ### Easy
+
+#### [1518. 换水问题](https://leetcode.cn/problems/water-bottles/)
+
+```cpp
+方法一：模拟
+
+class Solution {
+public:
+    int numWaterBottles(int numBottles, int numExchange) {
+        int drinkedBottles=numBottles;//已经喝到的水
+        int emptyBottles=drinkedBottles;//当前空水瓶数量
+
+        //只有当空水瓶数量大于交换1瓶水所需要的空水瓶数量时，才可以继续换水
+        while(emptyBottles>=numExchange){
+            //可以换到的水加入到已经喝到的水
+            drinkedBottles+=emptyBottles/numExchange;
+            //当前空瓶子数量=前一次交换水瓶后剩余的空水瓶+交换水瓶的数量(这次喝的)
+            emptyBottles=emptyBottles%numExchange+emptyBottles/numExchange;
+        }
+
+        return drinkedBottles;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(b/e)  其中b=numBottles,e=numExchange;
+空间复杂度：O(1);
+
+方法二：数学
+b=numBottles,e=numExchange
+1.一定可以喝到b瓶水，得到b个空水瓶
+2.每消耗e个空水瓶可以得到一瓶水（一个空水瓶），所以可以看作消耗(e-1)个空水瓶
+综上，b-n(e-1)>=e => n<=(b-e)/(e-1)，所以要找到最大的n，但此时空水瓶数量是>=e的，因此最终答案是b+n+1
+没有向老板借水的说法，所以不能欠老板水，因此最后一次换水时空水瓶数量应该大于等于e，而不能小于e，小于e就无法换水
+
+疑点：为什么不是b-n(e-1)>=0
+解释：因为不是有空水瓶就能换水，而是至少需要e个空水瓶才能换一瓶水，因此当空水瓶数量小于e时，就不用考虑换水了
+
+class Solution {
+public:
+    int numWaterBottles(int numBottles, int numExchange) {
+        int n=(numBottles-numExchange)/(numExchange-1);
+        return numBottles<numExchange?numBottles:numBottles+n+1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(1);
+空间复杂度：O(1);
+```
 
 
 
