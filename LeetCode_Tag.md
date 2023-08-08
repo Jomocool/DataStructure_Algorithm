@@ -1796,6 +1796,8 @@ public:
 
 ```cpp
 方法一：哈希表
+每个数都会有属于自己的循环数，所以用set记录当前n是否出现过，如果出现过，代表进入循环了，无法得到1，否则早退出了
+
 class Solution {
 public:
     int powSum(int n){
@@ -1823,6 +1825,90 @@ public:
 时空复杂度分析:
 时间复杂度：O(logn);
 空间复杂度：O(logn);
+```
+
+#### [205. 同构字符串](https://leetcode.cn/problems/isomorphic-strings/)
+
+![image-20230808223855470](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230808223855470.png)
+
+```cpp
+方法一：双向映射哈希表
+如果只有英文字母组合，那就用数组当哈希表即可，比如a映射b，就是vec['a'-'a']='b'。但是s和t是由任意有效的ASCII字符组成的
+
+思路：
+1.哈希表mp记录映射关系
+2.考虑不同字符映射到同一个字符的情况，所以相当于映射和被映射的字符是一对一的关系，因此需要另一张表记录反向映射
+
+class Solution {
+public:
+    bool isIsomorphic(string s, string t) {
+        if(s.length()!=t.length())return false;
+
+        unordered_map<char,char>mp_st;//s[i]->t[i]
+        unordered_map<char,char>mp_ts;//t[i]->s[i]
+        for(int i=0;i<s.length();i++){
+            if(!mp_st.count(s[i])){
+                //t[i]映射到s[i]，但是t[i]已经被映射过了，再被s[i]映射的话就不合规了
+                if(mp_ts.count(t[i]))return false;
+                //互相都没映射，首次建立映射关系
+                else{
+                    mp_st[s[i]]=t[i];
+                    mp_ts[t[i]]=s[i];
+                }
+            }else{
+                //对于主动映射字符s[i]就要检查是否映射多个字符了
+                //对于被映射的字符t[i]就要检查是否被多个字符映射了
+                //s[i]映射字母不等于t[i]或者t[i]映射字母不等于s[i](包括了t[i]无映射字母的情况)
+                if(mp_st[s[i]]!=t[i]||mp_ts[t[i]]!=s[i])return false;
+            }
+        }
+        return true;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [290. 单词规律](https://leetcode.cn/problems/word-pattern/)
+
+```cpp
+方法一：双向映射哈希表
+和205同构字符串类似，只不过是字符和字符串的爽想要映射，但是思路是一样的
+
+class Solution {
+public:
+    bool wordPattern(string pattern, string s) {
+        unordered_map<char,string>mp_ps;//pattern[i]->word
+        unordered_map<string,char>mp_sp;//word->pattern[i]
+
+        int i=0;
+        int j=0;
+        int m=pattern.length();
+        int n=s.length();
+        while(i<m&&j<n){
+            int start=j;//记录当前单词起始下标
+            while(j<n&&s[j]!=' ')j++;//遍历当前单词
+            string word=s.substr(start,j-start);//获取当前单词
+            //判断映射情况
+            if(!mp_ps.count(pattern[i])){
+                //pattern[i]没有映射字符串，但是当前单词已经被映射过了，再被pattern[i]映射的话就不合规了
+                if(mp_sp.count(word))return false;
+                //双向映射
+                mp_ps[pattern[i]]=word;
+                mp_sp[word]=pattern[i];
+            }else{
+                if(mp_ps[pattern[i]]!=word||mp_sp[word]!=pattern[i])return false;
+            }
+            i++;
+            j++;//跳过空格
+        }
+        return i>m-1&&j>n-1;//所有字符和单词的都映射完了，且合规
+    }
+};
+时空复杂度分析:
+时间复杂度：O(max(m,n));
+空间复杂度：O(m+n);
 ```
 
 
