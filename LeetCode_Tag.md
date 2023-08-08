@@ -1792,9 +1792,79 @@ public:
 
 ### Easy
 
+#### [202. 快乐数](https://leetcode.cn/problems/happy-number/)
+
+```cpp
+方法一：哈希表
+class Solution {
+public:
+    int powSum(int n){
+        int sum=0;
+        int digit=0;
+        while(n>0){
+            digit=n%10;
+            sum+=digit*digit;
+            n/=10;
+        }
+        return sum;
+    }
+
+    bool isHappy(int n) {
+        //记录过程中的n，如果重复出现代表进入循环了，返回false
+        unordered_set<int>s;
+        while(n!=1){
+            if(s.count(n))return false;
+            s.insert(n);
+            n=powSum(n);
+        }
+        return true;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(logn);
+```
+
 
 
 ### Medium
+
+#### [204. 计数质数](https://leetcode.cn/problems/count-primes/)
+
+```cpp
+方法一：埃氏筛
+定理：根据算数基本定理，所有合数都能够写成质数乘积的形式，意味着每个合数必然有一个质数因子
+关键：
+1.根据以上定理，由于因子一定小于等于自身，所以没被小于自身的质数乘积得到的话，就一定是质数了
+2.从平方i*i开始，不需要从i*2开始，因为已经被前面的质数处理过了
+
+class Solution {
+public:
+    int countPrimes(int n) {
+        //初始化所有小于n的数为质数
+        vector<bool>isPrime(n,true);
+        int cnt=0;
+        for(int i=2;i<n;i++){
+            if(isPrime[i]){
+                cnt++;
+                if((long long)i*i<n){
+                    //质数的倍数都是合数，标记为false
+                    for(int j=i*i;j<n;j+=i){
+                        isPrime[j]=false;
+                    }
+                }
+            }
+        }
+        return cnt;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nloglogn);
+空间复杂度：O(n);
+
+总结：
+从最小的质数2、3出发，其倍数就可以筛掉很多合数了，而不是这些倍数的数例如5、7、11、13……都是质数，然后再从这些质数出发（i*i出发，因为i*2开始的话都被前面的质数倍数处理完了，比如i*2是2的倍数，i*3是3的倍数，i*4是2的倍数，i*5是5的倍数，i*6是2的倍数，i*7是7的倍数，i*8是2的倍数，i*9是3的倍数……，而对于i*i，4、9、25、49……都是2、3、5、7自己本身的倍数，别的数处理不到）
+```
 
 
 
