@@ -1373,6 +1373,71 @@ public:
 总结：关键在于记录有几处不相同的地方，然后以2为分界线，分析各情况下交换两字符是否能够使二者相同
 ```
 
+#### [387. 字符串中的第一个唯一字符](https://leetcode.cn/problems/first-unique-character-in-a-string/)
+
+```cpp
+方法一：哈希表
+由于只有小写字母，所以可以用大小为26的数组记录索引
+
+思路：
+初始化数组数据为字符串长度，遍历字符串，第一次遇到的字符就记录下标，第二次遇到就标记为-1，这样就可以确定不是唯一字符了，然后再遍历数组，找到除了-1之外的最小值，就是唯一字符的下标了（不能在记录下标同时记录最小下标，因为可能没有唯一字符，全为-1）
+
+class Solution {
+public:
+    int firstUniqChar(string s) {
+        int n=s.length();
+        vector<int>vec_mp(26,n);
+        int min_Idx=n;
+
+        for(int i=0;i<n;i++){
+            if(vec_mp[s[i]-'a']==n){//第一次遇到s[i]，记录下标
+                vec_mp[s[i]-'a']=i;
+            }else{//不是第一次遇到s[i]
+                vec_mp[s[i]-'a']=-1;
+            }
+        }
+
+        for(int i=0;i<26;i++){
+            if(vec_mp[i]!=-1)min_Idx=min(min_Idx,vec_mp[i]);
+        }
+
+        return min_Idx==n?-1:min_Idx;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [594. 最长和谐子序列](https://leetcode.cn/problems/longest-harmonious-subsequence/)
+
+```cpp
+方法一：哈希表
+由于最大值和最小值的差值等于1，意味着序列中只能有两种数，x和x+1，所以用哈希表记录各个数出现的次数，然后遍历哈希表，如果key=x，那么其对应的子序列长度是mp[x]+mp[x+1]，即x和x+1出现的次数之和，如何没有x+1，则不考虑x
+
+卡点：
+我卡在了没有意识到对于最小值和最大值相差为1的序列，实际上只有两个值，即x和x+1，所以只需要记录各个数的词频即可
+
+class Solution {
+public:
+    int findLHS(vector<int>& nums) {
+        int maxLen=0;
+        unordered_map<int,int>mp;
+        for(auto&n:nums){
+            mp[n]++;
+        }
+        for(auto&pair:mp){
+            int x=pair.first;
+            if(mp.count(x+1))maxLen=max(maxLen,mp[x]+mp[x+1]);
+        }
+        return maxLen;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
 
 
 ### Medium
