@@ -1976,6 +1976,80 @@ public:
 空间复杂度：O(m+n);
 ```
 
+#### [599. 两个列表的最小索引总和](https://leetcode.cn/problems/minimum-index-sum-of-two-lists/)
+
+```cpp
+方法一：哈希表
+
+class Solution {
+public:
+    vector<string> findRestaurant(vector<string>& list1, vector<string>& list2) {
+        //以O(1)的时间获取list2中各餐厅和其下标
+        unordered_map<string,int>mp2;
+        for(int i=0;i<list2.size();i++){
+            mp2[list2[i]]=i;
+        }
+
+        int minIdxSum=INT_MAX;//最小下标和
+        vector<string>res;//结果集
+
+        for(int i=0;i<list1.size();i++){
+            string canteen=list1[i];
+            //如果list2有当前餐厅并且索引和更小，则清空结果集，重新加入餐厅
+            if(mp2.count(canteen)&&i+mp2[canteen]<minIdxSum){
+                minIdxSum=i+mp2[canteen];//更新最小索引和
+                res.clear();
+                res.push_back(canteen);
+            }
+            //如果list2有当前餐厅并且索引和相等，则直接加入餐厅
+            else if(mp2.count(canteen)&&i+mp2[canteen]==minIdxSum){
+                res.push_back(canteen);
+            }
+        }
+        
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(m+n);
+空间复杂度：O(m);
+其中m是list1的大小，n是list2的大小
+```
+
+#### [645. 错误的集合](https://leetcode.cn/problems/set-mismatch/)
+
+```cpp
+方法一：哈希表
+思路：
+用哈希表记录各个数值出现的频率，然后从1遍历到n，如果中间某个值对应的value是0，代表这是缺失的值；而如果value是2，代表这是重复出现的值
+
+class Solution {
+public:
+    vector<int> findErrorNums(vector<int>& nums) {
+        int n=nums.size();
+        int repeatVal=0;//重复值
+        int lostVal=0;//缺失值
+        unordered_map<int,int>mp;
+        for(auto&n:nums){
+            mp[n]++;
+        }
+
+        for(int i=1;i<=n;i++){
+            if(!mp.count(i))lostVal=i;
+            if(mp[i]==2)repeatVal=i;
+        }
+
+        return {repeatVal,lostVal};
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+一开始的错误想法：
+数组排序后，nums[i]应该等于i+1，如果不等，代表nums[i]是重复出现的值，并且i+1是丢失的整数。但实际上nums[i]不一定是重复出现的值。比如[1,3,4,5,5]，nums[1]!=1+1，会以为重复出现的值是3，但实际上重复出现的值是5，这是因为缺失的值和重复出现的值是没有任何关系的，都是随机的
+```
+
 
 
 ### Medium
