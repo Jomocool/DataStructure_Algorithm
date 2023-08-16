@@ -2050,6 +2050,52 @@ public:
 数组排序后，nums[i]应该等于i+1，如果不等，代表nums[i]是重复出现的值，并且i+1是丢失的整数。但实际上nums[i]不一定是重复出现的值。比如[1,3,4,5,5]，nums[1]!=1+1，会以为重复出现的值是3，但实际上重复出现的值是5，这是因为缺失的值和重复出现的值是没有任何关系的，都是随机的
 ```
 
+#### [884. 两句话中的不常见单词](https://leetcode.cn/problems/uncommon-words-from-two-sentences/)
+
+```cpp
+方法一：哈希表
+两张哈希表分别记录s1和s2个单词出现的次数
+
+class Solution {
+public:
+    vector<string> uncommonFromSentences(string s1, string s2) {
+        unordered_map<string,int>mp1;
+        unordered_map<string,int>mp2;
+        vector<string>res;
+
+        int index1=0;
+        while(index1<s1.length()){
+            int start=index1;
+            while(index1<s1.length()&&s1[index1]!=' ')index1++;
+            string word=s1.substr(start,index1-start);
+            mp1[word]++;
+            index1++;
+        }
+        int index2=0;
+        while(index2<s2.length()){
+            int start=index2;
+            while(index2<s2.length()&&s2[index2]!=' ')index2++;
+            string word=s2.substr(start,index2-start);
+            mp2[word]++;
+            index2++;
+        }
+
+        for(auto&p1:mp1){
+            if(p1.second==1&&!mp2.count(p1.first))res.push_back(p1.first);
+        }
+        for(auto&p2:mp2){
+            if(p2.second==1&&!mp1.count(p2.first))res.push_back(p2.first);
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n+m);
+空间复杂度：O(n+m);
+n是s1的长度，m是s2的长度
+```
+
 
 
 ### Medium
@@ -2089,6 +2135,106 @@ public:
 
 总结：
 从最小的质数2、3出发，其倍数就可以筛掉很多合数了，而不是这些倍数的数例如5、7、11、13……都是质数，然后再从这些质数出发（i*i出发，因为i*2开始的话都被前面的质数倍数处理完了，比如i*2是2的倍数，i*3是3的倍数，i*4是2的倍数，i*5是5的倍数，i*6是2的倍数，i*7是7的倍数，i*8是2的倍数，i*9是3的倍数……，而对于i*i，4、9、25、49……都是2、3、5、7自己本身的倍数，别的数处理不到）
+```
+
+#### [720. 词典中最长的单词](https://leetcode.cn/problems/longest-word-in-dictionary/)
+
+```cpp
+方法一：哈希集合
+关键：
+1.排序words，使得字典序小的单词在前，并且相似的单词聚在一起
+2.最长的单词必须是由单个字母累加而来的，比如world就必须由[w,wo,wor,worl,world]累加得到
+
+class Solution {
+public:
+    string longestWord(vector<string>& words) {
+        sort(words.begin(),words.end());//排序words
+        unordered_set<string>s;//记录有效的累加单词
+        s.insert("");//用于处理单字母删去一个字母后变为空字符串的情况
+        string res;//结果字符串
+        for(auto&word:words){
+            if(s.count(word.substr(0,word.size()-1))){
+                res=word.length()>res.length()?word:res;
+                s.insert(word);//能够从单字母累加上来的单词才是有效的，才能加入s中
+            }
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(n);
+
+方法二：字典树
+从根节点到叶子节点的一条路径代表着该条路径涉及的字母由上到下组合起来的单词是由单个字母一个一个字母累加而来的
+关键：
+1.每个节点维护一个大小为26的子节点数组children，因为由26个小写字母
+2.isEnd用于判断是否存在从根节点到当前节点组成的单词，方便判断下一个单词是否可以由当前单词累加一个字母得到
+
+class Trie{
+public:
+    Trie(){
+        this->children=vector<Trie*>(26,nullptr);
+        this->isEnd=false;
+    }
+
+    void insert(const string&word){
+        Trie*node=this;
+        for(const auto&c:word){
+            int index=c-'a';
+            if(node->children[index]==nullptr){
+                node->children[index]=new Trie();
+            }
+            node=node->children[index];
+        }
+        node->isEnd=true;
+    }
+
+    bool search(const string&word){
+        Trie*node=this;
+        for(const auto&c:word){
+            int index=c-'a';
+            //如果不存在字母c的路径或者该单词不是有其他单词添加一个字母而来的，返回false
+            /*
+            对于第二个条件：对于路径上所有节点(除叶子节点外)，isEnd必须都为true
+            因为既然是由其他单词累加一个字母得到，比如world，就必须存在单词[w,wo,wor,worl]
+            所以路径上的节点的isEnd由于在insert中的处理，都会被置为true
+            */
+            if(node->children[index]==nullptr||!node->children[index]->isEnd){
+                return false;
+            }
+            node=node->children[index];
+        }
+        return node!=nullptr&&node->isEnd;
+    }
+
+private:
+    vector<Trie*>children;
+    bool isEnd;
+};
+
+class Solution {
+public:
+    string longestWord(vector<string>& words) {
+        Trie trie;
+        for(auto& word:words){
+            trie.insert(word);
+        }
+        string res;
+        for(auto& word:words){
+            if(trie.search(word)){
+                if(word.length()>res.length()||word.length()==res.length()&&word<res){
+                    res=word;
+                }
+            }
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nm);
+空间复杂度：O(nm);
+n是words大小，m是最长words[i]的长度
 ```
 
 
