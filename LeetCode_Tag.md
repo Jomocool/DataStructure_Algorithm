@@ -2096,6 +2096,35 @@ public:
 n是s1的长度，m是s2的长度
 ```
 
+#### [1207. 独一无二的出现次数](https://leetcode.cn/problems/unique-number-of-occurrences/)
+
+```cpp
+方法一：哈希表+哈希集合
+由于只有2001个数，可以使用数组记录每个数的出现次数，再用哈希集合记录各出现次数然后找是否有重复的
+
+class Solution {
+public:
+    bool uniqueOccurrences(vector<int>& arr) {
+        int count[2001]={0};
+        for(auto&n:arr){
+            count[n+1000]++;
+        }
+
+        unordered_set<int>s;
+        for(int i=0;i<2001;i++){
+            if(count[i]==0)continue;//不算0
+            if(s.count(count[i]))return false;
+            s.insert(count[i]);
+        }
+
+        return true;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
 
 
 ### Medium
@@ -2235,6 +2264,40 @@ public:
 时间复杂度：O(nm);
 空间复杂度：O(nm);
 n是words大小，m是最长words[i]的长度
+```
+
+#### [970. 强整数](https://leetcode.cn/problems/powerful-integers/)
+
+```cpp
+方法一：枚举+哈希集合
+
+class Solution {
+public:
+    vector<int> powerfulIntegers(int x, int y, int bound) {
+        if(bound<2)return {};//x^i和y^i最小值是2
+        if(x==1){
+            if(y==1)return {2};//x，y都是1，只能得到2
+            else swap(x,y);//保证只能y是1，方便后面处理死循环
+        }
+
+        vector<int>res;//结果集
+        unordered_set<int>s;//记录已加入结果集的值，避免重复添加
+        for(int i=0;pow(x,i)<bound;i++){
+            for(int j=0;pow(x,i)+pow(y,j)<=bound;j++){
+                if(j>0&&y==1)break;//如果y==1，要注意避免死循环，因为1^n=1，处理一次就够了
+                int powSum=pow(x,i)+pow(y,j);
+                if(!s.count(powSum)){
+                    res.push_back(powSum);
+                    s.insert(powSum);
+                }
+            }
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O((logbound)^2);
+空间复杂度：O((logbound)^2);
 ```
 
 
