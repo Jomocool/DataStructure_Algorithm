@@ -2300,6 +2300,113 @@ public:
 空间复杂度：O((logbound)^2);
 ```
 
+#### [3. 无重复字符的最长子串](https://leetcode.cn/problems/longest-substring-without-repeating-characters/)
+
+```cpp
+方法一：滑动窗口+哈希集合
+思路：
+因为是找子串，所以需要一个滑动窗口来考虑所有可能的子串，而无重复字符就是滑动窗口变化的条件
+
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        unordered_set<char>st;//记录当前无重复子串中的字符
+        int maxLen=0;//如果是空字符串，不会进入while循环，直接返回0
+        int start=0;
+        int end=0;
+
+        while(end<s.length()){
+            //不断的加入新字符，直到有重复字符的出现
+            while(end<s.length()&&!st.count(s[end])){
+                st.insert(s[end]);
+                end++;
+            }
+            //当前s[end]是重复字符，s[start,end-1]子串是无重复字符子串
+            maxLen=max(maxLen,end-start);
+            //不断删去前面的字符，直到[start,end]中没有重复字符s[end]
+            while(start<end&&st.count(s[end])){
+                st.erase(s[start]);
+                start++;
+            }
+        }
+
+        return maxLen;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [215. 数组中的第K个最大元素](https://leetcode.cn/problems/kth-largest-element-in-an-array/)
+
+```cpp
+方法一：快排思想
+这里的快排思想是找一个pivot，然后小于pivot的在其右边，大于pivot的在其左边，函数partion返回值是排完序后的pivot所在下标，假设其当前下标是n，由于nums[0~n-1]虽然没排好序，但是都大于pivot，所以pivot就是nums第n+1大的值，因此要找第k大的值，只需要在某次partion时找到返回值为k-1的下标pos，此时nums[pos]就是nums第k大的值
+
+class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        int left=0,right=nums.size()-1;
+        int res=0;
+        while(left<=right){
+            int pos=partion(nums,left,right);
+            if(pos==k-1){
+                res=nums[pos];
+                break;
+            }else if(pos<k-1){
+                left=pos+1;
+            }else{
+                right=pos-1;
+            }
+        }
+        return res;
+    }
+
+private:
+    int partion(vector<int>&nums,int left,int right){
+        int pivot=nums[left];
+        int l=left+1,r=right;
+        while(l<=r){
+            if(nums[l]<pivot&&nums[r]>pivot){
+                swap(nums[l++],nums[r--]);
+            }
+            if(nums[l]>=pivot){
+                l++;
+            }
+            if(nums[r]<=pivot){
+                r--;
+            }
+        }
+        //此时nums[r]>=pivot而nums[l]<=pivot，由于pivot左边的元素要比其大，所以交换nums[r]过去
+        swap(nums[left],nums[r]);
+        //r是pivot当前的下标，代表着pivot是第r+1大的值
+        return r;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(logn);
+
+方法二：优先队列（小顶堆）
+
+class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        //小顶堆，维护k个元素，遍历玩nums后可以保证堆顶是第k大的数，因为数组中比其大的k-1个数都是堆里了
+        priority_queue<int,vector<int>,greater<int>>p_que;
+        for(auto&n:nums){
+            p_que.push(n);
+            if(p_que.size()>k)p_que.pop();
+        }
+        return p_que.top();
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(k);
+```
+
 
 
 ### Hard
