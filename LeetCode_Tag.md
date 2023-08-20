@@ -2389,6 +2389,7 @@ private:
 空间复杂度：O(logn);
 
 方法二：优先队列（小顶堆）
+维护数组nums中最大的k个数，其中这k个数中，最小的那个就是第k大的数。过程中如果队列元素数量超过k个，删掉最小的那个，因为此时队列中有k+1个数，他都比其他k个数小，至多只可能是第k+1大的数，不可能是第k大的数
 
 class Solution {
 public:
@@ -2405,6 +2406,95 @@ public:
 时空复杂度分析:
 时间复杂度：O(n);
 空间复杂度：O(k);
+```
+
+#### [347. 前 K 个高频元素](https://leetcode.cn/problems/top-k-frequent-elements/)
+
+```cpp
+方法一：优先队列+哈希表
+class Solution {
+public:
+    //自定义比大小
+    struct cmp{
+        bool operator()(pair<int,int>&p1,pair<int,int>&p2){
+            return p1.second>p2.second;
+        }
+    };
+
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        unordered_map<int,int>mp;//记录元素词频
+        priority_queue<pair<int,int>,vector<pair<int,int>>,cmp>pq;//存储前k个高频次所对应的元素
+        vector<int>res;//结果集
+
+        //记录词频
+        for(auto& n:nums){
+            mp[n]++;
+        }
+
+        //维护前k个高频元素
+        for(auto& pair:mp){
+            pq.push(pair);
+            if(pq.size()>k)pq.pop();
+        }
+
+        //遍历小顶堆，将元素加入结果集中
+        while(!pq.empty()){
+            res.push_back(pq.top().first);
+            pq.pop();
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogk);
+空间复杂度：O(n);
+```
+
+#### [380. O(1) 时间插入、删除和获取随机元素](https://leetcode.cn/problems/insert-delete-getrandom-o1/)
+
+```cpp
+方法一：哈希表+数组
+哈希表：key存储元素值，value值可以存储各元素对应索引
+数组：方便通过取模来获取随机数，删除元素时，可以通过哈希表获取元素对应索引，然后将该值和最后一个值交换，最后再删去最后一个元素即可
+
+class RandomizedSet {
+public:
+    RandomizedSet() {
+        //随机数随时间而变
+        srand((unsigned)time(NULL));
+    }
+    
+    bool insert(int val) {
+        if(mp.count(val))return false;//已存在，返回false
+        int idx=nums.size();//新元素下标
+        nums.emplace_back(val);
+        mp[val]=idx;//记录新元素及其对应下标
+        return true;
+    }
+    
+    bool remove(int val) {
+        if(!mp.count(val))return false;//如果不存在val，返回false
+        int idx=mp[val];//获取val下标
+        int last=nums.back();//获取数组最后一个值
+        nums[idx]=last;//将最后一个值备份到即将删去的元素所在下标
+        mp[last]=idx;//并更新最后一个元素的下标
+        nums.pop_back();//删去最后一个元素，val被最后一个元素覆盖，直接删去最后一个元素即可
+        mp.erase(val);//哈希表中也删去val对应的记录
+        return true;
+    }
+    
+    int getRandom() {
+        //通过对数组大小随机取模获取到0~nums.size()-1的数，这样每个下标被得到的概率是相同的
+        return nums[rand()%nums.size()];
+    }
+
+private:
+    vector<int>nums;
+    unordered_map<int,int>mp;
+};
+
+本题的关键在于用数组存储元素，哈希表记录元素及其对应下标，这样可以通过常数时间获取到元素下标，然后通过其和最后一个元素交换，最后直接删去最后一个元素即可，
 ```
 
 
