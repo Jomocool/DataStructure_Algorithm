@@ -2412,6 +2412,13 @@ public:
 
 ```cpp
 方法一：优先队列+哈希表
+优先队列：左边是队尾，右边是队头
+小根堆：左大右小
+大根堆：左小右大
+求前K大：要把小的删去，队列只能删队头，所以小的在队头，即在右边，因此是小根堆，p1在p2左边，所以排序算法是p1.second>p2.second
+求前K小：要把大的删去，队列只能删队头，所以大的值在队头，即右边，因此是大根堆，p1在p2左边，所以排序算法是p1.second<p2.second
+关键：把队列想象成队尾在左，队头在右，即左进右出。队头就代表着大小根堆的根
+
 class Solution {
 public:
     //自定义比大小
@@ -2495,6 +2502,94 @@ private:
 };
 
 本题的关键在于用数组存储元素，哈希表记录元素及其对应下标，这样可以通过常数时间获取到元素下标，然后通过其和最后一个元素交换，最后直接删去最后一个元素即可，
+```
+
+#### [451. 根据字符出现频率排序](https://leetcode.cn/problems/sort-characters-by-frequency/)
+
+```cpp
+方法一：哈希表+优先队列
+
+class Solution {
+public:
+    struct compare{
+        bool operator()(const pair<char,int>&p1,const pair<char,int>&p2){
+            return p1.second<p2.second;
+        }
+    };
+
+    string frequencySort(string s) {
+        unordered_map<char,int>mp;
+        priority_queue<pair<char,int>,vector<pair<char,int>>,compare>pq;
+        string res;
+
+        for(char&c:s){
+            mp[c]++;
+        }
+
+        for(auto&pair:mp){
+            pq.push(pair);
+        }
+
+        while(!pq.empty()){
+            res+=string(pq.top().second,pq.top().first);
+            pq.pop();
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n+klogk);
+空间复杂度：O(n+k);
+```
+
+#### [648. 单词替换](https://leetcode.cn/problems/replace-words/)
+
+```cpp
+方法一：哈希集合
+哈希集合可以保证常数时间验证词根
+
+class Solution {
+public:
+    string replaceWords(vector<string>& dictionary, string sentence) {
+        string res;
+        unordered_set<string>st(dictionary.begin(),dictionary.end());
+        int n=sentence.length();
+
+        int idx=0;
+        while(idx<n){
+            string word;
+            //遍历当前单词，看是否有对应词根，并且由于是一个个从短到长，可以保证是最短词根
+            while(idx<n&&sentence[idx]!=' '){
+                word.push_back(sentence[idx]);
+                //word是词根，词根后面的字母就可以直接跳过了
+                if(st.count(word)){
+                    res+=word+" ";
+                    while(idx<n&&sentence[idx]!=' ')idx++;
+                    idx++;//越过空格，或者保证处理完最后一个具有词根的单词后，idx是n+1，方便后面判断
+                    break;
+                }
+                idx++;
+            }
+			
+            //如果idx==n+1，说明最后一个单词具有词根，已经处理完了，直接break
+            if(idx==n+1)break;
+
+            //1.不是最后一个单词，则sentence[idx]==' '
+            //2.是最后一个单词，则idx==n，如果idx=n+1说明最后一个单词具有词根，不用在这处理
+            if(idx==n||sentence[idx]==' '){//越界的先在前面判断
+                res+=word+" ";
+                idx++;
+            }
+        }
+
+        res.pop_back();//删去最后一个多余的空格
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(m);
 ```
 
 
