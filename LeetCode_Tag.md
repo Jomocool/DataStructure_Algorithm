@@ -2522,7 +2522,7 @@ public:
         priority_queue<pair<char,int>,vector<pair<char,int>>,compare>pq;
         string res;
 
-        for(char&c:s){
+        for(auto&c:s){
             mp[c]++;
         }
 
@@ -2531,7 +2531,9 @@ public:
         }
 
         while(!pq.empty()){
-            res+=string(pq.top().second,pq.top().first);
+            char c=pq.top().first;
+            int count=pq.top().second;
+            res+=string(count,c);
             pq.pop();
         }
 
@@ -2571,13 +2573,16 @@ public:
                 }
                 idx++;
             }
+            //退出循环有三种情况：
+            //1.idx==n (最后一个单词 但word还未处理)
+            //2.sentence[idx]==' ' (word还未处理)
+            //3.idx==n+1 (最后一个单词 且word已处理)
 			
             //如果idx==n+1，说明最后一个单词具有词根，已经处理完了，直接break
             if(idx==n+1)break;
-
             //1.不是最后一个单词，则sentence[idx]==' '
             //2.是最后一个单词，则idx==n，如果idx=n+1说明最后一个单词具有词根，不用在这处理
-            if(idx==n||sentence[idx]==' '){//越界的先在前面判断
+            else if(idx==n||sentence[idx]==' '){//越界的先在前面判断
                 res+=word+" ";
                 idx++;
             }
@@ -2590,6 +2595,75 @@ public:
 时空复杂度分析:
 时间复杂度：O(n);
 空间复杂度：O(m);
+```
+
+#### [692. 前K个高频单词](https://leetcode.cn/problems/top-k-frequent-words/)
+
+```cpp
+方法一：哈希表
+
+class Solution {
+public:
+    bool static compare(const pair<string,int>&p1,const pair<string,int>&p2){
+        if(p1.second==p2.second)return p1.first<p2.first;
+        return p1.second>p2.second;
+    }
+
+    vector<string> topKFrequent(vector<string>& words, int k) {
+        unordered_map<string,int>mp(words.size());
+        for(auto&word:words)mp[word]++;
+
+        vector<pair<string,int>>vec(mp.begin(),mp.end());
+        sort(vec.begin(),vec.end(),compare);
+
+        vector<string>res;
+        res.reserve(k);
+        auto beg=vec.begin();
+
+        while(k--){
+            res.push_back(beg->first);
+            beg++;
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogk);
+空间复杂度：O(n);
+```
+
+#### [718. 最长重复子数组](https://leetcode.cn/problems/maximum-length-of-repeated-subarray/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int findLength(vector<int>& nums1, vector<int>& nums2) {
+        int n=nums1.size();
+        int m=nums2.size();
+
+        //dp[i][j]:nums1[0,i)和nums2[0,j)的最长公共子数组长度，且各子数组必须以nums1[i-1]、nums2[j-1]结尾
+        vector<vector<int>>dp(n+1,vector<int>(m+1,0));
+        int maxLen=0;
+
+        for(int i=1;i<=n;i++){
+            for(int j=1;j<=m;j++){
+                if(nums1[i-1]==nums2[j-1]){
+                    dp[i][j]=dp[i-1][j-1]+1;
+                    maxLen=max(maxLen,dp[i][j]);
+                }
+                //不相等的话就不连续了，而子数组是默认连续的，因此就是0
+            }
+        }
+
+        return maxLen;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nm);
+空间复杂度：O(nm);
 ```
 
 
