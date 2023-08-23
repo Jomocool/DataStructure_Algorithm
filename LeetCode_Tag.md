@@ -2631,9 +2631,51 @@ public:
 时空复杂度分析:
 时间复杂度：O(nlogk);
 空间复杂度：O(n);
+
+方法二：优先队列+哈希表
+class Solution {
+public:
+    struct compare{
+        bool operator()(const pair<string,int>&p1,const pair<string,int>&p2){
+            if(p1.second==p2.second)return p1.first>p2.first;
+            return p1.second<p2.second;
+        }
+    };
+
+    vector<string> topKFrequent(vector<string>& words, int k) {
+        unordered_map<string,int>mp;
+        priority_queue<pair<string,int>,vector<pair<string,int>>,compare>pq;
+        vector<string>res;
+
+        for(auto&word:words){
+            mp[word]++;
+        }
+
+        for(auto&pair:mp){
+            pq.push(pair);
+        }
+		
+        //由于是取k次优先队列头（而没有删除），所以频次大的或同频次但字典序小的要放在右边，因此要注意排序规则
+        while(k--){
+            res.emplace_back(pq.top().first);
+            pq.pop();
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogk);
+空间复杂度：O(n);
 ```
 
 #### [718. 最长重复子数组](https://leetcode.cn/problems/maximum-length-of-repeated-subarray/)
+
+> `数组或字符串的动态规划为什么状态表的含义都必须是以某个特定的元素作为截止元素？`
+>
+> 在动态规划中，状态表的含义以特定的元素作为截止元素，是为了将问题分解成子问题，并且避免重复计算。动态规划常用于解决具有重叠子问题特性的问题，通过存储子问题的结果，可以避免重复计算，提高算法的效率。
+>
+> 比如，对于数组nums1{3,2,1,4}和nums2{3,2,1,0}，要找它们的最长重复子数组长度，就可以先找{3,2,1}和{3,2,1}的最长重复子数组长度，依次类推下去，就把原本需要重复计算的结果记录下来。对于原始数组nums1和nums2分别是以各自的最后一个元素结尾，而对于子问题{3,2,1}和{3,2,1}也必须以各自的最后一个元素结尾才是等价的子问题，这就是为什么状态表的涵义都必须是以某个元素作为最后一个元素处理，因为不能擅自改变原始数据
 
 ```cpp
 方法一：动态规划
@@ -2643,15 +2685,21 @@ public:
     int findLength(vector<int>& nums1, vector<int>& nums2) {
         int n=nums1.size();
         int m=nums2.size();
-
-        //dp[i][j]:nums1[0,i)和nums2[0,j)的最长公共子数组长度，且各子数组必须以nums1[i-1]、nums2[j-1]结尾
+        
+		//经典套路：
+        //dp[i][j]:以nums1[i-1]结尾的子数组和以nums2[j-1]结尾的子数组的最长公共子数组长度
+        
+        //必须准确地考虑到以每一个数字结尾的情况，这样才能处理到所有的情况
+        //如果是按照子数组nums1[0,i-1]和子数组nums2[0,j-1]最长公共子数组长度来理解，
+        //dp[i][j]意义不清，因为不是求子序列，而是子数组，没有删除元素这一说法，必须是连续的，
+        //所以需要确切的结尾元素来区分各dp[i][j]的涵义
         vector<vector<int>>dp(n+1,vector<int>(m+1,0));
         int maxLen=0;
 
         for(int i=1;i<=n;i++){
             for(int j=1;j<=m;j++){
                 if(nums1[i-1]==nums2[j-1]){
-                    dp[i][j]=dp[i-1][j-1]+1;
+                    dp[i][j]=dp[i-1][j-1]+1;//子数组必须是连续的，所以看这两个子数组之前是否也相同
                     maxLen=max(maxLen,dp[i][j]);
                 }
                 //不相等的话就不连续了，而子数组是默认连续的，因此就是0
@@ -2676,9 +2724,81 @@ public:
 
 ### Easy
 
+#### [69. x 的平方根](https://leetcode.cn/problems/sqrtx/)
+
+```cpp
+方法一：二分法
+
+class Solution {
+public:
+    int mySqrt(int x) {
+       int left=1;
+       int right=x;
+
+       while(left<=right){
+           int mid=left+((right-left)>>1);
+           if((long)mid*mid==x){//转成long，防止溢出
+               return mid;
+           }
+           //mid只能处于[left,right]范围内，当前范围都是经过过前面的筛选后得到的
+           //因此小于left或大于right，都不是最终答案，因为其平方要么过小、要么过大
+           
+           //left==right时，mid=left=right，如果mid*mid!=x，即将退出循环，会有以下两种情况：
+           //1.mid*mid>x:right=mid-1后，此时right*right<x，但是(right+1)*(right+1)>x，返回right
+           //2.mid*mid<x:left=mid+1后，此时left*left>x，但是(left-1)*(left-1)>x，应当返回left-1
+           //  刚好等于right
+           //所以退出循环后，应当返回right
+           else if((long)mid*mid>x){
+               right=mid-1;
+           }else{
+               left=mid+1;
+           }
+       }
+       
+       //退出循环后，right<left，返回小的那个；如果返回大的left，left*left>x，不符合题意
+       return right;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logx);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
+
+#### [167. 两数之和 II - 输入有序数组](https://leetcode.cn/problems/two-sum-ii-input-array-is-sorted/)
+
+```cpp
+方法一：双指针
+
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& numbers, int target) {
+        int left=0;
+        int right=numbers.size()-1;
+        vector<int>res;
+
+        while(left<right){//保证left和right不等， 即不会重复使用同一个元素
+            int sum=numbers[left]+numbers[right];
+            if(sum==target){
+                res={left+1,right+1};
+                break;
+            }else if(sum<target){//过小
+                left++;
+            }else{//过大
+                right--;
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
 
 
 
