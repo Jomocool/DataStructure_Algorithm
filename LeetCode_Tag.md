@@ -2798,6 +2798,34 @@ public:
 时空复杂度分析:
 时间复杂度：O(n);
 空间复杂度：O(1);
+
+方法二：二分查找
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& numbers, int target) {
+        for(int i=0;i<numbers.size();i++){
+            //left=i+1:保证在i后面找到对应值，避免重复使用同一元素，同时保证mid>i
+            //一开始我是在整个numbers寻找target-numbers[i]，但这样会出现的问题：
+            //1.重复计算了，因为numbers[0,i-1]的元素肯定都和numbers[i]匹配过了
+            //2.由于有相同值的情况，而如果是在整个numbers使用二分查找，每次返回的都是同一个下标，不好区分
+            int left=i+1,right=numbers.size()-1;
+            while(left<=right){
+                int mid=left+((right-left)>>1);
+                if(numbers[mid]+numbers[i]==target){
+                    return {i+1,mid+1};
+                }else if(numbers[mid]+numbers[i]<target){
+                    left=mid+1;
+                }else{
+                    right=mid-1;
+                }
+            }
+        }
+        return {-1,-1};
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(1);
 ```
 
 
