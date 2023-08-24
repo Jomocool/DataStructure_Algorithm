@@ -2764,6 +2764,65 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [278. 第一个错误的版本](https://leetcode.cn/problems/first-bad-version/)
+
+```cpp
+方法一：二分查找
+
+// The API isBadVersion is defined for you.
+// bool isBadVersion(int version);
+
+class Solution {
+public:
+    int firstBadVersion(int n) {
+        int low=1;
+        int high=n;
+        while(low<high){
+            int mid=low+((high-low)>>1);
+            if(isBadVersion(mid)){
+                high=mid;//继续向前判断前面是否有更小的错误版本
+            }else{
+                low=mid+1;
+            }
+        }
+        return high;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
+#### [350. 两个数组的交集 II](https://leetcode.cn/problems/intersection-of-two-arrays-ii/)
+
+```cpp
+方法一：哈希表
+
+class Solution {
+public:
+    vector<int> intersect(vector<int>& nums1, vector<int>& nums2) {
+        unordered_map<int,int>mp1;
+        unordered_map<int,int>mp2;
+        vector<int>res;
+
+        for(auto&n:nums1)mp1[n]++;
+        for(auto&n:nums2)mp2[n]++;
+
+        for(auto&p1:mp1){
+            if(mp2.count(p1.first)){
+                int cnt=min(p1.second,mp2[p1.first]);
+                res.insert(res.end(),cnt,p1.first);
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(m+n);
+空间复杂度：O(m+n);
+```
+
 
 
 ### Medium
