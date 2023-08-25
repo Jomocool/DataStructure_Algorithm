@@ -2823,6 +2823,97 @@ public:
 空间复杂度：O(m+n);
 ```
 
+#### [367. 有效的完全平方数](https://leetcode.cn/problems/valid-perfect-square/)
+
+```cpp
+方法一：二分查找
+
+class Solution {
+public:
+    bool isPerfectSquare(int num) {
+        int low=1;
+        int high=num;
+        while(low<=high){
+            int mid=low+((high-low)>>1);
+            if((long)mid*mid==num){
+                return true;
+            }else if((long)mid*mid<num){
+                low=mid+1;
+            }else{
+                high=mid-1;
+            }
+        }
+        return false;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
+#### [374. 猜数字大小](https://leetcode.cn/problems/guess-number-higher-or-lower/)
+
+```cpp
+方法一：二分查找
+
+/** 
+ * Forward declaration of guess API.
+ * @param  num   your guess
+ * @return 	     -1 if num is higher than the picked number
+ *			      1 if num is lower than the picked number
+ *               otherwise return 0
+ * int guess(int num);
+ */
+
+class Solution {
+public:
+    int guessNumber(int n) {
+        int low=1;
+        int high=n;
+        while(low<=high){
+            int num=low+((high-low)>>1);
+            if(guess(num)==0){
+                return num;
+            }else if(guess(num)==1){
+                low=num+1;
+            }else{
+                high=num-1;
+            }
+        }
+        return -1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
+#### [392. 判断子序列](https://leetcode.cn/problems/is-subsequence/)
+
+```cpp
+方法一：一次遍历
+
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        int sIdx=0;
+        int tIdx=0;
+        int m=s.length();
+        int n=t.length();
+        while(tIdx<n){
+            //如果当前t[tIdx]和s[sIdx]匹配，就后移sIdx，去匹配下一个
+            if(s[sIdx]==t[tIdx])sIdx++;
+            if(sIdx==m)return true;//s的所有字符都被按序匹配完了，就说明s是t的子序列
+            tIdx++;//无论匹不匹配，tIdx都要后移，不匹配就相当于删去当前t[tIdx]，不考虑它
+        }
+        return m==0;//空字符串必然是t的子序列
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
