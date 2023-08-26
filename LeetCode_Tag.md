@@ -2891,7 +2891,7 @@ public:
 #### [392. 判断子序列](https://leetcode.cn/problems/is-subsequence/)
 
 ```cpp
-方法一：一次遍历
+方法一：双指针
 
 class Solution {
 public:
@@ -2911,6 +2911,36 @@ public:
 };
 时空复杂度分析:
 时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [441. 排列硬币](https://leetcode.cn/problems/arranging-coins/)
+
+```cpp
+方法一：二分查找
+利用等差数列求和公式，能够以常数时间获取到n个完整行的总硬币数
+
+class Solution {
+public:
+    int arrangeCoins(int n) {
+        int low=1;
+        int high=n;
+        while(low<=high){
+            int mid=low+((high-low)>>1);
+            //mid*(mid+1)/2:mid个完整行的硬币数量
+            if((long)mid*(mid+1)/2==n){
+                return mid;
+            }else if((long)mid*(mid+1)/2<n){
+                low=mid+1;
+            }else{
+                high=mid-1;
+            }
+        }
+        return high;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
 空间复杂度：O(1);
 ```
 
@@ -2971,6 +3001,38 @@ public:
             }
         }
         return {-1,-1};
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(1);
+```
+
+#### [475. 供暖器](https://leetcode.cn/problems/heaters/)
+
+```cpp
+方法一：排序+二分查找
+思路：
+排序heaters数组，遍历houses数组，依次找到每个房屋左边和右边最近的加热器，计算房屋与这两个加热器的距离，其中最小值是可覆盖"当前房屋"的最小半径，即加热器的加热半径至少要是这个值，当前房屋才能被覆盖，而对于所有房屋的最小覆盖半径中的最大值，就是整个heaters数组能够覆盖整个houses数组的最小值
+
+class Solution {
+public:
+    int findRadius(vector<int>& houses, vector<int>& heaters) {
+        int minRadius=0;
+        int n=heaters.size();
+        sort(heaters.begin(),heaters.end());
+        
+        for(int& house:houses){
+            int right=upper_bound(heaters.begin(),heaters.end(),house)-heaters.begin();//house右边最近的加热器
+            int left=right-1;//house左边最近的加热器
+            //right>=n，house右边没有加热器
+            int rightDistance = right>=n?INT_MAX:heaters[right]-house;
+            //left<=-1，house左边没有加热器
+            int leftDistance = left<0?INT_MAX:house-heaters[left];
+
+            minRadius=max(minRadius,min(leftDistance,rightDistance));
+        }
+        return minRadius;
     }
 };
 时空复杂度分析:
