@@ -2982,25 +2982,19 @@ public:
     char nextGreatestLetter(vector<char>& letters, char target) {
         int left=0;
         int right=letters.size()-1;
-        if(letters[right]<=target)return letters[0];//最大的字符都小于等于target
-        while(left<=right){//带=的条件好判断最后的情况
-            //left==right:
-            //肯定是left左边和right右边的字母不符合条件才会收缩成[left,right]
-            //再根据letters[mid]来判断当前mid是处于<=的那部分还是>那部分
-            //mid=left=right
-            //1.letters[mid]<=target，则letters[mid+1]必然大于target，且是最小的字母。而left=mid+1,
-            //2.letters[mid]>target，则letters[mid-1]必然小于等于target，则当前letters[mid]就是大于target的最小字母，而
-            //  right=mid-1，left=mid
-            //综上：letters[left]是大于target的最小字母
+        while(left<=right){
             int mid=left+((right-left)>>1);
             if(letters[mid]<=target){
                 left=mid+1;
             }else{
+                //letters[mid]>target，不能简单地就让right=mid-1，因为我们要找的字母也是大于target的，所以需要判断其是否满足条件
+                //判断mid前一个(如果存在)字母是否小于等于target，如果是，当前mid对应字母就符合要求了
+                if(mid>0&&letters[mid-1]<=target)return letters[mid];
                 right=mid-1;
             }
         }
-        //退出循环后，left>right，此时的letters[right]<=target，而letters[left]是大于target的最小字符
-        return letters[left];
+        //while循环中都没有返回结果，说明不存在或者target<=letters[0]，都返回letters[0]
+        return letters[0];
     }
 };
 时空复杂度分析:
