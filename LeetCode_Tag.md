@@ -2944,6 +2944,70 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [704. 二分查找](https://leetcode.cn/problems/binary-search/)
+
+```cpp
+方法一：二分查找
+
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left=0;
+        int right=nums.size()-1;
+        while(left<=right){
+            int mid=left+((right-left)>>1);
+            if(nums[mid]==target){
+                return mid;
+            }else if(nums[mid]<target){
+                left=mid+1;
+            }else{
+                right=mid-1;
+            }
+        }
+        return -1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
+#### [744. 寻找比目标字母大的最小字母](https://leetcode.cn/problems/find-smallest-letter-greater-than-target/)
+
+```cpp
+方法一：二分查找
+
+class Solution {
+public:
+    char nextGreatestLetter(vector<char>& letters, char target) {
+        int left=0;
+        int right=letters.size()-1;
+        if(letters[right]<=target)return letters[0];//最大的字符都小于等于target
+        while(left<=right){//带=的条件好判断最后的情况
+            //left==right:
+            //肯定是left左边和right右边的字母不符合条件才会收缩成[left,right]
+            //再根据letters[mid]来判断当前mid是处于<=的那部分还是>那部分
+            //mid=left=right
+            //1.letters[mid]<=target，则letters[mid+1]必然大于target，且是最小的字母。而left=mid+1,
+            //2.letters[mid]>target，则letters[mid-1]必然小于等于target，则当前letters[mid]就是大于target的最小字母，而
+            //  right=mid-1，left=mid
+            //综上：letters[left]是大于target的最小字母
+            int mid=left+((right-left)>>1);
+            if(letters[mid]<=target){
+                left=mid+1;
+            }else{
+                right=mid-1;
+            }
+        }
+        //退出循环后，left>right，此时的letters[right]<=target，而letters[left]是大于target的最小字符
+        return letters[left];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
