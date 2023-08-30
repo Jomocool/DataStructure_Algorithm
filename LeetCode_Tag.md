@@ -3098,6 +3098,128 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [29. 两数相除](https://leetcode.cn/problems/divide-two-integers/)
+
+```cpp
+方法一：类二分查找
+思路：
+1.判断边界情况
+2.统一符号，都是负数。为什么不是正数？：INT_MIN转为正数为溢出
+
+class Solution {
+public:
+    int divide(int dividend, int divisor) {
+        //判断边界情况，即被除数和除数各自等于INT_MAX、INT_MIN的情况
+        //dividend==INT_MAX，无论divisor等于何值，结果都不会溢出
+        //divisor==INT_MAX||divisor==INT_MIN，结果都不会溢出
+        //因此只需判断dividned==INT_MIN时的情况
+        if(dividend==INT_MIN){
+            if(divisor==-1)return INT_MAX;
+            else if(divisor==1)return INT_MIN;
+            else if(divisor==INT_MIN)return 1;
+            else if(divisor==INT_MAX)return -1;
+        }
+
+        //被除数是0，结果都等于0
+        if(dividend==0)return 0;
+
+        //统一符号
+        bool flag=(dividend>0)^(divisor>0);//结果是否为负
+        if(dividend>0){
+            dividend=-dividend;
+        }
+        if(divisor>0){
+            divisor=-divisor;
+        }
+
+        //abs(dividend)<abs(divisor)，返回0
+        if(dividend>divisor)return 0;
+
+        int res=0;
+        vector<int>candidates;
+        candidates.push_back(divisor);
+        //注意溢出：提前判断
+        while(candidates.back()>=dividend-candidates.back()){
+            //1、10、100、1000……
+            candidates.push_back(candidates.back()+candidates.back());
+        }
+        
+        //从大到小，尽可能除尽
+        for(int i=candidates.size()-1;i>=0;i--){
+            if(dividend<=candidates[i]){
+                res+=(1<<i);
+                dividend-=candidates[i];
+            }
+        }
+
+        return flag?-res:res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(logn);
+n=dividend
+
+方法二：位运算
+
+```
+
+#### [34. 在排序数组中查找元素的第一个和最后一个位置](https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/)
+
+```cpp
+方法一：二分查找
+
+class Solution {
+public:
+    //最右边
+    int rightBinarySearch(vector<int>&nums,int target){
+        int left=0;
+        int right=nums.size()-1;
+        while(left<=right){
+            int mid=left+((right-left)>>1);
+            if(nums[mid]==target){
+                if(mid==nums.size()-1||nums[mid+1]>target)return mid;
+                left=mid+1;
+            }else if(nums[mid]<target){
+                left=mid+1;
+            }else{
+                if(mid>0&&nums[mid-1]==target)return mid-1;
+                right=mid-1;
+            }
+        }
+        return -1;
+    }
+	
+    //最左边
+    int leftBinarySearch(vector<int>&nums,int target){
+        int left=0;
+        int right=nums.size()-1;
+        while(left<=right){
+            int mid=left+((right-left)>>1);
+            if(nums[mid]==target){
+                if(mid==0||nums[mid-1]<target)return mid;
+                right=mid-1;
+            }else if(nums[mid]>target){
+                right=mid-1;
+            }else{
+                if(mid<nums.size()-1&&nums[mid+1]==target)return mid+1;
+                left=mid+1;
+            }
+        }
+        return -1;
+    }
+
+    vector<int> searchRange(vector<int>& nums, int target) {
+        int leftPos=leftBinarySearch(nums,target);
+        int rightPos=rightBinarySearch(nums,target);
+        return{leftPos,rightPos};
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
 
 
 ### Hard
