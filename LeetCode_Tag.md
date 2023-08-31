@@ -3109,42 +3109,22 @@ public:
 class Solution {
 public:
     int divide(int dividend, int divisor) {
-        //判断边界情况，即被除数和除数各自等于INT_MAX、INT_MIN的情况
-        //dividend==INT_MAX，无论divisor等于何值，结果都不会溢出
-        //divisor==INT_MAX||divisor==INT_MIN，结果都不会溢出
-        //因此只需判断dividned==INT_MIN时的情况
-        if(dividend==INT_MIN){
-            if(divisor==-1)return INT_MAX;
-            else if(divisor==1)return INT_MIN;
-            else if(divisor==INT_MIN)return 1;
-            else if(divisor==INT_MAX)return -1;
-        }
-
-        //被除数是0，结果都等于0
         if(dividend==0)return 0;
+        if(dividend==INT_MIN&&divisor==-1)return INT_MAX;
+        if(dividend==INT_MIN&&divisor==1)return INT_MIN;//由于res是正数，暂时可能会是INT_MAX+1，溢出了，所以提前判断
 
-        //统一符号
-        bool flag=(dividend>0)^(divisor>0);//结果是否为负
-        if(dividend>0){
-            dividend=-dividend;
-        }
-        if(divisor>0){
-            divisor=-divisor;
-        }
-
-        //abs(dividend)<abs(divisor)，返回0
-        if(dividend>divisor)return 0;
+        bool isNeg=(dividend>0)^(divisor>0);
+        if(dividend>0)dividend=-dividend;
+        if(divisor>0)divisor=-divisor;
 
         int res=0;
         vector<int>candidates;
         candidates.push_back(divisor);
-        //注意溢出：提前判断
+        //1/10/100/1000……(二进制)个divisor
         while(candidates.back()>=dividend-candidates.back()){
-            //1、10、100、1000……
             candidates.push_back(candidates.back()+candidates.back());
         }
         
-        //从大到小，尽可能除尽
         for(int i=candidates.size()-1;i>=0;i--){
             if(dividend<=candidates[i]){
                 res+=(1<<i);
@@ -3152,7 +3132,7 @@ public:
             }
         }
 
-        return flag?-res:res;
+        return isNeg?-res:res;
     }
 };
 时空复杂度分析:
@@ -3161,7 +3141,34 @@ public:
 n=dividend
 
 方法二：位运算
+class Solution {
+public:
+    int divide(int dividend, int divisor) {
+        if(dividend==0)return 0;
+        if(dividend==INT_MIN&&divisor==-1)return INT_MAX;
 
+        long x=dividend;
+        long y=divisor;
+
+        bool isNeg=(x>0)^(y>0);
+        //转成正数，因为负数的符号位1，在右移完之后，会被当作值来处理，影响结果。
+        if(x<0)x=-x;
+        if(y<0)y=-y;
+
+        long res=0;
+        for(int i=31;i>=0;i--){
+            if((x>>i)>=y){//x有2^i个y
+                res+=(1<<i);
+                x-=y<<i;
+            }
+        }
+
+        return isNeg?-res:res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(1);
+空间复杂度：O(1);
 ```
 
 #### [34. 在排序数组中查找元素的第一个和最后一个位置](https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/)
@@ -3213,6 +3220,91 @@ public:
         int leftPos=leftBinarySearch(nums,target);
         int rightPos=rightBinarySearch(nums,target);
         return{leftPos,rightPos};
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
+#### [153. 寻找旋转排序数组中的最小值](https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/)
+
+```cpp
+方法一：二分查找
+关键：
+找到区分左右递增子数组的元素，即nums[0]和nums[n-1]，其实只要找到两子数组的最值即可
+左子数组的最小值就是nums[0]，最大值不清楚
+右子数组的最大值就是nums[n-1]，最小值不清楚，因为是我们要找的。
+而左子数组的所有元素必然都大于等于nums[0]，右子数组的所有元素必然也都小于等于nums[n-1]。因此，通过互斥事件可推出，小于nums[0]的元素肯定在右子数组，大于nums[n-1]的元素肯定在左子数组
+
+class Solution {
+public:
+    int findMin(vector<int>& nums) {
+        int n=nums.size();
+        //左边递增子数组的最小值大于右边递增子数组的最大值，如果出现左边值小于右边值的情况，说明整个数组单调递增
+        //或者只有一个元素
+        if(nums[0]<nums[n-1]||n==1)return nums[0];
+
+        //上面条件不成立，意味着nums中有左右两个递增子数组
+        int left=0;
+        int right=n-1;
+        while(left<=right){
+            int mid=left+((right-left)>>1);
+            //由于mid要么在左边递增子数组要么在右边递增子数组，所以下面两个条件至少有一个且只有一个成立
+            if(nums[mid]>nums[n-1]){//在左边递增子数组中
+                //数组中如果出现前值大于后值的情况，说明就是两个子数组的交界处，此时右边的值就是最小值
+                if(nums[mid]>nums[mid+1])return nums[mid+1];
+                left=mid+1;
+            }else if(nums[mid]<nums[0]){//在右边递增子数组中
+                if(nums[mid-1]>nums[mid])return nums[mid];
+                right=mid-1;
+            }
+        }
+        return -1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
+#### [162. 寻找峰值](https://leetcode.cn/problems/find-peak-element/)
+
+```cpp
+方法一：二分查找
+
+class Solution {
+public:
+    int findPeakElement(vector<int>& nums) {
+        int n=nums.size();
+        if(n==1)return 0;
+        else if(n==2)return nums[0]>nums[1]?0:1;
+
+        //至少有3个元素
+        int left=0;
+        int right=n-1;
+        while(left<=right){
+            //分析各种可能的情况：1.mid下标边界问题 2.nums[mid]和两边的值的大小关系
+            int mid=left+((right-left)>>1);
+            if(mid==0&&nums[mid]>nums[mid+1]){
+                return mid;
+            }else if(mid==n-1&&nums[mid]>nums[mid-1]){
+                return mid;
+            }else if(mid>0&&mid<n-1&&nums[mid]>nums[mid-1]&&nums[mid]>nums[mid+1]){
+                return mid;
+            }else{//上面的情况都不符合
+                if(mid==0)left=mid+1;
+                else if(mid==n-1)right=mid-1;
+                else{
+                    if(nums[mid]<nums[mid+1]){//因为nums[mid]<nums[mid+1]不符合，那就往大的值收缩
+                        left=mid+1;
+                    }else{
+                        right=mid-1;
+                    }
+                }
+            }
+        }
+        return -1;
     }
 };
 时空复杂度分析:
