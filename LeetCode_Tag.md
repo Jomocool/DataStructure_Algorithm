@@ -3312,6 +3312,196 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [287. 寻找重复数](https://leetcode.cn/problems/find-the-duplicate-number/)
+
+<img src="https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230902134503373.png" alt="image-20230902134503373" style="zoom:80%;" />
+
+<img src="https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230902133458907.png" alt="image-20230902133458907"  />
+
+```cpp
+方法一：二分查找
+在nums中，小于等于nums[i]的数应该是nums[i]个，假设实际值为cnt
+1. cnt<=nums[i]:重复值>nums[i]
+2. cnt>nums[i]:重复值<=nums[i]
+通过以上两种情况，可以用二分查找法加快搜索速度
+不要被无序数组迷惑了
+
+class Solution {
+public:
+    int findDuplicate(vector<int>& nums) {
+        int n=nums.size();
+        int low=1;
+        int high=n-1;
+        int res=0;
+
+        while(low<=high){
+            int cnt=0;
+            int mid=low+((high-low)>>1);
+            for(int i=0;i<n;i++){
+                cnt+=nums[i]<=mid;
+            }
+            if(cnt<=mid){
+                low=mid+1;
+            }else{
+                res=mid;//让res记录mid，直到最后一个mid就是最终结果，结束循环后直接返回
+                high=mid-1;
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(1);
+
+方法二：位运算
+把nums中所有数看作二进制数，先计算nums中第i位是1的数的数量x，再计算[1,n]中n个数第i位是1的数的数量y，如果x>y，代表重复的那个数的第i位是1，考虑完所有数位之后，重复的那个数哪些数位是1都可以知道，也就可以计算出它的值了
+
+本质上就是看数组nums和数组{1,2,3,……,n}对于某个数量计算的不同来找到重复数的特征，比如位运算方法就是找到重复数在当前数位上的数字是1，计算到第0位之后，重复数所有数位上的1都找到了，自然它的值就得出来了
+
+class Solution {
+public:
+    int findDuplicate(vector<int>& nums) {
+        int n=nums.size(),ans=0;
+        
+        //确认二进制下最高位是哪一位
+        int bit_max=31;
+        while(((n-1)>>bit_max)==0){
+            bit_max--;
+        }
+
+        for(int bit=bit_max;bit>=0;bit--){
+            int x=0,y=0;
+            for(int i=0;i<n;i++){
+                if((nums[i]>>bit)&1){
+                    x++;
+                }
+                if(i>=1&&(i>>bit)&1){
+                    y++;
+                }
+            }
+
+            //代表重复的数的bit位上是1
+            if(x>y){
+                ans|=1<<bit;
+            }
+        }
+
+        return ans;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(1);
+
+方法三：快慢指针（Floyd判圈算法）
+把索引和nums元素都看作普通值，然后nums[i]代表着i->nums[i]，即i下一个节点是nums[i]
+
+思路：
+1.转成环图
+2.用Floyd判圈算法找到环的入口，即重复值(入度为2)，因为有两个索引值指向它，所以才会有环
+
+class Solution {
+public:
+    int findDuplicate(vector<int>& nums) {
+        int slow=0,fast=0;
+        //不能先判断while循环条件，因为一开始的slow和fast必然相等，这样永远无法进入循环
+        do{
+            slow=nums[slow];
+            fast=nums[nums[fast]];//一次走两步
+        }while(slow!=fast);
+
+        slow=0;
+        while(slow!=fast){
+            slow=nums[slow];
+            fast=nums[fast];
+        }
+        
+        return slow;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [378. 有序矩阵中第 K 小的元素](https://leetcode.cn/problems/kth-smallest-element-in-a-sorted-matrix/)
+
+![](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230902141948251.png)
+
+![image-20230902142828618](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230902142828618.png)
+
+```cpp
+方法一：优先队列
+
+class Solution {
+public:
+    int kthSmallest(vector<vector<int>>& matrix, int k) {
+        int n=matrix.size();
+        //优先队列(大根堆)
+        priority_queue<int,vector<int>,less<int>>pq;
+        for(int i=0;i<n;i++){
+            for(int j=0;j<n;j++){
+                pq.push(matrix[i][j]);
+                if(pq.size()>k){
+                    pq.pop();
+                }
+            }
+        }
+        return pq.top();
+    }
+};
+时空复杂度分析:
+时间复杂度：O((n^2)logn);
+空间复杂度：O(k);
+
+方法二：二分查找
+
+class Solution {
+public:
+    //找小于等于mid的元素数量cnt，并判断是否cnt>=k
+    bool check(vector<vector<int>>&matrix,int mid,int k,int n){
+        //初始位置在matrix[n-1][0]，因为小于等于mid的都在矩阵的左下角模块
+        int i=n-1;
+        int j=0;
+        int cnt=0;
+        while(i>=0&&j<n){
+            if(matrix[i][j]<=mid){
+                cnt+=i+1;
+                j++;
+            }else{
+                i--;
+            }
+        }
+        return cnt>=k;
+    }
+
+    int kthSmallest(vector<vector<int>>& matrix, int k) {
+        int n=matrix.size();
+        int left=matrix[0][0];
+        int right=matrix[n-1][n-1];
+
+        while(left<right){
+            int mid=left+((right-left)>>1);
+            if(check(matrix,mid,k,n)){
+                right=mid;
+            }else{
+                left=mid+1;
+            }
+        }
+        
+        //left一定存在于matrix中，原因如下：
+        //假设第k小的元素是m，第k+1小的元素是s，则[m,s)都符合答案
+		//但是由于left是第一个符合条件的答案，即m，所以left才是我们想要的答案
+        return left;
+    }
+};
+时空复杂度分析:
+时间复杂度：O((nlog(r-l));
+空间复杂度：O(1);
+```
+
 
 
 ### Hard
