@@ -3467,10 +3467,13 @@ public:
         int j=0;
         int cnt=0;
         while(i>=0&&j<n){
-            if(matrix[i][j]<=mid){
+            //一列一列处理，同时利用到了矩阵行和列的非递增性
+            if(matrix[i][j]<=mid){//=mid很关键，代表mid存在于matrix中
                 cnt+=i+1;
-                j++;
+                j++;//mid>=matrix[i][j]>=matrix[i-k][j](k<=i)
             }else{
+                //mid<matrix[i][j]<=matrix[i][j+k](k<n-j)
+                //所以当前行第j列及其后面的都大于mid，因此不用考虑当前行了，i--
                 i--;
             }
         }
@@ -3500,6 +3503,158 @@ public:
 时空复杂度分析:
 时间复杂度：O((nlog(r-l));
 空间复杂度：O(1);
+```
+
+#### [436. 寻找右区间](https://leetcode.cn/problems/find-right-interval/)
+
+![image-20230903152733890](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230903152733890.png)
+
+```cpp
+方法一：二分查找
+思路：
+把起点及其在intervals对应下标作为一个整体都放到一个集合中，然后按起点值从小到大排序，然后遍历intervals的终点，找到第一个大于或等于它的起点，即lower_bound
+
+class Solution {
+public:
+    vector<int> findRightInterval(vector<vector<int>>& intervals) {
+        //{start[i],i}
+        vector<pair<int,int>>startIntervals;
+        int n=intervals.size();
+        for(int i=0;i<n;i++){
+            startIntervals.emplace_back(intervals[i][0],i);
+        }
+        sort(startIntervals.begin(),startIntervals.end());
+
+        vector<int>ans(n,-1);
+        for(int i=0;i<n;i++){
+            auto it=lower_bound(startIntervals.begin(),startIntervals.end(),make_pair(intervals[i][1],0));
+            if(it!=startIntervals.end()){
+                ans[i]=it->second;
+            }
+        }
+
+        return ans;
+    }
+};
+时空复杂度分析:
+时间复杂度：O((nlogn);
+空间复杂度：O(n);
+
+方法二：双指针
+
+思路：
+起点数组和终点数组从小到大排序
+
+class Solution {
+public:
+    vector<int> findRightInterval(vector<vector<int>>& intervals) {
+        vector<pair<int,int>>startIntervals;
+        vector<pair<int,int>>endIntervals;
+        int n=intervals.size();
+
+        for(int i=0;i<n;i++){
+            startIntervals.emplace_back(intervals[i][0],i);
+            endIntervals.emplace_back(intervals[i][1],i);
+        }
+        sort(startIntervals.begin(),startIntervals.end());
+        sort(endIntervals.begin(),endIntervals.end());
+
+        int i=0;
+        int j=0;
+        vector<int>ans(n,-1);
+        while(i<n&&j<n){
+            //每个终点都要有一个右边界起点，所以是定住终点的指针j，去找合适的起点，因此移动起点的指针i
+            while(i<n&&endIntervals[j].first>startIntervals[i].first){
+                i++;
+            }
+            if(i<n){
+                ans[endIntervals[j].second]=startIntervals[i].second;
+            }
+            j++;
+        }
+        return ans;
+    }
+};
+时空复杂度分析:
+时间复杂度：O((nlogn);
+空间复杂度：O(n);
+```
+
+#### [454. 四数相加 II](https://leetcode.cn/problems/4sum-ii/)
+
+```cpp
+方法一：哈希表
+nums1和nums2一组，nums3和nums4一组
+
+class Solution {
+public:
+    int fourSumCount(vector<int>& nums1, vector<int>& nums2, vector<int>& nums3, vector<int>& nums4) {
+        int cnt=0;
+        unordered_map<int,int>mp;
+        for(auto&val1:nums1){
+            for(auto&val2:nums2){
+                mp[val1+val2]++;
+            }
+        }
+
+        for(auto&val3:nums3){
+            for(auto&val4:nums4){
+                int val=-(val3+val4);
+                if(mp.count(val)){
+                    cnt+=mp[val];
+                }
+            }
+        }
+
+        return cnt;
+    }
+};
+时空复杂度分析:
+时间复杂度：O((n^2);
+空间复杂度：O(n^2);
+```
+
+#### [792. 匹配子序列的单词数](https://leetcode.cn/problems/number-of-matching-subsequences/)
+
+```cpp
+方法一：二分查找
+
+class Solution {
+public:
+    int numMatchingSubseq(string s, vector<string>& words) {
+        vector<vector<int>>pos(26);
+        for(int i=0;i<s.length();i++){
+            pos[s[i]-'a'].emplace_back(i);
+        }
+
+        int res=words.size();
+        for(auto&w:words){
+            if(w.length()>s.length()){
+                res--;
+                continue;
+            }
+			
+            //不从0开始，因为是upper_bound，是严格大于。
+            //如果s[0]==w[0]，但upper_bound无法找到，因为不是严格大于
+            //但如果使用lower_bound，p可能会原地不动
+            int p=-1;//当前指向s的指针遍历到的位置，初始化时还没遍历，所以不能指向0，只能指向1。
+            for(auto&c:w){
+                auto &ps=pos[c-'a'];//用引用，不用拷贝，减少时间
+                //s中p下标之后第一个出现字符c的下标
+                //upper_bound可以防止s[p]被重复利用，当前p能够被找到意味着已经被上一个字符c使用过了，所以不能重复再被使用一次
+                //因此使用upper_bound，在大于下标p的情况下去找当前字符c
+                auto it=upper_bound(ps.begin(),ps.end(),p);
+                if(it==ps.end()){
+                    res--;
+                    break;
+                }
+                p=*it;
+            }
+        }
+
+        return res;
+    }
+};
 ```
 
 
