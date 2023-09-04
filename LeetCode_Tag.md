@@ -3584,29 +3584,30 @@ public:
 
 ```cpp
 方法一：哈希表
-nums1和nums2一组，nums3和nums4一组
+nums1和nums2一组，nums3和nums4一组，将时间复杂度从n^4降到n^2
+mp[val]:nums1和nums2组成值为val的组合数
 
 class Solution {
 public:
     int fourSumCount(vector<int>& nums1, vector<int>& nums2, vector<int>& nums3, vector<int>& nums4) {
-        int cnt=0;
+        int res=0;
         unordered_map<int,int>mp;
-        for(auto&val1:nums1){
-            for(auto&val2:nums2){
-                mp[val1+val2]++;
+        for(auto&a:nums1){
+            for(auto&b:nums2){
+                mp[a+b]++;
             }
         }
 
-        for(auto&val3:nums3){
-            for(auto&val4:nums4){
-                int val=-(val3+val4);
-                if(mp.count(val)){
-                    cnt+=mp[val];
+        for(auto&c:nums3){
+            for(auto&d:nums4){
+                int target=-(c+d);
+                if(mp.count(target)){
+                    res+=mp[target];
                 }
             }
         }
 
-        return cnt;
+        return res;
     }
 };
 时空复杂度分析:
@@ -3670,6 +3671,51 @@ public:
 
 
 ### Medium
+
+#### [155. 最小栈](https://leetcode.cn/problems/min-stack/)
+
+```cpp
+方法一：双栈
+
+class MinStack {
+public:
+    stack<int>stk1;
+    stack<int>stk2;
+    int minVal;
+
+    MinStack() {
+        minVal=INT_MAX;
+    }
+    
+    void push(int val) {
+        minVal=min(minVal,val);
+        stk1.push(val);
+    }
+    
+    void pop() {
+        int val=stk1.top();stk1.pop();
+        //stk2用于暂存stk1的元素，然后重新计算最小之后，再返回stk1中
+        if(minVal==val){
+            minVal=INT_MAX;
+            while(!stk1.empty()){
+                minVal=min(minVal,stk1.top());
+                stk2.push(stk1.top());stk1.pop();
+            }
+            while(!stk2.empty()){
+                stk1.push(stk2.top());stk2.pop();
+            }
+        }
+    }
+    
+    int top() {
+        return stk1.top();
+    }
+    
+    int getMin() {
+        return minVal;
+    }
+};
+```
 
 
 
