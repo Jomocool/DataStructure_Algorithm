@@ -3668,6 +3668,180 @@ public:
 
 ### Easy
 
+#### [225. 用队列实现栈](https://leetcode.cn/problems/implement-stack-using-queues/)
+
+```cpp
+方法一：双队列
+
+class MyStack {
+public:
+    queue<int>q1;
+    queue<int>q2;
+
+    MyStack() {}
+    
+    void push(int x) {
+        q1.push(x);
+    }
+    
+    int pop() {
+        //把q1的除了尾端的其余元素放到q2暂存
+        while(q1.size()>1){
+            q2.push(q1.front());q1.pop();
+        }
+        //获取尾端元素，即栈顶
+        int val=q1.front();q1.pop();
+        //把放在q2暂存的元素放回q1
+        while(!q2.empty()){
+            q1.push(q2.front());q2.pop();
+        }
+        return val;
+    }
+    
+    int top() {
+        while(q1.size()>1){
+            q2.push(q1.front());q1.pop();
+        }
+        int val=q1.front();q1.pop();
+        while(!q2.empty()){
+            q1.push(q2.front());q2.pop();
+        }
+       	//之前先出队列是为了保证元素的顺序正确
+        q1.push(val);
+        return val;
+    }
+    
+    bool empty() {
+        return q1.empty();
+    }
+};
+```
+
+#### [682. 棒球比赛](https://leetcode.cn/problems/baseball-game/)
+
+```cpp
+方法一：栈
+根据ops[i]的操作，来处理分数：
+1."x":直接入栈
+2."+":弹栈一次，计算前两次得分和，然后再把弹栈出来的分数和得分和压栈
+3."D":计算前一次得分的两倍，直接压栈
+4."C":前一次分数无效，直接弹栈就好
+
+class Solution {
+public:
+    int calPoints(vector<string>& operations) {
+        stack<int>stk;
+        int res=0;
+        for(auto&op:operations){
+            if(op=="+"){
+                int preScore=stk.top();stk.pop();
+                int newScore=preScore+stk.top();
+                stk.push(preScore);
+                stk.push(newScore);
+            }else if(op=="D"){
+                int newScore=stk.top()*2;
+                stk.push(newScore);
+            }else if(op=="C"){
+                stk.pop();
+            }else{
+                //string转int
+                int flag=1;
+                int num=0;
+                if(op[0]=='-')flag=-1;
+                for(int i=0;i<op.length();i++){
+                    if(op[i]=='+'||op[i]=='-')continue;
+                    num=num*10+(op[i]-'0');
+                }
+                stk.push(flag*num);
+            }
+        }
+        
+        while(!stk.empty()){
+            res+=stk.top();stk.pop();
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nm);
+空间复杂度：O(n);
+其中，n是操作数，m是最大分数字符串长度
+```
+
+#### [844. 比较含退格的字符串](https://leetcode.cn/problems/backspace-string-compare/)
+
+```cpp
+方法一：栈
+
+class Solution {
+public:
+    bool backspaceCompare(string s, string t) {
+        stack<char>stk;
+        string sRes;
+        string tRes;
+
+        for(auto&c:s){
+            if(!stk.empty()&&c=='#')stk.pop();
+            else if(c!='#') stk.push(c);//不能是else，不然当栈空时会push('#')
+        }
+        while(!stk.empty()){
+            sRes.push_back(stk.top());stk.pop();
+        }
+
+        for(auto&c:t){
+            if(!stk.empty()&&c=='#')stk.pop();
+            else if(c!='#') stk.push(c);
+        }
+        while(!stk.empty()){
+            tRes.push_back(stk.top());stk.pop();
+        }
+
+        return sRes==tRes;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(max(n.m));
+空间复杂度：O(max(n,m));
+n==s.length(),m==t.lengh()
+```
+
+#### [1047. 删除字符串中的所有相邻重复项](https://leetcode.cn/problems/remove-all-adjacent-duplicates-in-string/)
+
+```cpp
+方法一：栈
+
+class Solution {
+public:
+    string removeDuplicates(string s) {
+        stack<char>stk;
+        for(auto&c:s){
+            if(!stk.empty()){
+                //如果当前字符c和前一个字母相同，弹栈且c不压栈，这样就做到消除两个字母了
+                if(c==stk.top()){
+                    stk.pop();
+                    continue;
+                }
+            }
+            stk.push(c);
+        }
+
+        string res;
+        while(!stk.empty()){
+            res.push_back(stk.top());stk.pop();
+        }
+		
+        //出栈顺序和字符串顺序相反，所以需要反转
+        //反转字符串比把栈顶元素插入到res前面时间效率更高，因为插入到res前面需要不断开辟新的空间，所以采用反转字符串的方式。
+        reverse(res.begin(),res.end());
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
 
 
 ### Medium
