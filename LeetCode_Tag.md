@@ -3891,6 +3891,131 @@ public:
 };
 ```
 
+#### [71. 简化路径](https://leetcode.cn/problems/simplify-path/)
+
+```cpp
+方法一：栈
+文件名：压栈
+.：忽略
+..：弹栈
+
+class Solution {
+public:
+    string simplifyPath(string path) {
+        stack<string>stk;
+        int idx=0;
+        int n=path.length();
+        while(idx<n){
+            while(idx<n&&path[idx]=='/')idx++;
+            if(idx==n)break;//如果不break，可能会stk中会多一个"/"
+            int start=idx;
+            while(idx<n&&path[idx]!='/')idx++;
+            string filename="/"+path.substr(start,idx-start);
+            if(filename=="/.")continue;
+            else if(filename=="/.."){
+                if(!stk.empty())stk.pop();
+            }
+            else stk.push(filename);
+        }
+        if(stk.empty())return "/";//空路径返回根目录即可
+		
+        //stk中目录顺序是反的，所以需要另一个辅助栈将其反转
+        string res;
+        stack<string>tmp;
+        while(!stk.empty()){
+            tmp.push(stk.top());stk.pop();
+        }
+        while(!tmp.empty()){
+            res+=tmp.top();tmp.pop();
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [394. 字符串解码](https://leetcode.cn/problems/decode-string/)
+
+```cpp
+方法一：双辅助栈
+思路：
+一个栈用于存放数字，另一个栈用于存放字符串
+
+class Solution {
+public:
+    string decodeString(string s) {
+        stack<int>stk_num;
+        stack<string>stk_str;
+        int num=0;
+        string res;
+        int n=s.length();
+
+        for(int i=0;i<n;i++){
+            if(isalpha(s[i])){
+                res.push_back(s[i]);
+            }else if(isdigit(s[i])){
+                num=num*10+(s[i]-'0');
+            }else if(s[i]=='['){
+                stk_num.push(num);
+                //先把前面解码得到的字符串res放入栈，等下就可以直接对stk_str.top()操作，再重置res。保证后入栈的在后面
+                stk_str.push(res);
+                //重置
+                num=0;
+                res="";
+            }else{//s[i]==']'
+                //cnt是当前res的频次
+                int cnt=stk_num.top();stk_num.pop();
+                for(int k=0;k<cnt;k++)stk_str.top()+=res;//保证先入栈的在前面
+                res=stk_str.top();stk_str.pop();//res是'['前的字符串，所以处理完']'后，应该把解码后的stk.top()赋值给res
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [636. 函数的独占时间](https://leetcode.cn/problems/exclusive-time-of-functions/)
+
+```cpp
+方法一：栈
+
+class Solution {
+public:
+    vector<int> exclusiveTime(int n, vector<string>& logs) {
+        vector<int>res(n,0);
+        //pair<flag,开始运行的时间戳>
+        stack<pair<int,int>>stk;
+
+        for(auto&log:logs){
+            char type[10];
+            int flag,timestamp;
+            sscanf(log.c_str(),"%d:%[^:]:%d",&flag,type,&timestamp);
+            if(type[0]=='s'){
+                if(!stk.empty()){
+                    //计算当前调用函数的独占时间，因为即将悬挂
+                    res[stk.top().first]+=timestamp-stk.top().second;
+                }
+                stk.emplace(flag,timestamp);
+            }else{//end:此时栈顶一定是对应的函数start信息
+                res[stk.top().first]+=timestamp-stk.top().second+1;stk.pop();
+                //栈顶函数结束时间戳也是栈底悬挂函数起始时间戳
+                if(!stk.empty())stk.top().second=timestamp+1;
+            }
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nm);
+空间复杂度：O(n);
+```
+
 
 
 ### Hard
