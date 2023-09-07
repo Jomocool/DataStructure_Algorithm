@@ -4009,16 +4009,75 @@ public:
             }
         }
         return res;
-    }
+    }	
 };
 时空复杂度分析:
 时间复杂度：O(nm);
 空间复杂度：O(n);
 ```
 
+#### [739. 每日温度](https://leetcode.cn/problems/daily-temperatures/)
 
+```cpp
+方法一：单调栈
+保证栈从栈底到栈顶的温度temperatures[i]（存下标，既能获取温度也能获取下标）是单调递减的顺序，然后如果当前温度大于栈顶温度，就说明当前温度大于栈顶温度，即res[stk.top()]=i
 
-### Hard
+class Solution {
+public:
+    vector<int> dailyTemperatures(vector<int>& temperatures) {
+        stack<int>stk;
+        vector<int>res(temperatures.size(),0);
+        for(int i=0;i<temperatures.size();i++){
+            while(!stk.empty()&&temperatures[i]>temperatures[stk.top()]){
+                res[stk.top()]=i-stk.top();stk.pop();
+            }
+            stk.push(i);
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [856. 括号的分数](https://leetcode.cn/problems/score-of-parentheses/)
+
+```cpp
+方法一：栈
+括号的匹配一般都是栈，因为栈的FILO很符合括号的匹配顺序
+
+思路：
+eg."(()(()))"
+stk初始化时先压入0
+0:'('，栈压入0，stk{0,0}
+1:'('，栈压入0，stk{0,0,0}
+2:')'，弹栈，计算分数，stk{1,0}
+3:'('，栈压入0，stk{0,1,0}
+4:'('，栈压入0，stk{0,0,1,0}
+5:')'，弹栈，计算分数，stk{1,1,0}
+6:')'，弹栈，计算分数，stk{3,0}
+7:')'，弹栈，计算分数，stk{6}
+最终分数：6分
+关键：遇到'('，先要与左边括号的分数区分开，所以0入栈；遇到')'，要看当前右括号属于哪一种类型，如果当前右括号左边是左括号，说明第一组括号分数是1，而第一组括号的分数计算是独立的，所以刚刚入栈的0就起到作用了，独立计算分数，同时加到栈顶分数上。如果当前右括号左边仍然是右括号，当前栈顶分数肯定不是0，并且分数的计算是2倍的，所以获取上一组括号计算的分数后，乘2再加到栈顶。因为当前右括号和其对应左括号的形式就是(A)
+
+class Solution {
+public:
+    int scoreOfParentheses(string s) {
+        stack<int>stk;
+        stk.push(0);
+        for(char&c:s){
+            if(c=='('){
+                stk.push(0);
+            }else{
+                int v=stk.top();stk.pop();
+                stk.top()+=max(2*v,1);
+            }
+        }
+        return stk.top();
+    }
+};
+```
 
 
 
