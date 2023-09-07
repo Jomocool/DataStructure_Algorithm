@@ -4059,17 +4059,20 @@ stk初始化时先压入0
 6:')'，弹栈，计算分数，stk{3,0}
 7:')'，弹栈，计算分数，stk{6}
 最终分数：6分
-关键：遇到'('，先要与左边括号的分数区分开，所以0入栈；遇到')'，要看当前右括号属于哪一种类型，如果当前右括号左边是左括号，说明第一组括号分数是1，而第一组括号的分数计算是独立的，所以刚刚入栈的0就起到作用了，独立计算分数，同时加到栈顶分数上。如果当前右括号左边仍然是右括号，当前栈顶分数肯定不是0，并且分数的计算是2倍的，所以获取上一组括号计算的分数后，乘2再加到栈顶。因为当前右括号和其对应左括号的形式就是(A)
+关键：遇到')'时，当前stk.top()是这对括号的分数基础，对其作出相应的计算（然后弹栈）后，加到stk.top()，是给下一对括号累加分数基础
 
 class Solution {
 public:
     int scoreOfParentheses(string s) {
         stack<int>stk;
+        //由于'('和')'是成对出现的，所以最后应该留一个0在栈顶记录分数，因此提前让1个0入栈
         stk.push(0);
         for(char&c:s){
+            //每对括号有自己的独立的分数计算，所以遇到一个左括号，就先让1个0入栈
             if(c=='('){
                 stk.push(0);
             }else{
+                //遇到右括号，可能是第一个右括号，也可能是连续遇到的第n个右括号，都无所谓，因为前面计算的分数基础都在stk.top()了
                 int v=stk.top();stk.pop();
                 stk.top()+=max(2*v,1);
             }
@@ -4077,6 +4080,103 @@ public:
         return stk.top();
     }
 };
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [921. 使括号有效的最少添加](https://leetcode.cn/problems/minimum-add-to-make-parentheses-valid/)
+
+```cpp
+方法一：栈
+括号的匹配一般都是栈，因为栈的FILO很符合括号的匹配顺序
+由于左右括号至少要成对出现才能是有效的，但不能只考虑数量，还要考虑左右括号的相对位置，因为右括号必须在左括号右边才是有效的，因此用栈合适不过了，遍历过程中如果出现栈里没有左括号可以匹配，代表着要插入一个左括号了，遍历完之后，栈如果不为空，代表着还有左括号无法匹配，因此需要添加右括号了
+
+class Solution {
+public:
+    int minAddToMakeValid(string s) {
+        stack<char>stk;
+        int res=0;
+        for(char&c:s){
+            if(c=='(')stk.push(c);
+            else{
+                //如果栈为空，没有左括号可以匹配右括号，添加一个左括号
+                if(!stk.empty())stk.pop();
+                else res++;
+            }
+        }
+        //栈里如果还有剩余的左括号，需要添加右括号和其匹配
+        return res+stk.size();
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [946. 验证栈序列](https://leetcode.cn/problems/validate-stack-sequences/)
+
+```cpp
+方法一：栈模拟
+
+class Solution {
+public:
+    bool validateStackSequences(vector<int>& pushed, vector<int>& popped) {
+        stack<int>stk;
+        int idx=0;//popped当前需要弹栈的元素下标
+        for(int&n:pushed){
+            stk.push(n);
+            //由于元素不会重复，因此只要栈顶元素和要被弹栈的元素相等，就要弹栈了
+            while(!stk.empty()&&stk.top()==popped[idx]){
+                stk.pop();
+                idx++;
+            }
+        }
+        //看栈里的元素是否能够被弹空，如果可以，序列就没问题
+        //还有一个判断方式是，idx==popped.size()
+        return stk.size()==0;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [1003. 检查替换后的词是否有效](https://leetcode.cn/problems/check-if-word-is-valid-after-substitutions/)
+
+```cpp
+方法一：栈
+思路：
+遇到'a'，压栈；遇到'b'，跟最近的'a'连接，其实就是栈顶的'a'；遇到'c'，跟最近的"ab"连接，其实就是栈顶元素。
+如果遇到'b'或'c'时，栈为空，说明s肯定不是只插入"abc"得到的，因为如果是有效的，会先弹出第一个"abc"，然后后面的'b'或'c'会和前面的'a'或"ab"拼接，继续下一个"abc"的匹配
+
+关键：
+b一定跟着a，c一定跟着ab
+
+class Solution {
+public:
+    bool isValid(string s) {
+        stack<string>stk;
+        for(char&c:s){
+            if(c=='a'){//如果是'a'，就压栈
+                stk.push(string(1,c));
+            }else if(c=='b'){
+                if(stk.empty())return false;//栈为空，说明b是第一个，无效
+                stk.top().push_back(c);
+                if(stk.top()!="ab")return false;//如果不等于"ab"，说明"abc"的顺序也出错了，无效
+            }else{
+                if(stk.empty())return false;//栈为空，说明c是第一个，无效
+                stk.top().push_back(c);
+                if(stk.top()!="abc")return false;//如果不等于"abc"，说明"abc"的顺序也出错了，无效
+                stk.pop();//成功匹配到一个"abc"，弹栈，让下一个'a'或"ab"去匹配
+            }
+        }
+        return stk.size()==0;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
 ```
 
 
