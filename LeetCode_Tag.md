@@ -4179,6 +4179,216 @@ public:
 空间复杂度：O(n);
 ```
 
+#### [1190. 反转每对括号间的子串](https://leetcode.cn/problems/reverse-substrings-between-each-pair-of-parentheses/)
+
+```cpp
+方法一：栈
+思路：
+由于左右括号肯定成对出现，所以最后栈顶肯定被弹空。因此，我们可以先提前让空字符串入栈，最后把结果添加到空字符串中，结果就是遍历完后，栈顶字符串就是我们要的结果字符串
+遇到'('：压栈
+遇到字母：插入栈顶字符串尾端
+遇到')'：弹栈，然后反转弹出来的字符串，而后添加到栈顶字符串后面
+
+class Solution {
+public:
+    //反转字符串[left,right)部分
+    void reverseStr(string&str){
+        int l=0;
+        int r=str.length()-1;
+        while(l<r){
+            swap(str[l++],str[r--]);
+        }
+    }
+
+    string reverseParentheses(string s) {
+        stack<string>stk;
+        stk.push("");
+        for(char&c:s){
+            if(c=='('){
+                stk.push(string(1,c));
+            }else if(c==')'){
+                string str=stk.top();stk.pop();
+                reverseStr(str);
+                str.pop_back();//删掉左括号
+                stk.top()+=str;
+            }else{
+                stk.top().push_back(c);
+            }
+        }
+        return stk.top();
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [1209. 删除字符串中的所有相邻重复项 II](https://leetcode.cn/problems/remove-all-adjacent-duplicates-in-string-ii/)
+
+```cpp
+方法一：栈
+思路：
+遍历字符串，如果当前字符等于栈顶字符，就把当前字符添加到栈顶字符后面，直到栈顶字符串的长度等于k或者遇到不同字符，如果有k个相邻的相同字符，就弹栈，相当于做了一步删除操作。遍历完之后，拼接栈里的各字符串，但是需要注意的是拼接完之后要反转，因为出栈顺序和字符串顺序相反，直接反转即可，因为各字符串都是由相同字符组成的，所以反转整体字符串也不会影响各字符串的顺序
+
+class Solution {
+public:
+    string removeDuplicates(string s, int k) {
+        stack<string>stk;
+        for(char&c:s){
+            if(!stk.empty()&&c==stk.top()[0]){
+                stk.top().push_back(c);
+                if(stk.top().length()==k)stk.pop();
+                continue;
+            }
+            stk.push(string(1,c));
+        }
+
+        string res;
+        while(!stk.empty()){
+            res+=stk.top();stk.pop();
+        }
+        reverse(res.begin(),res.end());
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [316. 去除重复字母](https://leetcode.cn/problems/remove-duplicate-letters/)
+
+![image-20230908103304305](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230908103304305.png)
+
+
+
+```cpp
+方法一：贪心+单调栈
+思路：
+1.字典序最小：栈底到栈顶的字符严格单调递增
+2.字符唯一且相对顺序不变：从左到右遍历s
+关键：
+字符剩余个数和字符是否已在栈中这两个条件十分重要
+
+class Solution {
+public:
+    string removeDuplicateLetters(string s) {
+        vector<int>vis(26,0),num(26,0);
+        stack<char>stk;
+        //记录各字符出现的次数
+        for(char&c:s){
+            num[c-'a']++;
+        }
+        for(char&c:s){
+            //如果当前字符没有在栈里
+            if(!vis[c-'a']){
+                while(!stk.empty()&&stk.top()>c){
+                    if(num[stk.top()-'a']>0){//后面还有字符才能删除当前栈顶字符，不然当前字符就消失了，不符题意
+                        vis[stk.top()-'a']=0;//弹栈后，取消在栈中的记录
+                        stk.pop();
+                    }else{
+                        break;
+                    }
+                }
+                vis[c-'a']=1;//标记入栈
+                stk.push(c);
+            }
+            //字符数量减1
+            num[c-'a']--;
+        }
+
+        string res;
+        while(!stk.empty()){
+            res.push_back(stk.top());stk.pop();
+        }
+        reverse(res.begin(),res.end());
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+
+
+### Hard
+
+#### [84. 柱状图中最大的矩形](https://leetcode.cn/problems/largest-rectangle-in-histogram/)
+
+```cpp
+方法一：单调栈
+栈底到栈顶是非严格单调递增的顺序，因为对于一个柱子，真正限制其向两边延伸的是它左右两边第一根比它低的柱子，而比它高的柱子是可以帮助它延伸且不受影响的
+由于计算的时候是需要左右第一根比当前柱子矮的柱子，但是0没有左柱子，heights.size()-1没有右柱子，所以只能手动添加高度为0的柱子，这样既不影响面积的计算，也限制了左右边界，不会导致最左和最右还有中间最低的柱子没有左右边界导致空栈而无法计算面积的问题
+
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        stack<int>stk;
+        int maxArea=0;
+        //在左右边界各添加一个高度为0的柱子，是方便原数组中最左和最右柱子矩形的计算
+        heights.insert(heights.begin(),0);
+        heights.push_back(0);
+        for(int i=0;i<heights.size();i++){
+            while(!stk.empty()&&heights[i]<heights[stk.top()]){
+                int h=heights[stk.top()];stk.pop();
+                int w=i-stk.top()-1;
+                maxArea=max(maxArea,h*w);
+            }
+            stk.push(i);
+        }
+        return maxArea;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [85. 最大矩形](https://leetcode.cn/problems/maximal-rectangle/)
+
+```cpp
+方法一：单调栈
+思路：
+一行一行遍历，从第一行开始，新遍历到的那一行做底，当前行有元素为1的，说明地基打好了，可以累加其上面的元素，形成一根柱子，即由各方块组成的柱子，但如果中间某个方块是0，则柱子就截断了。剩下的就和84题思路一样了
+
+class Solution {
+public:
+    //不能传引用，因为会修改原heights的数据和结构
+    int maxRectangle(vector<int>heights){
+        stack<int>stk;
+        int maxArea=0;
+        heights.insert(heights.begin(),0);
+        heights.push_back(0);
+        for(int i=0;i<heights.size();i++){
+            while(!stk.empty()&&heights[i]<heights[stk.top()]){
+                int h=heights[stk.top()];stk.pop();
+                int w=i-stk.top()-1;
+                maxArea=max(maxArea,h*w);
+            }
+            stk.push(i);
+        }
+        return maxArea;
+    }
+
+    int maximalRectangle(vector<vector<char>>& matrix) {
+        vector<int>heights(matrix[0].size(),0);
+        int maxArea=0;
+        for(int i=0;i<matrix.size();i++){
+            for(int j=0;j<matrix[0].size();j++){
+                if(matrix[i][j]=='0')heights[j]=0;
+                else heights[j]+=1;
+            }
+            maxArea=max(maxArea,maxRectangle(heights));
+        }
+        return maxArea;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nm);
+空间复杂度：O(m);
+```
+
 
 
 ## 双指针
