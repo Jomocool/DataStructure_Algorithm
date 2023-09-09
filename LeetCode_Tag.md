@@ -4273,27 +4273,34 @@ public:
 class Solution {
 public:
     string removeDuplicateLetters(string s) {
-        vector<int>vis(26,0),num(26,0);
-        stack<char>stk;
-        //记录各字符出现的次数
+        vector<bool>vis(26,false);//记录字母是否已入栈，防止重复入栈导致结果字符串右重复字符
+        vector<int>num(26,0);//记录当前遍历到的字符后面各字符还有多少个，防止删掉某个字母处于栈中的最后一个字符
+        stack<char>stk;//栈，可以保证字母的相对顺序
+        
+        //记录各字母数量
         for(char&c:s){
             num[c-'a']++;
         }
+
         for(char&c:s){
-            //如果当前字符没有在栈里
+            //如果当前字符不在栈中，考虑入栈
             if(!vis[c-'a']){
-                while(!stk.empty()&&stk.top()>c){
-                    if(num[stk.top()-'a']>0){//后面还有字符才能删除当前栈顶字符，不然当前字符就消失了，不符题意
-                        vis[stk.top()-'a']=0;//弹栈后，取消在栈中的记录
+                //因为要保证字典序最小，所以小字母应该尽量在前面，即栈底
+                while(!stk.empty()&&c<stk.top()){
+                    //如果较大字母在后面还会出现的话就可以弹栈，之后再加入
+                    if(num[stk.top()-'a']>0){
+                        vis[stk.top()-'a']=false;
                         stk.pop();
-                    }else{
+                    }
+                    else{
                         break;
                     }
                 }
-                vis[c-'a']=1;//标记入栈
+                //c入栈
+                vis[c-'a']=true;
                 stk.push(c);
             }
-            //字符数量减1
+            //遍历过一个字母，之后的字母数量就少一个
             num[c-'a']--;
         }
 
@@ -4301,6 +4308,7 @@ public:
         while(!stk.empty()){
             res.push_back(stk.top());stk.pop();
         }
+        //注意出栈顺序和字符顺序
         reverse(res.begin(),res.end());
         return res;
     }
@@ -4395,9 +4403,80 @@ public:
 
 ### Easy
 
+#### [925. 长按键入](https://leetcode.cn/problems/long-pressed-name/)
+
+```cpp
+方法一：双指针
+idx1用于遍历name
+idx2用于遍历typed
+typed只是name各字符由若干个分成多个了而已，因此typed不会在两组字符之间出现一个没有在对应name两字符之间出现过的字符
+
+class Solution {
+public:
+    bool isLongPressedName(string name, string typed) {
+        int idx1=0;
+        int idx2=0;
+        int m=name.size();
+        int n=typed.size();
+
+        while(idx1<m&&idx2<n){
+            //name和typed每组的起始字符都应该相同，否则typed[idx2]就是中间不应该存在的字符
+            if(name[idx1]!=typed[idx2])return false;
+            //匹配一组字符
+            while(idx1<m&&idx2<n&&name[idx1]==typed[idx2]){
+                idx1++;
+                idx2++;
+            }
+            //略过长按的字符
+            while(idx2>0&&typed[idx2-1]==typed[idx2])idx2++;
+
+            //name已经完全匹配完了，但是typed还没遍历完，说明最后面的字符不是长按name[m-1]引起的，因此不合理
+            //或者typed已经遍历完了，但是name还没完全匹配完
+            if((idx1==m&&idx2!=n)||(idx1!=m&&idx2==n))return false;
+        }
+
+        return true;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n+m);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
+
+#### [532. 数组中的 k-diff 数对](https://leetcode.cn/problems/k-diff-pairs-in-an-array/)
+
+```cpp
+方法一：双指针
+
+class Solution {
+public:
+    int findPairs(vector<int>& nums, int k) {
+        sort(nums.begin(),nums.end());
+        int n=nums.size(),y=0,res=0;
+
+        for(int x=0;x<n;x++){
+            if(x==0||nums[x]!=nums[x-1]){//去重
+                //y<=x：x去重相当于帮助y去重了
+                while(y<n&&(nums[y]-nums[x]<k||y<=x)){
+                    y++;
+                }
+                if(y<n&&nums[y]-nums[x]==k){
+                    res++;
+                }
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(logn);
+```
 
 
 
