@@ -4456,18 +4456,58 @@ class Solution {
 public:
     int findPairs(vector<int>& nums, int k) {
         sort(nums.begin(),nums.end());
-        int n=nums.size(),y=0,res=0;
-
-        for(int x=0;x<n;x++){
-            if(x==0||nums[x]!=nums[x-1]){//去重
-                //y<=x：x去重相当于帮助y去重了
-                while(y<n&&(nums[y]-nums[x]<k||y<=x)){
-                    y++;
-                }
-                if(y<n&&nums[y]-nums[x]==k){
-                    res++;
-                }
+        int n=nums.size();
+        int ans=0;
+        for(int j=0,i=0;j<n;j++){
+            if(j==0||nums[j-1]!=nums[j]){//去重
+                //nums[i]也不会重复，因为nums[i]-num[j]==k的时候就退出while循环了
+                //然后添加到答案之后，j就不断往后移动直到下一个不同的nums[j]，所以即使有众多nums[i]可以和当前nums[j]匹配
+                //但也只有第一个nums[i]会被记录到ans中
+                while(i<n&&(i<=j||nums[i]-nums[j]<k))i++;
+                if(i<n&&nums[i]-nums[j]==k)ans++;
             }
+        }
+        return ans;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(logn);
+```
+
+#### [56. 合并区间](https://leetcode.cn/problems/merge-intervals/)
+
+```cpp
+方法一：双指针
+思路：
+1.按区间起始位置从小到大排序
+2.i指向当前区间，j不断遍历到intervals[i]无法覆盖完全的区间
+3.向结果区间集合中，加入区间[intervals[i][0],intervals[j][1]]
+
+class Solution {
+public:
+    static bool compare(const vector<int>&vec1,const vector<int>&vec2){
+        if(vec1[0]<vec2[0])return true;
+        else if(vec1[0]==vec2[0])return vec1[1]<vec2[1];
+        else return false;
+    }
+
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        sort(intervals.begin(),intervals.end(),compare);
+        
+        int i=0;
+        int j=0;
+        int n=intervals.size();
+        vector<vector<int>>res;
+        while(i<n&&j<n){
+            int left=intervals[i][0];//左边界
+            int right=intervals[j][1];//右边界
+            while(j<n&&intervals[j][0]<=right){
+                //合并两区间后，更新右边界，注意要取当前所有右边界中最大的那个，因为能够尽可能的覆盖更多的区间，避免区间重复
+                right=max(right,intervals[j++][1]);
+            }
+            res.push_back({left,right});
+            i=j;
         }
 
         return res;
@@ -4476,6 +4516,37 @@ public:
 时空复杂度分析:
 时间复杂度：O(nlogn);
 空间复杂度：O(logn);
+```
+
+#### [75. 颜色分类](https://leetcode.cn/problems/sort-colors/)
+
+```cpp
+方法一：双指针
+
+class Solution {
+public:
+    void sortColors(vector<int>& nums) {
+        int n=nums.size();
+        //p0:下一个0应该去的位置
+        //p2:下一个2应该去的位置
+        //0和2都处理好了，1也处理完了
+        int p0=0,p2=n-1;
+        for(int i=0;i<=p2;i++){
+            //遇到2，就把2换到p2的位置，直到nums[i]!=2
+            while(i<=p2&&nums[i]==2){
+                swap(nums[i],nums[p2--]);
+            }
+            //如果nums[i]=0，就把0换到p0的位置
+            if(nums[i]==0){
+                swap(nums[i],nums[p0++]);
+            }
+        }
+        //处理完之后，1都在中间
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
 ```
 
 
