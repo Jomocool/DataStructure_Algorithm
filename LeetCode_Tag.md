@@ -654,9 +654,7 @@ public:
 
 ### Medium
 
-#### [581. 最短无序连续子数组](https://leetcode.cn/problems/shortest-unsorted-continuous-subarray/)
-
-![微信截图_20200921203355.png](https://pic.leetcode-cn.com/1600691648-ZCYlql-%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20200921203355.png)
+#### [581. ![微信截图_20200921203355.png](https://pic.leetcode-cn.com/1600691648-ZCYlql-%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20200921203355.png)
 
 ```cpp
 方法一：一次遍历
@@ -4443,6 +4441,31 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [485. 最大连续 1 的个数](https://leetcode.cn/problems/max-consecutive-ones/)
+
+```cpp
+方法一：双指针
+
+class Solution {
+public:
+    int findMaxConsecutiveOnes(vector<int>& nums) {
+        int i=0;
+        int n=nums.size();
+        int maxOneNum=0;
+        while(i<n){
+            while(i<n&&nums[i]==0)i++;//略过0
+            int start=i;//记录第一个1的下标
+            while(i<n&&nums[i]==1)i++;//计算连续1的个数
+            maxOneNum=max(maxOneNum,i-start);//计算最大值
+        }
+        return maxOneNum;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
@@ -4547,6 +4570,206 @@ public:
 时空复杂度分析:
 时间复杂度：O(n);
 空间复杂度：O(1);
+```
+
+#### [80. 删除有序数组中的重复项 II](https://leetcode.cn/problems/remove-duplicates-from-sorted-array-ii/)
+
+```cpp
+方法一：双指针
+
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        int i=0,j=0;
+        int n=nums.size();
+        //j必然大于等于i，所以无需担心nums[i]覆盖掉还没遍历到的元素
+        while(j<n){
+            int cnt=1;//当前已经在nums[j]上了，所以初始化出现次数为1
+            //计算nums[j]出现次数
+            while(j<n-1&&nums[j]==nums[j+1]){
+                cnt++;
+                j++;
+            }
+            //至少有一个nums[j]
+            nums[i++]=nums[j];
+            //如果出现次数超过两次，最多只能在“新数组”里出现两次，由于前面已经添加过一次了，所以再添加一次刚好两次
+            if(cnt>=2)nums[i++]=nums[j];
+            j++;//指向下一个新元素
+        }
+        //i指向当前待添加元素的位置，所以刚好是“新数组”的大小
+        return i;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [524. 通过删除字母匹配到字典里最长单词](https://leetcode.cn/problems/longest-word-in-dictionary-through-deleting/)
+
+```cpp
+方法一：双指针+排序
+本题实际上就是在找dictionary中是否存在长度最长且在同样长度中字典序最小的s的子序列
+按字符串长度从大到小排序，如果长度相同，就按照字典序从小到大排序，这样从前向后遍历dictionary，第一个符合要求，即是s的子序列的字符串就是结果字符串
+
+关键：
+判断删除一些元素之后，能不能和其它匹配，其实就是在问其它是否是当前的子序列
+
+class Solution {
+public:
+    //字符串比大小是先看字母大小再看长度，比如"b">"ab">"a"，字典序比较
+    //但是我们的目标是把长的优先，所以字符串长度优先级应该最高，再比较字典序
+    static bool compare(const string&s1,const string&s2){
+        if(s1.size()>s2.size())return true;
+        else if(s1.size()==s2.size())return s1<s2;//保证每组长度相同的字符串中，第一个就是字典序最小的
+        return false;
+    }
+	
+    //判断word是否为s子序列
+    bool isSubsequence(string s,string word){
+        int i=0;
+        int j=0;
+        int n=s.size();
+        int m=word.size();
+
+        while(i<n){
+            if(s[i]==word[j])j++;
+            i++;
+        }
+
+        return j==m;
+    }
+
+    string findLongestWord(string s, vector<string>& dictionary) {
+        sort(dictionary.begin(),dictionary.end(),compare);
+        int n=dictionary.size();
+
+        for(int i=0;i<n;i++){
+            if(isSubsequence(s,dictionary[i])){
+                return dictionary[i];
+            }
+        }
+
+        return "";
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(logn);
+```
+
+#### [986. 区间列表的交集](https://leetcode.cn/problems/interval-list-intersections/)
+
+```cpp
+方法一：双指针
+关键：
+交集就是 大的起始点 到 小的起始点所在区间的结束点 组成的区间
+然后哪个区间的结束点小，其对应的指针就先后移
+
+卡点：
+一开始想先找到起始点小的区间，然后从它开始，其实不需要这样。只要能够获取到大的起始点和小的起始点所在区间的结束点即可。
+因此找交集的起始点是最大值，而结束点是最小值
+
+class Solution {
+public:
+    vector<vector<int>> intervalIntersection(vector<vector<int>>& firstList, vector<vector<int>>& secondList) {
+        int i=0;
+        int j=0;
+        int m=firstList.size();
+        int n=secondList.size();
+        vector<vector<int>>res;
+        while(i<m&&j<n){
+            //交集区间在于 大的起始点 到 小的起始点所在区间的结束点 之间
+            //所以起始点取最大值，结束点取最小值
+            int start=max(firstList[i][0],secondList[j][0]);
+            int end=min(firstList[i][1],secondList[j][1]);
+            if(start<=end){
+                res.push_back({start,end});
+            }
+            //结束点小的区间指针先移动，因为结束点大的区间可能和另一个区间列表还有交集
+            if(firstList[i][1]<secondList[j][1])i++;
+            else j++;
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(min(m,n));
+空间复杂度：O(1);
+```
+
+#### [1004. 最大连续1的个数 III](https://leetcode.cn/problems/max-consecutive-ones-iii/)
+
+```cpp
+方法一：滑动窗口（双指针）
+关键：把问题转成求连续子数组中出现最多k个0的情况下子数组的最大长度
+
+class Solution {
+public:
+    int longestOnes(vector<int>& nums, int k) {
+        
+        int i=0,zeros=0,res=0;
+        //一开始使用while循环，会出现k=0的情况下，滑动窗口不移动导致while陷入死循环的问题
+        //用for循环，右边界必定会向右扩展，只需要记录0的个数不超过k，否则缩小左边界，后移i，直到删掉一个0
+        for(int j=0;j<nums.size();j++){
+            if(nums[j]==0)zeros++;
+            while(zeros>k){
+                if(nums[i++]==0)zeros--;
+            }
+            res=max(res,j-i+1);
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [1498. 满足条件的子序列数目](https://leetcode.cn/problems/number-of-subsequences-that-satisfy-the-given-sum-condition/)
+
+```cpp
+方法一：滑动窗口（双指针）
+
+class Solution {
+public:
+    int numSubseq(vector<int>& nums, int target) {
+        //排序
+        sort(nums.begin(),nums.end());
+        int n=nums.size();
+        const int mod=1000000007;
+
+        //快速幂
+        vector<int>pow(n);
+        pow[0]=1;
+        for(int i=1;i<n;i++){
+            pow[i]=(pow[i-1]<<1)%mod;
+        }
+
+        int res=0;
+        int i=0;
+        int j=n-1;
+        while(i<=j){
+            //最大值、最小值的和过大，左移最大值指针，以减小和
+            if(nums[i]+nums[j]>target){
+                j--;
+            }else{
+                //nums[i]和nums[j]必须出现在子序列中，这样最小值和最大值的和才小于等于target
+                //所以就是nums[i]和nums[j]之间的元素(包括nums[i])的排列组合
+                //nums[i]到nums[j-1]，总共有(j-1)-i+1=j-i个元素
+                //j-i个元素的子集个数是2^(j-i)
+                res=(res+pow[j-i])%mod;
+                //以nums[i]为最小值的情况都处理完了，后移i
+                i++;
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(n);
 ```
 
 
