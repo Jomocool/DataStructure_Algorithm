@@ -4754,9 +4754,10 @@ public:
             if(nums[i]+nums[j]>target){
                 j--;
             }else{
-                //nums[i]和nums[j]必须出现在子序列中，这样最小值和最大值的和才小于等于target
-                //所以就是nums[i]和nums[j]之间的元素(包括nums[i])的排列组合
-                //nums[i]到nums[j-1]，总共有(j-1)-i+1=j-i个元素
+                //nums[i]必须出现在子序列中，这样最小值和最大值的和才小于等于target，否则最小值变大，和可能就大于target
+                //因为nums[i]+nums[j]<=target，所以nums[i]+nums[j-k]必然也小于等于target
+                //所以就是nums[i]和nums[j]之间的元素(包括nums[j])的排列组合
+                //nums[i+1]到nums[j]，总共有j-(i+1)+1=j-i个元素
                 //j-i个元素的子集个数是2^(j-i)
                 res=(res+pow[j-i])%mod;
                 //以nums[i]为最小值的情况都处理完了，后移i
@@ -4782,9 +4783,219 @@ public:
 
 ### Easy
 
+#### [944. 删列造序](https://leetcode.cn/problems/delete-columns-to-make-sorted/)
+
+```cpp
+方法一：直接遍历
+
+class Solution {
+public:
+    int minDeletionSize(vector<string>& strs) {
+        int n=strs.size();//行数
+        int m=strs[0].size();//列数
+        int res=0;
+
+        for(int j=0;j<m;j++){
+            for(int i=0;i<n-1;i++){
+                if(strs[i][j]>strs[i+1][j]){
+                    res++;
+                    break;
+                }
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nm);
+空间复杂度：O(1);
+```
+
+#### [1046. 最后一块石头的重量](https://leetcode.cn/problems/last-stone-weight/)
+
+```cpp
+方法一：大根堆
+因为总是要取两块最重的石头碰撞，用最大堆保存最合适不过了
+
+class Solution {
+public:
+    int lastStoneWeight(vector<int>& stones) {
+        priority_queue<int,vector<int>,less<int>>pq;
+        //先加入到大根堆中
+        for(auto&n:stones){
+            pq.push(n);
+        }
+
+        //至少要有两个石头才能碰撞
+        while(pq.size()>=2){
+            int x=pq.top();pq.pop();
+            int y=pq.top();pq.pop();
+            //x可能等于y，不用把新重量加入
+            if(x-y>0){
+                pq.push(x-y);
+            }
+        }
+
+        //大根堆为空，代表所有石头都被粉碎
+        if(pq.empty())return 0;
+        //大根堆不为空，还有剩余石头，即大根堆的根
+        return pq.top();
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(n);
+```
+
+#### [1217. 玩筹码](https://leetcode.cn/problems/minimum-cost-to-move-chips-to-the-same-position/)
+
+```cpp
+方法一：贪心
+能走两步绝不走一步，本题实际上就是在考各筹码的位置到最后统一位置总共所需的最小代价，本质上就是能不能以偶数步从positions[i]到最后统一位置，如果可以代价就是0，否则代价就是1，因为可以先走完前面偶数步之后，最后再走一步。
+问题的关键是如何确定最后统一的位置呢？其实也只和奇数偶数有关，因为所有位置要么是奇数要么是偶数，从position[i]到1或者3的代价是一样的，因为可以从1走两步到3，代价是0，所以只需要找两个奇偶数代表即可，然后计算到它们二者统一位置上的不同代价，返回最小值即可
+
+class Solution {
+public:
+    int minCostToMoveChips(vector<int>& position) {
+        int posOdd=1;
+        int posEven=2;
+        int resOdd=0;
+        int resEven=0;
+
+        for(auto&pos:position){
+            //用取模2判断奇偶，最终提交时间是8ms
+            //但是用位运算判断奇偶，最终提交时间是0ms
+            if(abs(pos-posOdd)&1)resOdd++;
+            if(abs(pos-posEven)&1)resEven++;
+        }
+
+        return min(resOdd,resEven);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [1221. 分割平衡字符串](https://leetcode.cn/problems/split-a-string-in-balanced-strings/)
+
+```cpp
+方法一：贪心
+从左到右遍历s，时刻记录'L'和'R'的数量，如果二者数量一样，就代表又可以分割平衡字符串了，数量加1
+
+class Solution {
+public:
+    int balancedStringSplit(string s) {
+        int numL=0;
+        int numR=0;
+        int i=0;
+        int res=0;
+        while(i<s.length()){
+            s[i++]=='L'?numL++:numR++;
+            if(numL==numR)res++;
+        }
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
+
+#### [1029. 两地调度](https://leetcode.cn/problems/two-city-scheduling/)
+
+```cpp
+方法一：贪心
+思路：
+假设先让所有人去a市，再从其中找一半的人去b市，需要补差价bCost-aCost，这个值可正可负，为了最终费用最低，差价肯定越小越好，所以按bCost-aCost从小到大排序
+
+class Solution {
+public:
+    int twoCitySchedCost(vector<vector<int>>& costs) {
+        //排序
+        sort(costs.begin(),costs.end(),
+                [](const vector<int>&o1,const vector<int>&o2){
+            return (o1[1]-o1[0]<o2[1]-o2[0]);
+        });
+
+        int res=0;//最终费用
+        int n=costs.size()/2;
+        //前n个人去b市，后n个人去a市
+        for(int i=0;i<n;i++){
+            res+=costs[i][1]+costs[i+n][0];
+        }
+        
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nlogn);
+空间复杂度：O(1);
+其中n是costs的大小
+```
+
+#### [1049. 最后一块石头的重量 II](https://leetcode.cn/problems/last-stone-weight-ii/)
+
+```cpp
+方法一：动态规划，01背包问题
+思路：
+把石头分成重量尽可能相等的两堆，两堆石头碰撞之后，其中一堆必然全被粉碎，剩下一堆的实际只有一个石头，重量是初始两堆石头的重量差，因此重量差越小，最后一块石头的重量就越小
+因此，目标就是尽可能的凑出重量为所有石头质量之和的一半的那堆石头
+
+class Solution {
+public:
+    int lastStoneWeightII(vector<int>& stones) {
+        int sum=accumulate(stones.begin(),stones.end(),0);
+        int target=sum/2;
+        int n=stones.size();
+
+        //dp[i][j]:从stones[0,i-1]里找到离j最近且小于j的石头堆的重量
+        vector<vector<int>>dp(n+1,vector<int>(target+1,0));
+        for(int i=1;i<=n;i++){
+            for(int j=1;j<=target;j++){
+                //i是dp的行，不是stones的，所以取石头应该是stones[i-1]
+                //由于是01背包，stones[i-1]要么是放要么是不放，所以是找上一行的，而不是当前行的
+                //因为当前行的有些可能已经更新过了，且已经放了stones[i-1]，不能重复放了
+                if(j<stones[i-1])dp[i][j]=dp[i-1][j];//小于stones[i]的背包无法装下stones[i]，不更新
+                else dp[i][j]=max(dp[i-1][j],dp[i-1][j-stones[i-1]]+stones[i-1]);
+            }
+        }
+        //分成sum-dp[n][target]和dp[n][target]两堆石头，其中dp[n][target]是大的那堆
+        return sum-2*dp[n][target];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n*target);
+空间复杂度：O(n*target);
+
+优化空间：二维数组优化成一维数组
+class Solution {
+public:
+    int lastStoneWeightII(vector<int>& stones) {
+        int n=stones.size();
+        int sum=accumulate(stones.begin(),stones.end(),0);
+
+        int target=sum/2;
+        vector<int>dp(target+1,0);
+        for(int i=0;i<n;i++){
+            //需要前面的值，所以从后面开始更新
+            for(int j=target;j>=stones[i];j--){
+                dp[j]=max(dp[j],dp[j-stones[i]]+stones[i]);
+            }
+        }
+
+        return sum-2*dp.back();
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n*target);
+空间复杂度：O(target);
+```
 
 
 
