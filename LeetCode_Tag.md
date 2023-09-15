@@ -5025,6 +5025,192 @@ public:
 
 ### Medium
 
+#### [39. 组合总和](https://leetcode.cn/problems/combination-sum/)
+
+```cpp
+方法一：回溯
+
+class Solution {
+public:
+    vector<int>path;
+    vector<vector<int>>res;
+	
+    /*
+    遍历完所有元素不是某一层该做的事情，每一层只需要处理好自己应该添加几个candidates[idx]之后交给下一层处理，然后整体看起来就像是遍历完
+    所有元素后形成的结果集了
+    */
+    //idx:当前准备处理的元素的下标
+    void backTracking(vector<int>&candidates,int idx,int target){
+        if(target==0){
+            res.push_back(path);
+            return;
+        }
+        if(target<0||idx==candidates.size())return;
+
+        int j=0;
+        for(;candidates[idx]*j<=target;j++){
+            if(j>0)path.push_back(candidates[idx]);
+            backTracing(candidates,idx+1,target-candidates[idx]*j);
+        }
+        //上一个for是因为candidates[idx]*j>target才退出的，所以实际上path中只添加了j-1个candidates[idx]
+        for(int k=1;k<j;k++)path.pop_back();
+    }
+
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        path.clear();
+        res.clear();
+        backTracing(candidates,0,target);
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(2^n*n);
+空间复杂度：O(n);
+```
+
+#### [40. 组合总和 II](https://leetcode.cn/problems/combination-sum-ii/)
+
+```cpp
+方法一：回溯
+
+class Solution {
+public:
+    vector<int>path;
+    vector<vector<int>>res;
+    vector<bool>isUsed;
+
+    void backTracking(vector<int>&candidates,int idx,int target){
+        if(target==0){
+            res.push_back(path);
+            return;
+        }
+        if(target<0||idx==candidates.size())return;
+
+        int j=0;//添加candidates[idx]的个数
+        for(;candidates[idx]*j<=target&&j<=1;j++){
+            if(j>0){
+                /*
+                如果candidates[idx]等于其前一个元素，并且前面一个元素未被使用，代表着以这组相同元素的第一个元素为首的组合已经把后面
+                所有情况都考虑过了，不用再以一个同样的元素为首再处理一遍了，这样会有重复的组合出现
+                */
+                if(idx>0&&candidates[idx]==candidates[idx-1]&&!isUsed[idx-1]){
+                    return;
+                }else{
+                    path.push_back(candidates[idx]);
+                    isUsed[idx]=true;
+                }
+            }
+            //j==0:不添加当前元素
+            //j==1:添加一个当前元素
+            backTracking(candidates,idx+1,target-candidates[idx]*j);
+        }
+        //j==2，代表已经添加了1个candidates[idx]
+        if(j==2){
+            path.pop_back();
+            isUsed[idx]=false;
+        }
+    }
+
+    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
+        //排序，使相同的元素聚集在一起，方便去重
+        sort(candidates.begin(),candidates.end());
+        isUsed=vector<bool>(candidates.size(),false);
+        backTracking(candidates,0,target);
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(2^n*n);
+空间复杂度：O(n);
+```
+
+#### [46. 全排列](https://leetcode.cn/problems/permutations/)
+
+```cpp
+方法一：回溯
+
+class Solution {
+public:
+    vector<int>path;
+    vector<vector<int>>res;
+    vector<bool>isUsed;
+
+    void backTracking(vector<int>&nums,int n){
+        if(path.size()==n){
+            res.push_back(path);
+            return;
+        }
+        //由于是全排列，所以每次都要考虑到所有元素，如果是已经加入到path中的元素，isUsed[i]=true，不会重复添加
+        //第一层的for循环就是在选定全排列的第一个元素
+        //第二层的for循环就是在选定全排列的第二个元素
+        //后面的以此类推，但是由于有isUsed存在，所以不会在path中重复添加同一个元素
+        for(int i=0;i<n;i++){
+            if(isUsed[i])continue;
+            path.push_back(nums[i]);
+            isUsed[i]=true;
+            backTracking(nums,n);
+            path.pop_back();
+            isUsed[i]=false;            
+        }
+    }
+
+    vector<vector<int>> permute(vector<int>& nums) {
+        int n=nums.size();
+        isUsed=vector<bool>(n,false);
+        backTracking(nums,n);
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n*n!);
+空间复杂度：O(n);
+```
+
+#### [47. 全排列 II](https://leetcode.cn/problems/permutations-ii/)
+
+```cpp
+方法一：回溯
+
+class Solution {
+public:
+    vector<int>path;
+    vector<vector<int>>res;
+    vector<bool>isUsed;
+
+    void backTracking(vector<int>&nums,int n){
+        if(path.size()==n){
+            res.push_back(path);
+            return;
+        }
+
+        for(int i=0;i<n;i++){
+            //isUsed[i-1]==true:说明同一树枝(path)使用过nums[i-1]
+            //isUsed[i-1]==false:说明同一树层(当前for循环)使用过nums[i-1]，则当前层不能再考虑nums[i]了，而不是整个全排列不能考虑nums[i]了，所以不能return
+            if(i>0&&nums[i]==nums[i-1]&&!isUsed[i-1])continue;
+            if(!isUsed[i]){
+                path.push_back(nums[i]);
+                isUsed[i]=true;
+                backTracking(nums,n);
+                path.pop_back();
+                isUsed[i]=false;
+            }
+        }
+    }
+
+    vector<vector<int>> permuteUnique(vector<int>& nums) {
+        //排序，去重
+        sort(nums.begin(),nums.end());
+        int n=nums.size();
+        isUsed=vector<bool>(n,false);
+        backTracking(nums,n);
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n*n!);
+空间复杂度：O(n);
+```
+
 
 
 ### Hard
