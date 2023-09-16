@@ -5011,20 +5011,6 @@ public:
 
 ### Medium
 
-
-
-### Hard
-
-
-
-## 动态规划
-
-### Easy
-
-
-
-### Medium
-
 #### [39. 组合总和](https://leetcode.cn/problems/combination-sum/)
 
 ```cpp
@@ -5210,6 +5196,203 @@ public:
 时间复杂度：O(n*n!);
 空间复杂度：O(n);
 ```
+
+#### [78. 子集](https://leetcode.cn/problems/subsets/)
+
+![image-20230916161038498](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230916161038498.png)
+
+```cpp
+方法一：回溯
+子集就是在递归的过程中收集了所有节点的情况得到的
+
+class Solution {
+public:
+    vector<int>path;
+    vector<vector<int>>res;
+
+    void backTracking(vector<int>nums,int idx,int n){
+        res.push_back(path);
+        //具体情况参考上图
+        for(int i=idx;i<n;i++){
+            path.push_back(nums[i]);
+            backTracking(nums,i+1,n);
+            path.pop_back();
+        }
+    }
+
+    vector<vector<int>> subsets(vector<int>& nums) {
+        int n=nums.size();
+        backTracking(nums,0,n);
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(2^n*n);
+空间复杂度：O(n);
+```
+
+#### [90. 子集 II](https://leetcode.cn/problems/subsets-ii/)
+
+```cpp
+方法一：回溯
+
+class Solution {
+public:
+    vector<int>path;
+    vector<vector<int>>res;
+    vector<bool>isUsed;
+
+    void backTracking(vector<int>&nums,int idx,int n){
+        res.push_back(path);
+        for(int i=idx;i<n;i++){
+            //当前树层已经有该值了，其对应的所有情况已经被处理过了，不需要再重复处理了
+            if(i>0&&nums[i-1]==nums[i]&&!isUsed[i-1])continue;
+            path.push_back(nums[i]);
+            isUsed[i]=true;
+            backTracking(nums,i+1,n);
+            path.pop_back();
+            isUsed[i]=false;
+        }
+    }
+
+    vector<vector<int>> subsetsWithDup(vector<int>& nums) {
+        //排序，方便去重
+        sort(nums.begin(),nums.end());
+        int n=nums.size();
+        isUsed=vector<bool>(n,false);
+        backTracking(nums,0,n);
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(2^n*n);
+空间复杂度：O(n);
+```
+
+#### [面试题 08.08. 有重复字符串的排列组合](https://leetcode.cn/problems/permutation-ii-lcci/)
+
+```cpp
+方法一：回溯
+对于全排列，由于每个字符都可能出现在任意一个位置上，即任意一层，所以每层都需要从0开始遍历，并且还需要一个isUsed数组来判断当前字符是否已经被当前树层或树枝用过
+s[i-1]==s[i]&&!isUsed[i-1]:被当前树层用过
+isUsed[i]:被当前树枝用过
+
+class Solution {
+public:
+    string path;
+    vector<string>res;
+    vector<bool>isUsed;
+
+    void backTracking(string&s,int n){
+        if(path.size()==n)res.emplace_back(path);
+        //全排列就是要考虑所有字符，因此从第一个字符遍历到最后一个字符
+        for(int i=0;i<n;i++){
+            //假设s[i-1]是字符c
+            //意味着全排列当前位置是字符c的情况已经处理过了，而s[i]==s[i-1]，不需要再处理全排列当前位置是字符c的情况了，否则就重复了
+            if(i>0&&s[i-1]==s[i]&&!isUsed[i-1])continue;
+            if(!isUsed[i]){
+                path.push_back(s[i]);
+                isUsed[i]=true;
+                backTracking(s,n);
+                path.pop_back();
+                isUsed[i]=false;
+            }
+        }
+    }
+
+    vector<string> permutation(string S) {
+        //排序，方便去重
+        sort(S.begin(),S.end());
+        int n=S.size();
+        isUsed=vector<bool>(n,false);
+        backTracking(S,n);
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n*n!);
+空间复杂度：O(n);
+```
+
+
+
+### Hard
+
+#### [679. 24 点游戏](https://leetcode.cn/problems/24-game/)
+
+```cpp
+方法一：
+思路：
+先选两个数，再选两个数到一个新列表中，然后将前两个数的计算值放入到新列表中，然后处理3个数、2个数、1个数的列表，看最终结果值是否可以等于24，只要其中一种情况可以得到24，就返回true。回溯体现在把计算值拿出来的过程。
+注意：
+1.除法为实数运算，用浮点数储存，考虑精度误差，10^-6
+2.除数不能等于0
+3.交换律可以减少重复计算的情况
+
+
+class Solution {
+public:
+    static constexpr int TARGET = 24;//目标值
+    static constexpr double EPSILON = 1e-6;//误差标准值
+    static constexpr int ADD = 0, MULTIPLY = 1, SUBTRACT = 2,DIVIDE = 3;//定义运算符
+
+    bool judgePoint24(vector<int>& cards) {
+        vector<double>l;
+        for(const int&num:cards){
+            l.emplace_back(static_cast<double>(num));
+        }
+        return solve(l);
+    }
+	
+    //solve一开始处理4个数的列表，然后该列表将前两个数计算的结果放入新列表中，继续递归，然后处理3个数的列表，直到列表中只有一个结果值
+    bool solve(vector<double>&l){
+        if(l.size()==0)return false;
+        //剩最后一个值时，该值就是最终计算得出的结果值
+        if(l.size()==1)return fabs(l[0]-TARGET)<EPSILON;//误差要小于10^-6
+
+        int n=l.size();
+        for(int i=0;i<n;i++){
+            for(int j=0;j<n;j++){
+                if(i!=j){//前两个数对应下标
+                    vector<double>list2;
+                    //选择后两个数
+                    for(int k=0;k<n;k++){
+                        if(k!=i&&k!=j)list2.emplace_back(l[k]);//不能重复选择前两个数
+                    }
+                    //选择运算符
+                    for(int k=0;k<4;k++){
+                        //k<2是乘法和加法，满足交换律，i和j谁前谁后都一样，计算一次就好了
+                        if(k<2&&i>j)continue;
+                        if(k==ADD)list2.emplace_back(l[i]+l[j]);
+                        else if(k==MULTIPLY)list2.emplace_back(l[i]*l[j]);
+                        else if(k==SUBTRACT)list2.emplace_back(l[i]-l[j]);
+                        else if(k==DIVIDE){
+                            if(fabs(l[j])<EPSILON)continue;//除数是0
+                            list2.emplace_back(l[i]/l[j]);
+                        }
+                        if(solve(list2))return true;
+                        list2.pop_back();//回溯
+                    }
+                }
+            }
+        }
+        return false;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(1);
+空间复杂度：O(1);
+```
+
+
+
+## 动态规划
+
+### Easy
+
+
+
+### Medium
 
 
 
