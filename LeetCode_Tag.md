@@ -5370,6 +5370,10 @@ public:
                             if(fabs(l[j])<EPSILON)continue;//除数是0
                             list2.emplace_back(l[i]/l[j]);
                         }
+                        //如果list2能得到24，返回true给上一层，上一层接收到之后也会继续返回，直到最顶层，最终就是只要有一种情况成立
+                        //就会一路往上返回true，这也是我们的目的，因此是if(solve(list2))return true
+                        //而不是：solve(list2)，这样即使最终结果可以得到24，但由于没有返回true，所以上层也不知道
+                        //也不是：return solve(list2)，因为可能当前情况不成立，需要回溯后，重新计算值放进去，可能会错过正确情况
                         if(solve(list2))return true;
                         list2.pop_back();//回溯
                     }
@@ -5390,13 +5394,182 @@ public:
 
 ### Easy
 
+#### [70. 爬楼梯](https://leetcode.cn/problems/climbing-stairs/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int climbStairs(int n) {
+        //dp[i]:爬到第i阶的方法数
+        vector<int>dp(n+1,0);
+        dp[0]=1;//初始化dp[0]为1，方便dp[2]的计算
+        dp[1]=1;
+        for(int i=2;i<=n;i++){
+            //因为一次可以爬1或2个台阶，因此可以从前一个台阶或前两个台阶爬上来
+            dp[i]=dp[i-1]+dp[i-2];
+        }
+        return dp[n];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+优化空间复杂度：一维数组 => 常数个值
+只需要维护dp[i]、dp[i-1]、dp[i-2]三个值即可
+class Solution {
+public:
+    int climbStairs(int n) {
+        if(n<=1)return 1;
+        int a=1;
+        int b=1;
+        int c=0;
+        for(int i=2;i<=n;i++){
+            c=a+b;
+            a=b;
+            b=c;
+        }
+        return c;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [121. 买卖股票的最佳时机](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock/)
+
+```cpp
+方法一：一次遍历
+遍历的过程中，不断更新今天之前的历史最低点，并且同时计算最大利润，即今天的价格-历史最低点
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int cost=INT_MAX;
+        int profit=INT_MIN;
+        //可以保证cost一定在price之前
+        for(int&price:prices){
+            profit=max(profit,price-cost);//计算最大利润
+            cost=min(cost,price);//更新最低点
+        }
+        return profit>0?profit:0;//没有利润返回0
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
 
+#### [53. 最大子数组和](https://leetcode.cn/problems/maximum-subarray/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int n=nums.size();
+        int maxSum=INT_MIN;
+        //dp[i]:以nums[i-1]为结尾的连续子数组的最大和
+        vector<int>dp(n+1,0);
+        for(int i=1;i<=n;i++){
+            //前面连续子数组的和大于0的话，才继续延续，否则只会拖累nums[i-1]的值
+            //因为nums[i-1]+负数<nums[i-1]，为了让后面有更大的和，肯定不能加上前面的负值和
+            if(dp[i-1]>0)dp[i]=dp[i-1]+nums[i-1];
+            else dp[i]=nums[i-1];
+            maxSum=max(maxSum,dp[i]);
+        }
+        return maxSum;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+优化空间复杂度：一维数组 => 单值
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int n=nums.size();
+        int cur=0;
+        int maxSum=INT_MIN;
+        for(int i=0;i<n;i++){
+            if(cur>0)cur+=nums[i];
+            else cur=nums[i];
+            maxSum=max(maxSum,cur);
+        }
+        return maxSum;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [122. 买卖股票的最佳时机 II](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-ii/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int n=prices.size();
+        //因为每天要么持有股票，要么不持有股票这两种状态
+        //dp[i][0]:第i天手里没有股票时的最大利润
+        //dp[i][1]:第i天手里有股票时的最大利润
+        //多一行方便初始化
+        vector<vector<int>>dp(n,vector<int>(2,0));
+        dp[0][1]=-prices[0];//初始化dp
+        for(int i=1;i<n;i++){
+            //今天不持有股票可能是前一天就不持有股票，也可能是今天卖出而不持有股票
+            dp[i][0]=max(dp[i-1][0],dp[i-1][1]+prices[i]);
+            //今天持有股票可能是前一天就持有股票，也可能是今天买入而持有股票
+            dp[i][1]=max(dp[i-1][1],dp[i-1][0]-prices[i]);
+        }
+        return max(dp[n-1][0],dp[n-1][1]);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+优化空间复杂度：
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int nohold=0;
+        int hold=-prices[0];
+        int n=prices.size();
+        for(int i=1;i<n;i++){
+            int tmp=nohold;
+            nohold=max(nohold,hold+prices[i]);
+            hold=max(hold,tmp-prices[i]);
+        }
+        return max(nohold,hold);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Hard
+
+#### [123. 买卖股票的最佳时机 III](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iii/)
+
+```cpp
+
+```
 
 
 
