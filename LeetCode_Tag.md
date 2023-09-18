@@ -5568,7 +5568,99 @@ public:
 #### [123. 买卖股票的最佳时机 III](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iii/)
 
 ```cpp
+方法一：动态规划
+思路：
+由于最多只能完成两次交易，因此在任意一天结束之后，可能会处于一下5种状态之一：
+1.未进行过任何操作
+2.只进行过一次买操作
+3.进行过一次买操作和卖操作，即完成了一次交易
+4.在完成了一次交易的情况下，进行了第二次的买操作
+5.完成了两次交易
+第一个状态的利润显然是0，因此不需要记录，对应剩下四种状态的利润，分别用buy1、sell1、buy2、sell2记录
 
+对于buy1:我们可以在第i天什么也不做，保持不变，也可以在进行任何操作的前提下以prices[i]的价格购入股票，转移方程如下
+buy1=max(buy1,-prices[i]);
+
+对于sell1:我们可以在第i天什么也不做，保持不变，也可以在完成第一次买的操作下，以prices[i]的价格卖出股票，转移方程如下
+sell1=max(sell1,buy1+prices[i]);
+
+对于buy2:我们可以在第i天什么也不做，保持不变，也可以在完成第一次交易的情况下以prices[i]的价格买入第二次股票，转移方程如下
+buy2=max(buy2,sell1-prices[i]);
+
+对于sell2:我们可以在第i天什么也不做，保持不变，也可以在完成第二次买的操作下，以prices[i]的价格卖出股票，转移方程如下
+sell2=max(sell2,buy2+prices[i]);
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int n=prices.size();
+        int buy1=-prices[0];//在第1天，第一次买入
+        int sell1=0;//在第1天，第一次买入又卖出
+        int buy2=-prices[0];//在第1天，第一次交易之后第二次买入
+        int sell2=0;//在第1天，第二次买入之后又卖出
+        for(int i=1;i<n;i++){
+            buy1=max(buy1,-prices[i]);
+            //buy1是考虑了第i天的价格的，但是对sell1没有影响，原因如下：
+            //1.buy1>-prices[i]:代表着今天的股票价格更高，今天购入股票的话利润就没那么高了，因此延续buy1
+            /*2.buy1<-prices[i]:代表着今天的股票价格根底，今天购入股票利润更高，因此换作今天购入股票
+              buy1+prices[i]=0，sell1还是延续之前的sell1，即使当天买入卖出，sell1也不会被影响*/
+            //后面的buy2和sell2也是如此
+            sell1=max(sell1,buy1+prices[i]);
+            buy2=max(buy2,sell1-prices[i]);
+            sell2=max(sell2,buy2+prices[i]);
+        }
+        //最大利润可能是不交易(0)、一次交易(sell1)、两次交易(sell2)
+        //sell1>=0&&sell2>=0，所以不用考虑不交易
+        //sell1和sell2都是在维护最大值，且sell1的结果会影响到sell2，因此最大利润返回sell2即可
+        return sell2;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [188. 买卖股票的最佳时机 IV](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iv/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int maxProfit(int k, vector<int>& prices) {
+        int n=prices.size();
+        int m=k*2;
+        //dp[i][j]:第i天的第j次交易买卖的最大利润
+        vector<vector<int>>dp(n,vector<int>(m,0));
+        for(int i=0;i<m;i++){
+            //偶数代表着买操作，在第1天，在前一次交易的基础上买入股票
+            //奇数代表着完成一次交易，利润是0，无需修改
+            if((i&1)==0)dp[0][i]=-prices[0];
+        }
+
+        for(int i=1;i<n;i++){
+            //由于第一次买入没有依赖值，所以单独处理
+            dp[i][0]=max(dp[i-1][0],-prices[i]);
+            for(int j=1;j<m;j++){
+                //买入
+                if((j&1)==0){
+                    //要么不操作，要么前一天完成j%2次的交易的情况下以prices[i]的价格买入股票
+                    dp[i][j]=max(dp[i-1][j],dp[i-1][j-1]-prices[i]);
+                }
+                //卖出
+                else{
+                    //要么不操作，要么在完成前一次买入的操作下，以prices[i]的价格卖出股票
+                    dp[i][j]=max(dp[i-1][j],dp[i-1][j-1]+prices[i]);
+                }
+            }
+        }
+
+        return dp[n-1][m-1];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(nm);
+空间复杂度：O(nm);
 ```
 
 
