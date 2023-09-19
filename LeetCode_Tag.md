@@ -5561,6 +5561,89 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [198. 打家劫舍](https://leetcode.cn/problems/house-robber/)
+
+```cpp
+方法一：动态规划
+思路：
+每一家只有两个状态，偷与不偷
+
+class Solution {
+public:
+    int rob(vector<int>& nums) {
+        int n=nums.size();
+        //dp[i][0]:不偷第i家的最大利润
+        //dp[i][1]:偷第i家的最大利润
+        vector<vector<int>>dp(n,vector<int>(2,0));
+        dp[0][1]=nums[0];
+        for(int i=1;i<n;i++){
+            dp[i][0]=max(dp[i-1][0],dp[i-1][1]);//不偷第i家的最大利润是之前的最大利润
+            dp[i][1]=dp[i-1][0]+nums[i];//偷第i家的话，第i-1家一定不能偷
+        }
+        //返回考虑完n家之后的最大值
+        return max(dp[n-1][0],dp[n-1][1]);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+优化空间效率：
+class Solution {
+public:
+    int rob(vector<int>& nums) {
+        int n=nums.size();
+        int noStl=0;
+        int stl=nums[0];
+        for(int i=1;i<n;i++){
+            int tmp=noStl;
+            noStl=max(noStl,stl);
+            stl=tmp+nums[i];
+        }
+        return max(noStl,stl);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [213. 打家劫舍 II](https://leetcode.cn/problems/house-robber-ii/)
+
+```cpp
+方法一：动态规划
+思路：
+1.一间房：return nums[0];
+2.两间房：return max(nums[0],nums[1]);
+3.超过两间房才需要考虑首尾问题：
+偷了第0家，就不能偷第n-1家，因此偷的范围是[0,n-2]
+偷了n-1家，就不能偷第0家，因此偷的范围是[1,n-1]
+按照上一题的方法找出二者的最大值即可
+
+class Solution {
+public:
+    int robRange(vector<int>&nums,int start,int end){
+        int noStl=0,stl=nums[start];
+        for(int i=start+1;i<=end;i++){
+            int tmp=noStl;
+            noStl=max(noStl,stl);
+            stl=tmp+nums[i];
+        }
+        return max(noStl,stl);
+    }
+
+    int rob(vector<int>& nums) {
+        int n=nums.size();
+        if(n==1)return nums[0];
+        else if(n==2)return max(nums[0],nums[1]);
+        return max(robRange(nums,0,n-2),robRange(nums,1,n-1));
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Hard
