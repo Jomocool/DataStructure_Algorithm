@@ -5463,6 +5463,33 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [303. 区域和检索 - 数组不可变](https://leetcode.cn/problems/range-sum-query-immutable/)
+
+```cpp
+方法一：动态规划
+
+class NumArray {
+public:
+    //dp[i]:nums[0,i]的和
+    vector<int>dp;
+
+    NumArray(vector<int>& nums) {
+        int n=nums.size();
+        dp=vector<int>(n,0);
+        dp[0]=nums[0];
+        for(int i=1;i<n;i++){
+            dp[i]=dp[i-1]+nums[i];
+        }
+    }
+    
+    int sumRange(int left, int right) {
+        //dp[right]-dp[left]减去了nums[left]，需要加回来
+        int leftVal=left==0?dp[left]:dp[left]-dp[left-1];
+        return dp[right]-dp[left]+leftVal;
+    }
+};
+```
+
 
 
 ### Medium
@@ -5613,6 +5640,8 @@ public:
 ```cpp
 方法一：动态规划
 思路：
+本题对比前一道题唯一不同的就是保证第0家和第n-1家不能同时被偷，其余和前一道题一样即可。
+[0,n-2]和[1,n-1]就恰好解决了这个问题，所以分开去计算即可
 1.一间房：return nums[0];
 2.两间房：return max(nums[0],nums[1]);
 3.超过两间房才需要考虑首尾问题：
@@ -5631,7 +5660,7 @@ public:
         }
         return max(noStl,stl);
     }
-
+数
     int rob(vector<int>& nums) {
         int n=nums.size();
         if(n==1)return nums[0];
@@ -5642,6 +5671,118 @@ public:
         //所以即使出现上述情况，也是能够保证最大利润的
         //这样保证了0和第n-1家不会同时被偷，同时也保证了最大利润
         return max(robRange(nums,0,n-2),robRange(nums,1,n-1));
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [309. 买卖股票的最佳时机含冷冻期](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-with-cooldown/)
+
+```cpp
+方法一：动态规划
+思路：
+与之前不同的地方在于，需要确定到底是哪一天卖出的，如果是前一天卖出导致今天不持有股票，那么下一天就不会处于冷冻期，如果是今天卖出导致不持有股票，那么下一天就会处于冷冻期
+每天的状态：
+1.持有股票：可能前一天就持有股票，也可能当天买入股票
+2.不持有股票：
+  2.1今天卖出而不持有股票，下一天是冷冻期
+  2.2前一天卖出而不持有股票，下一天不会是冷冻期
+综上，每天的状态总共有3种：
+1.持有股票：买入并不会导致冷冻期
+2.不持有股票且不使下一天处于冷冻期
+3.不持有股票且使下一天是冷冻期
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int n=prices.size();
+        //dp[i][0]:第i天持有股票的最大利润
+        //dp[i][1]:当天卖出导致第i天不持有股票，会使下一天处于冷冻期的最大利润
+        //dp[i][2]:前一天卖出导致第i天不持有股票，不会使下一条处于冷冻期的最大利润
+        vector<vector<int>>dp(n,vector<int>(3,0));
+        dp[0][0]=-prices[0];
+        //初入股市，不持有股票利润就为0
+        dp[0][1]=0;
+        dp[0][2]=0;
+        for(int i=1;i<n;i++){
+            //今天不能是冷冻期，否则无法买入
+            dp[i][0]=max(dp[i-1][0],dp[i-1][2]-prices[i]);
+            dp[i][1]=dp[i-1][0]+prices[i];//当天卖出
+            //之前就不持有股票导致今天不持有股票，把之前所有不持有股票状态下的利润取最大值
+            dp[i][2]=max(dp[i-1][1],dp[i-1][2]);
+        }
+        //最后不持有股票才有最大利润
+        return max(dp[n-1][1],dp[n-1][2]);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+优化空间效率：
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int n=prices.size();
+        int hold=-prices[0];
+        int unhold1=0;
+        int unhold2=0;
+        for(int i=1;i<n;i++){
+            int tmp_hold=hold;
+            int tmp_unhold1=unhold1;
+            hold=max(hold,unhold2-prices[i]);
+            unhold1=tmp_hold+prices[i];
+            unhold2=max(tmp_unhold1,unhold2);
+        }
+        return max(unhold1,unhold2);
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [714. 买卖股票的最佳时机含手续费](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-with-transaction-fee/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices, int fee) {
+        int n=prices.size();
+        //dp[i][0]:第i天不持有股票的最大利润
+        //dp[i][1]:第i天持有股票的最大利润
+        vector<vector<int>>dp(n,vector<int>(2,0));
+        dp[0][0]=0;
+        dp[0][1]=-prices[0];
+        for(int i=1;i<n;i++){
+            dp[i][0]=max(dp[i-1][0],dp[i-1][1]+prices[i]-fee);
+            dp[i][1]=max(dp[i-1][1],dp[i-1][0]-prices[i]);
+        }
+        //最后把股票卖出，能回本一点是一点
+        return dp[n-1][0];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+优化空间效率：
+class Solution {
+public:
+    int maxProfit(vector<int>& prices, int fee) {
+        int n=prices.size();
+        int unhold=0;
+        int hold=-prices[0];
+        for(int i=1;i<n;i++){
+            int tmp=unhold;
+            unhold=max(unhold,hold+prices[i]-fee);
+            hold=max(hold,tmp-prices[i]);
+        }
+        return unhold;
     }
 };
 时空复杂度分析:
