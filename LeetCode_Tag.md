@@ -5490,6 +5490,85 @@ public:
 };
 ```
 
+#### [746. 使用最小花费爬楼梯](https://leetcode.cn/problems/min-cost-climbing-stairs/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int minCostClimbingStairs(vector<int>& cost) {
+        int n=cost.size();
+        //dp[i]:爬到下标为i的台阶的最小花费
+        //下标为n的台阶就是最终的顶部台阶
+        vector<int>dp(n+1,0);
+        //初始化dp[0]、dp[1]为0
+        for(int i=2;i<=n;i++){
+            dp[i]=min(dp[i-1]+cost[i-1],dp[i-2]+cost[i-2]);
+        }
+        return dp[n];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+优化空间效率：
+class Solution {
+public:
+    int minCostClimbingStairs(vector<int>& cost) {
+        int n=cost.size();
+        int a=0,b=0,c=0;
+        for(int i=2;i<=n;i++){
+            c=min(a+cost[i-2],b+cost[i-1]);
+            a=b;
+            b=c;
+        }
+        return c;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
+#### [1025. 除数博弈](https://leetcode.cn/problems/divisor-game/)
+
+```cpp
+方法一：动态规划
+思路：
+对于当前的n，如果Alice能够得到一个x，使得n-x是一个使Bob必败的数，那么Alice就必胜
+
+class Solution {
+public:
+    bool divisorGame(int n) {
+        //dp[i]:黑板上的数为数字i时，Alice是否必胜
+        vector<bool>dp(n+1,false);
+        //初始化dp
+        dp[1]=false;
+        dp[2]=true;
+        for(int i=3;i<=n;i++){
+            for(int x=1;x<i;x++){
+                //此时Alice选择完x
+                //因为dp[i]是Alice先手的结果
+                //如果想让Alice选择完x之后还能够必胜
+                //应该选择一个dp[i-x]，意味着此时先手那方的结果
+                //i-x是留给Bob的，此时如果dp[i-x]=false，Bob先手的话，Bob必输
+                //而Alice就必胜了，因此选择一个x，使得留给Bob的数是其先手必输的
+                if(i%x==0&&!dp[i-x]){
+                    dp[i]=true;
+                    break;
+                }
+            }
+        }
+        return dp[n];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n^2);
+空间复杂度：O(n);
+```
+
 
 
 ### Medium
@@ -5788,6 +5867,45 @@ public:
 时空复杂度分析:
 时间复杂度：O(n);
 空间复杂度：O(1);
+```
+
+#### [5. 最长回文子串](https://leetcode.cn/problems/longest-palindromic-substring/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        int n=s.size();
+        int maxLen=1;//至少都有一个字母
+        int start=0;
+        //dp[i][j]:s[i,j]是否为回文子串
+        vector<vector<bool>>dp(n,vector<bool>(n,false));
+        //初始化dp，因为完善dp的过程中dp[i][j]和dp[i+1][j-1]有关，一下就减去了两个字符
+        //因此初始化dp时应考虑一个字符和两个字符的情况，因为对于i==j-1的情况，i+1>j-1的
+        //因此dp[i+1][j-1]的情况是不符合逻辑的，因此也无法用
+        for(int i=0;i<n;i++){
+            dp[i][i]=true;
+            if(i<n-1&&s[i]==s[i+1]){
+                dp[i][i+1]=true;
+                maxLen=2;
+                start=i;
+            }
+        }
+        //转移方程需要dp[i+1][j-1]的值，即左下，因此遍历顺序就是从左下到右上
+        for(int i=n-1;i>=0;i--){
+            for(int j=i+2;j<n;j++){
+                dp[i][j]=dp[i+1][j-1]&&(s[i]==s[j]);
+                if(dp[i][j]&&j-i+1>maxLen){
+                    maxLen=j-i+1;
+                    start=i;
+                }
+            }
+        }
+        return s.substr(start,maxLen);
+    }
+};
 ```
 
 
