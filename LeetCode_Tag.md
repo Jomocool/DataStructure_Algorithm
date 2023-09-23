@@ -5906,6 +5906,102 @@ public:
         return s.substr(start,maxLen);
     }
 };
+时空复杂度分析:
+时间复杂度：O(n^2);
+空间复杂度：O(n^2);
+```
+
+#### [62. 不同路径](https://leetcode.cn/problems/unique-paths/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int uniquePaths(int m, int n) {
+        //dp[i][j]:到达(i,j)位置的方法数
+        vector<vector<int>>dp(m,vector<int>(n,0));
+        for(int i=0;i<m;i++)dp[i][0]=1;//第一列只能从上边过来
+        for(int j=0;j<n;j++)dp[0][j]=1;//第一行只能从左边过来
+
+        for(int i=1;i<m;i++){
+            for(int j=1;j<n;j++){
+                dp[i][j]=dp[i-1][j]+dp[i][j-1];
+            }
+        }
+
+        return dp[m-1][n-1];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(m*n);
+空间复杂度：O(m*n);
+```
+
+#### [63. 不同路径 II](https://leetcode.cn/problems/unique-paths-ii/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+        int m=obstacleGrid.size();
+        int n=obstacleGrid[0].size();
+        //dp[i][j]=到达(i,j)的方法数
+        vector<vector<int>>dp(m,vector<int>(n,0));
+        for(int i=0;i<m;i++){
+            if(obstacleGrid[i][0]==1)break;
+            dp[i][0]=1;
+        }
+        for(int j=0;j<n;j++){
+            if(obstacleGrid[0][j]==1)break;
+            dp[0][j]=1;
+        }
+        for(int i=1;i<m;i++){
+            for(int j=1;j<n;j++){
+                if(obstacleGrid[i][j]==1)continue;
+                dp[i][j]=dp[i-1][j]+dp[i][j-1];
+            }
+        }
+        return dp[m-1][n-1];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(m*n);
+空间复杂度：O(m*n);
+```
+
+#### [64. 最小路径和](https://leetcode.cn/problems/minimum-path-sum/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int minPathSum(vector<vector<int>>& grid) {
+        int m=grid.size();
+        int n=grid[0].size();
+        //dp[i][j]:到达(i,j)的最小和
+        vector<vector<int>>dp(m,vector<int>(n,0));
+        dp[0][0]=grid[0][0];
+        for(int i=1;i<m;i++){
+            dp[i][0]=dp[i-1][0]+grid[i][0];
+        }
+        for(int j=1;j<n;j++){
+            dp[0][j]=dp[0][j-1]+grid[0][j];
+        }
+        for(int i=1;i<m;i++){
+            for(int j=1;j<n;j++){
+                dp[i][j]=min(dp[i-1][j],dp[i][j-1])+grid[i][j];
+            }
+        }
+        return dp[m-1][n-1];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(m*n);
+空间复杂度：O(m*n);
 ```
 
 
@@ -6006,8 +6102,54 @@ public:
     }
 };
 时空复杂度分析:
-时间复杂度：O(nm);
-空间复杂度：O(nm);
+时间复杂度：O(m*n);
+空间复杂度：O(m*n);
+```
+
+#### [72. 编辑距离](https://leetcode.cn/problems/edit-distance/)
+
+```cpp
+方法一：动态规划
+思路：
+	由于题目要求的是把整个word1转成整个word2，所以可以把dp[i][j]定义为：word1[0,i-1]转成word2[0,j-1]的最少操作数
+	转移方程：
+    1. word1[i-1]==word2[j-1]:dp[i][j]=dp[i-1][j-1](什么都不用操作，操作数必然最小)
+	2. word1[i-1]!=word2[j-1]:
+	  2.1 word1删除word1[i-1]:dp[i][j]=dp[i-1][j]+1(让word1[0,i-2]和word2[0,j-1]匹配)
+      2.2 word1替换一个字符:dp[i][j]=dp[i-1][j-1]+1(把word1[i-1]替换成word2[j-1])
+      2.3 word1插入一个字符:dp[i][j]=dp[i][j-1]+1(word1插入word2[j-1]字符，该字符匹配掉word2[j-1]，剩下word1[0,i-1]和
+          word2[0,j-2]匹配)
+      综上，取以上三种情况的最小值赋值给dp[i][j]
+
+class Solution {
+public:
+    int minDistance(string word1, string word2) {
+        int m=word1.size();
+        int n=word2.size();
+        //dp[i][j]:word1[0,i-1]转成word2[0,j-1]的最少操作数
+        vector<vector<int>>dp(m+1,vector<int>(n+1,0));
+        //初始化dp
+        for(int i=0;i<=m;i++){
+            dp[i][0]=i;
+        }
+        for(int j=0;j<=n;j++){
+            dp[0][j]=j;
+        }
+        for(int i=1;i<=m;i++){
+            for(int j=1;j<=n;j++){
+                int insert=dp[i][j-1]+1;
+                int del=dp[i-1][j]+1;
+                int swap=dp[i-1][j-1]+1;
+                if(word1[i-1]==word2[j-1])swap--;
+                dp[i][j]=min(insert,min(del,swap));
+            }
+        }
+        return dp[m][n];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(m*n);
+空间复杂度：O(m*n);
 ```
 
 
