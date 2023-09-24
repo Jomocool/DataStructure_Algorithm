@@ -6004,6 +6004,81 @@ public:
 空间复杂度：O(m*n);
 ```
 
+#### [91. 解码方法](https://leetcode.cn/problems/decode-ways/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int numDecodings(string s) {
+        int n=s.size();
+        if(s[0]=='0')return 0;
+        //dp[i]:s[0,i-1]的解码方法总数
+        vector<int>dp(n+1,0);
+        dp[0]=1;//转移方程需要，或者可以理解为空字符串也有1种解码方法数
+        dp[1]=1;
+        for(int i=2;i<=n;i++){//处理dp[i]时，对应的尾字符是s[i-1]
+            //1.s[i-1]==0;
+            //1.1 前导0
+            if(s[i-1]=='0'&&(s[i-2]!='1'&&s[i-2]!='2'))return 0;
+            //1.2 s[i-1]是0的话，只能且必须和前面的1或2连接
+            else if(s[i-1]=='0'&&(s[i-2]=='1'||s[i-2]=='2'))dp[i]=dp[i-2];
+            //2.s[i-1]!=0
+            //2.1 s[i-1]不为0的情况，s[i-1]和s[i-2]既可以分开处理，也可以连接在一起处理
+            else if((s[i-2]=='1'&&s[i-1]!='0')||(s[i-2]=='2'&&(s[i-1]>'0'&&s[i-1]<='6')))dp[i]=dp[i-1]+dp[i-2];
+            //2.2 s[i-1]只能单独处理的情况
+            else dp[i]=dp[i-1];
+        }
+        return dp[n];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [120. 三角形最小路径和](https://leetcode.cn/problems/triangle/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int minimumTotal(vector<vector<int>>& triangle) {
+        int n=triangle.size();
+        //由于不方便用二维数组，因此直接用一维数组，且必须保证每个节点都有存储空间，因此直接申请最后一行元素个数空间
+        //dp[j]:到达triangle[i][j]节点的最小路径和
+        vector<int>dp(n,0);
+        dp[0]=triangle[0][0];
+        for(int i=1;i<n;i++){
+            //每一列的第一个和最后一个节点是特殊节点，只能从特定节点下来
+            //第i行的最后一个节点只能从第i-1行的最后一个节点下来
+            dp[i]=dp[i-1]+triangle[i][i];
+            //小细节：完善dp的顺序应该和转移方程的依赖顺序是相反的，比如当前dp值依赖左边的，那么就需要先完善右边的，再左边的
+            //这样才不会覆盖掉还需要被依赖的dp值
+            //转移方程的依赖项是前一行的前一列的值，所以应该从后遍历到前，这样当前行的路径和才不会覆盖掉上一行仍需要被后面依赖的路径和
+            for(int j=i-1;j>0;j--){
+                //triangle[i][j]节点可从triangle[i-1][j]节点或triangle[i-1][j-1]节点下来
+                dp[j]=min(dp[j],dp[j-1])+triangle[i][j];
+            }
+            //第i行的第一个节点只能从第i-1行的第一个节点下来
+            dp[0]+=triangle[i][0];//dp[0]不能提前改，否则会影响后续值
+        }
+        return *min_element(dp.begin(),dp.end());
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n^2);
+空间复杂度：O(n);
+```
+
+#### [139. 单词拆分](https://leetcode.cn/problems/word-break/)
+
+```cpp
+
+```
+
 
 
 ### Hard
