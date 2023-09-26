@@ -6076,7 +6076,119 @@ public:
 #### [139. 单词拆分](https://leetcode.cn/problems/word-break/)
 
 ```cpp
+方法一：动态规划
 
+class Solution {
+public:
+    bool wordBreak(string s, vector<string>& wordDict) {
+        //以O(1)的时间获取到某个单词是否在字典中的信息
+        set<string>st(wordDict.begin(),wordDict.end());
+        int n=s.length();
+        //dp[i]:子串s[0,i-1]是否可以被拼接形成
+        vector<bool>dp(n+1,false);
+        dp[0]=true;//空字符串可以被拼接形成
+        for(int i=1;i<=n;i++){
+            //dp[i](即s[0,i-1]子串是否可以被拼接)的计算可以分成两部分：
+            //把s[0,i-1]子串分成两部分，s[0,j-1]和s[j,i-1]
+            //如果这两部分都能够被拼接形成，代表着s[0,i-1]也能够被拼接形成
+            //1.s[0,j-1]能否被拼接形成的情况存储在了dp[j]
+            //2.剩下的只需要去找字典st中是否存在单词s[j,i-1]
+            //如果条件1、2同时满足的话，说明s[0,i-1]可以被拼接形成，所以dp[i]=true;
+            for(int j=i-1;j>=0;j--){
+                if(dp[j]&&st.count(s.substr(j,i-j))){
+                    dp[i]=true;
+                    break;
+                }
+            }
+        }
+        return dp[n];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n^2);
+空间复杂度：O(n);
+```
+
+#### [140. 单词拆分 II](https://leetcode.cn/problems/word-break-ii/)
+
+![image-20230926105325710](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20230926105325710.png)
+
+```cpp
+方法一：记忆化搜索+回溯
+思路：使用哈希表存储字符串 sss 的每个下标和从该下标开始的部分可以组成的句子列表，在回溯过程中如果遇到已经访问过的下标，则可以直接从哈希表得到结果，而不需要重复计算。如果到某个下标发现无法匹配，则哈希表中该下标对应的是空列表，因此可以对不能拆分的情况进行剪枝优化。
+
+class Solution {
+private:
+    //(key,value) => (index,s[index,n-1]子串所有可能的句子)
+    unordered_map<int,vector<string>>ans;
+    //以O(1)的时间判断单词是否在字典中
+    unordered_set<string>wordSet;
+
+public:
+    void backTrack(const string&s,int index){
+        //没有处理s[index,n-1]子串的情况才需要处理，如果处理过了直接在ans里找就行了
+        if(!ans.count(index)){//剪枝
+            if(index==s.size()){
+                //最后一个加入空串是方便把最后一个单词加入到ans[index]中
+                ans[index]={""};//最后一个单词后面只能添加空串了
+                return;
+            }
+            ans[index]={};//先初始化
+            //当前单词是s.substr(index,i-index)，所以i是用于考虑单词长度的
+            for(int i=index+1;i<=s.size();i++){
+                string word = s.substr(index,i-index);
+                //如果字典中有该单词，就代表着可以在这个单词后面添加空格
+                if(wordSet.count(word)){
+                    backTrack(s,i);//获取到s[i,n-1]子串的所有可能的句子
+                    for(const string& succ:ans[i]){
+                        //如果succ是空串，则不拼接空串
+                        //将当前单词word拼接ans[i]的所有句子，就是s[index,n-1]所有句子的情况了
+                        ans[index].push_back(succ.empty()?word:word+" "+succ);
+                    }
+                }
+            }
+        }
+    }
+
+    vector<string> wordBreak(string s, vector<string>& wordDict) {
+        wordSet = unordered_set(wordDict.begin(),wordDict.end());
+        backTrack(s,0);
+        return ans[0];
+    }
+};
+```
+
+#### [152. 乘积最大子数组](https://leetcode.cn/problems/maximum-product-subarray/)
+
+```cpp
+方法一：动态规划
+思路：
+考虑当前位置如果是一个负数的话，那么我们希望以它前一个位置结尾的某个段的积也是个负数，这样就可以负负得正，并且我们希望这个积尽可能「负得更多」，即尽可能小。如果当前位置是一个正数的话，我们更希望以它前一个位置结尾的某个段的积也是个正数，并且希望它尽可能地大。
+
+class Solution {
+public:
+    int maxProduct(vector<int>& nums) {
+        //maxDp[i]:以nums[i]结尾的子数组的最大乘积
+        //minDp[i]:以nums[i]结尾的子数组的最小乘积
+        vector<int>maxDp(nums),minDp(nums);
+        for(int i=1;i<nums.size();i++){
+            //最大乘积：
+            //1.nums[i](大于0的情况下)和前一个最大乘积相乘的乘积值，正正得正
+            //2.nums[i](小于0的情况下)和前一个最小成绩相乘的乘积值，负负得正
+            //3.nums[i]自己一组
+            maxDp[i]=max(maxDp[i-1]*nums[i],max(nums[i],minDp[i-1]*nums[i]));
+            //最小乘积：
+            //1.nums[i](大于0的情况下)和前一个最小乘积相乘的乘积值，正负得负
+            //2.nums[i](小于0的情况下)和前一个最大乘积相乘的乘积值，负正得负
+            //3.nums[i]自己一组
+            minDp[i]=min(minDp[i-1]*nums[i],min(nums[i],maxDp[i-1]*nums[i]));
+        }
+        return *max_element(maxDp.begin(),maxDp.end());
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
 ```
 
 
