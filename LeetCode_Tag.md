@@ -5569,6 +5569,37 @@ public:
 空间复杂度：O(n);
 ```
 
+#### [263. 丑数](https://leetcode.cn/problems/ugly-number/)
+
+![image-20231017171218553](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20231017171218553.png)
+
+```cpp
+方法一：数学
+
+class Solution {
+public:
+    bool isUgly(int n) {
+        if(n<=0)return false;
+        
+        int factors[3] = {2,3,5};
+        for(int factor:factors){
+            while(n%factor==0)n/=factor;
+        }
+		
+        // 如果n是丑数，则n=2^a×3^b×5^c
+        // 1.除2^a: n=3^b×5^c
+        // 2.除3^b: n=5^c
+        // 3.除5^c: n=1
+        // 不需要知道a、b、c的大小，除到余数不为0后就会自行退出while循环去除下一个factor了
+        // 所以判断n是否为丑数的条件就是，除完3轮之后n是否等于1
+        return n==1;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(logn);
+空间复杂度：O(1);
+```
+
 
 
 ### Medium
@@ -6184,6 +6215,82 @@ public:
             minDp[i]=min(minDp[i-1]*nums[i],min(nums[i],maxDp[i-1]*nums[i]));
         }
         return *max_element(maxDp.begin(),maxDp.end());
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+```
+
+#### [221. 最大正方形](https://leetcode.cn/problems/maximal-square/)
+
+![image-20231017100837132](https://md-jomo.oss-cn-guangzhou.aliyuncs.com/IMG/image-20231017100837132.png)
+
+```cpp
+方法一：动态规划
+
+思路：
+1. dp[i][j]:以matrix[i][j]格子为右下角的正方形的最大边长值
+2. 转移方程: 和以[i-1][j]、[i][j-1]、[i-1][j-1]格子为右下角的正方形有关
+   2.1 matrix[i][j]=0: dp[i][j]=0; 正方形不能包含0
+   2.2 i==0||j==0: dp[i][j]=matrix[i][j]; 无法往左上延伸
+   2.3 dp[i][j]=min(dp[i-1][j],min(dp[i][j-1],dp[i-1][j-1]))+1;
+	   应该取最小值，这样正方形包含的才全是1，比如上图中的绿色格子如果取最大值，则正方形边长就是3，则会覆盖左上角的0，不符合规则了
+
+class Solution {
+public:
+    int maximalSquare(vector<vector<char>>& matrix) {
+        int n=matrix.size();
+        int m=matrix[0].size();
+        vector<vector<int>>dp(n,vector<int>(m,0));
+        
+        int maxLen=0;
+        for(int i=0;i<n;i++){
+            for(int j=0;j<m;j++){
+                if(matrix[i][j]=='1'){
+                    if(i==0||j==0){
+                        dp[i][j]=1;
+                    }else{
+                        dp[i][j]=min(dp[i-1][j],min(dp[i][j-1],dp[i-1][j-1]))+1;
+                    }
+                    maxLen=max(maxLen,dp[i][j]);
+                }
+                
+            }
+        }
+
+        return maxLen*maxLen;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(mn);
+空间复杂度：O(mn);
+```
+
+#### [264. 丑数 II](https://leetcode.cn/problems/ugly-number-ii/)
+
+```cpp
+方法一：三指针
+
+思路：
+丑数可以由前面的较小的丑数*2、*3、*5得到，但是要注意会计算出重复的数，因此用三根指针记录，如果有重复的，指针通通后移，不然下次循环会把上次求的相同的丑数加入到结果集中
+
+class Solution {
+public:
+    int nthUglyNumber(int n) {
+        int a=0,b=0,c=0;
+        int res[n];
+        res[0]=1;
+        for(int i=1;i<n;i++){
+            int n2=res[a]*2,n3=res[b]*3,n5=res[c]*5;
+            res[i]=min(min(n2,n3),n5);//最小值先放入
+            // 用3个if，而不是else if是因为要去重
+            // 可能n2==n3、n3==n5……，这种情况下，由于该丑数已经加入了，不能重复加入，因此要后移求的丑数相等的指针
+            if(res[i]==n2)a++;
+            if(res[i]==n3)b++;
+            if(res[i]==n5)c++;
+        }
+        return res[n-1];
     }
 };
 时空复杂度分析:
