@@ -6298,6 +6298,70 @@ public:
 空间复杂度：O(n);
 ```
 
+#### [300. 最长递增子序列](https://leetcode.cn/problems/longest-increasing-subsequence/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        int n=nums.size();
+        //dp[i]:以nums[i]为尾元素的最长子序列的长度，至少都有自己本身1个元素，因此长度默认初始化1
+        vector<int>dp(n,1);
+        dp[0]=1;
+        int maxLen=1;
+        
+        for(int i=1;i<n;i++){
+            for(int j=0;j<i;j++){
+                if(nums[i]>nums[j]){
+                    dp[i]=max(dp[i],dp[j]+1);
+                }
+            }
+            maxLen=max(maxLen,dp[i]);
+        }
+
+        return maxLen;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n^2);
+空间复杂度：O(n);
+```
+
+#### [322. 零钱兑换](https://leetcode.cn/problems/coin-change/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        // dp[i]:凑成总金额为i所需的最少的硬币个数
+        vector<int>dp(amount+1,-1);
+        // 初始化
+        dp[0]=0;
+        for(int i=0;i<coins.size();i++){
+            if(coins[i]<=amount)dp[coins[i]]=1;
+        }
+        for(int i=1;i<=amount;i++){
+            for(int j=0;j<coins.size();j++){
+                int k=i-coins[j];
+                if(k>=0&&dp[k]!=-1){
+                    if(dp[i]==-1)dp[i]=dp[k]+1;
+                    else dp[i]=min(dp[i],dp[k]+1);
+                }
+            }
+        }
+
+        return dp[amount];
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n*m);
+空间复杂度：O(n);
+```
+
 
 
 ### Hard
