@@ -6362,6 +6362,64 @@ public:
 空间复杂度：O(n);
 ```
 
+#### [413. 等差数列划分](https://leetcode.cn/problems/arithmetic-slices/)
+
+```cpp
+方法一：动态规划
+
+class Solution {
+public:
+    int numberOfArithmeticSlices(vector<int>& nums) {
+        int n=nums.size();
+        if(n<3)return 0;
+
+        //dp[i]:以nums[i]为尾元素的等差数列个数
+        vector<int>dp(n,0);
+        int res=0;
+        for(int i=2;i<n;i++){
+            if(nums[i]-nums[i-1]==nums[i-1]-nums[i-2]){
+                /*
+                eg.[1,2,3,4,5]
+                dp[3]:{[1,2,3,4],[2,3,4]}=2
+                dp[4]:{[1,2,3,4,5],[2,3,4,5],[3,4,5]}=3
+                dp[i]相对于dp[i-1]多一个[nums[i-2],nums[i-1],nums[i]]
+                */
+                dp[i]=dp[i-1]+1;
+                res+=dp[i];
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(n);
+
+优化空间复杂度：
+class Solution {
+public:
+    int numberOfArithmeticSlices(vector<int>& nums) {
+        int n=nums.size();
+        if(n<3)return 0;
+
+        int res=0,a=0;
+        for(int i=2;i<n;i++){
+            if(nums[i]-nums[i-1]==nums[i-1]-nums[i-2]){
+                res+=++a;
+            }else{
+                a=0;
+            }
+        }
+
+        return res;
+    }
+};
+时空复杂度分析:
+时间复杂度：O(n);
+空间复杂度：O(1);
+```
+
 
 
 ### Hard
