@@ -6420,6 +6420,132 @@ public:
 空间复杂度：O(1);
 ```
 
+#### [516. 最长回文子序列](https://leetcode.cn/problems/longest-palindromic-subsequence/)
+
+```cpp
+class Solution {
+public:
+    int longestPalindromeSubseq(string s) {
+        int n=s.size();
+        // dp[i][j]：s[i,j](下标范围在i~j)的最长回文子序列长度
+        vector<vector<int>>dp(n,vector<int>(n));
+        int res = 1;// 至少有1
+
+        for(int i=0;i<n;i++)
+        {
+            dp[i][i]=1;
+            if(i+1<n)
+            {
+                if(s[i]==s[i+1]){
+                    dp[i][i+1]=2;
+                    res=2;
+                }
+                else dp[i][i+1]=1;// 由于是子序列，所以至少最长的回文子序列长度也有1
+            }
+        }
+
+        // 状态转移方程是从长度较短的子序列向长度较长的子序列转移，因此循环顺序是从左下到右上，即(i:n-2~0, j:i+2~n-1)
+        for(int i=n-2;i>=0;i--)
+        {
+            for(int j=i+2;j<n;j++)
+            {
+                if(s[i]==s[j])dp[i][j]=dp[i+1][j-1]+2;// +2：s[i]、s[j]两个字符
+                else dp[i][j]=max(dp[i][j-1],dp[i+1][j]);// s[i]!=s[j]：则s[i]和s[j]不能同时作为子序列的头尾
+                res = max(res,dp[i][j]);
+            }
+        }
+
+        return res;
+    }
+};
+```
+
+#### [518. 零钱兑换 II](https://leetcode.cn/problems/coin-change-ii/)
+
+```cpp
+class Solution {
+public:
+    int change(int amount, vector<int>& coins) {
+        //dp[i]：凑出总金额i的硬币组合数
+        vector<int>dp(amount+1,0);
+        dp[0]=1;// 空集也是集合
+
+        // 将遍历coins放在外层for循环，可以保证取硬币的顺序，因此就不会出现同样的硬币但排列不同的情况了
+        for(int &coin:coins)
+        {
+            for(int i=coin;i<=amount;i++)
+            {
+                // 凑成i-coin之后再加coin就凑成dp[i]了
+                // 因此凑成i-coin和凑成i的硬币组合数相同
+                dp[i]+=dp[i-coin];
+            }
+        }
+
+        return dp[amount];
+    }
+};
+
+下面的做法会出现重复的硬币排列，因为内层循环是遍历coins，导致每个i都会从coins[0]开始取，导致取硬币的顺序不固定，因此就会出现比如{1，1,2}、{1,2,1}的排列，二者实际上只能算一种方法
+// class Solution {
+// public:
+//     int change(int amount, vector<int>& coins) {
+//         //dp[i]：凑出总金额i的硬币组合数
+//         vector<int>dp(amount+1,0);
+//         dp[0]=1;// 空集也是集合
+
+//         for(int i=1;i<=amount;i++)
+//         {   
+//             // 永远把判断下标越界放在通过该下标取值之前
+//             for(int j=0;j<coins.size()&&i-coins[j]>=0;j++)
+//             {
+//                 // 凑成i-coins[j]之后再加coins[j]就凑成dp[i]了
+//                 // 因此凑成i-coins[j]和凑成i的硬币组合数相同
+//                 dp[i]+=dp[i-coins[j]];
+//             }
+//         }
+
+//         return dp[amount];
+//     }
+// };
+```
+
+#### [583. 两个字符串的删除操作](https://leetcode.cn/problems/delete-operation-for-two-strings/)
+
+```cpp
+class Solution {
+public:
+    int minDistance(string word1, string word2) {
+        int m=word1.size(),n=word2.size();
+
+        // dp[i][j]：使得word1[0,i-1]、word2[0,j-1]相同的最小步数
+        // dp[0][0]=0：二者都是空串，不用做任何操作，步数为0
+        vector<vector<int>>dp(m+1,vector<int>(n+1,0));
+        for(int i=1;i<=m;i++)
+        {
+            dp[i][0]=i;
+        }
+        for(int j=1;j<=n;j++)
+        {
+            dp[0][j]=j;
+        }
+        
+        // 1.word1[i-1]==word2[j-1]：dp[i][j]=dp[i-1][j-1]，不用做任何操作
+        // 2.word1[i-1]!=word2[j-1]：dp[i][j]=min(dp[i-1][j-1]+2,min(dp[i-1][j],dp[i][j-1])+1)，word1[i-1]和word2[j-1]不能同时存在，删掉word1[i-1] or 删掉word2[j-1] or 都删（起始不用考虑都删，因为dp[i-1][j]和dp[i][j-1]肯定都已经包含dp[i-1][j-1]了）
+        // 状态转移方程的是由短字符串向长字符串转移，因此循环顺序是从左上到右下
+        for(int i=1;i<=m;i++)
+        {
+            for(int j=1;j<=n;j++)
+            {
+                if(word1[i-1]==word2[j-1])dp[i][j]=dp[i-1][j-1];
+                else dp[i][j]=min(dp[i-1][j-1]+2,min(dp[i-1][j],dp[i][j-1])+1);
+            }
+        }
+
+        return dp[m][n];
+    }
+};
+```
+
 
 
 ### Hard
