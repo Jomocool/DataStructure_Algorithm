@@ -6546,6 +6546,142 @@ public:
 };
 ```
 
+#### [638. 大礼包](https://leetcode.cn/problems/shopping-offers/)
+
+```cpp
+class Solution {
+public:
+    // table: 暂存记忆化搜索的过程值
+    map<vector<int>,int>table;
+
+    // price: 物品价格表
+    // filterSpecial: 过滤后的大礼包表
+    // curNeeds: 目前所需物品清单
+    int dfs(vector<int>&price,vector<vector<int>>&filterSpecial,vector<int>&curNeeds,int n){
+        if(!table.count(curNeeds)){
+            // 如果curNeeds对应的所需物品清单的最小价格未被计算过
+            // 计算curNeeds的最小价格
+            // 先将最小价格初始化为单独购买各所需物品的总价
+            int minPrice=0;
+            for(int i=0;i<n;i++){
+                minPrice+=curNeeds[i]*price[i];
+            }
+
+            // 遍历各大礼包，选择一个合适的
+            for(auto&filterSp:filterSpecial){
+                vector<int>nxtNeeds;// 下一个需要的物品清单
+                for(int i=0;i<n;i++){
+                    // 大礼包中的该物品数量超出待购清单的物品数量，因此无法购买该大礼包
+                    if(filterSp[i]>curNeeds[i])break;
+                    nxtNeeds.emplace_back(curNeeds[i]-filterSp[i]);
+                }
+
+                // 把整个大礼包都买下来了
+                if (nxtNeeds.size()==n){
+                    // 初始是不购买大礼包和购买大礼包哪个更优惠
+                    // 之后便是购买哪个大礼包更加优惠
+                    minPrice=min(minPrice,dfs(price,filterSpecial,nxtNeeds,n)+filterSp[n]);
+                }
+            }
+
+            // 最终计算得出curNeeds的最小总价，记录到table
+            table[curNeeds]=minPrice;
+        }
+
+        // 说明当前所需物品清单的最小价格曾被计算过（即存在了table中），就不用再计算一次了
+        return table[curNeeds];
+    }
+
+    int shoppingOffers(vector<int>& price, vector<vector<int>>& special, vector<int>& needs) {
+        int n = price.size();
+
+        // 过滤后的大礼包
+        vector<vector<int>>filterSpecial;
+        for(auto& sp:special){
+            // 计算大礼包是否更优惠且有物品
+            int totalCount=0;
+            int totalPrice=0;
+            for(int i=0;i<n;i++){
+                totalCount+=sp[i];
+                totalPrice+=sp[i]*price[i];
+            }
+
+            // 如果大礼包整体购买比单独购买更优惠，并且有物品，则不被过滤
+            if(totalCount>0&&totalPrice>sp[n]){
+                filterSpecial.emplace_back(sp);
+            }
+        }
+
+        return dfs(price,filterSpecial,needs,n);
+    }
+};
+```
+
+#### [647. 回文子串](https://leetcode.cn/problems/palindromic-substrings/)
+
+```cpp
+class Solution {
+public:
+    // 中心扩展法
+    int extend(string&s,int l,int r){
+        int res=0;
+        // 每一次循环，就代表有一个回文子串
+        while(l>=0&&r<s.size()&&s[l]==s[r]){
+            l--;
+            r++;
+            res++;
+        }
+        return res;
+    }
+
+    int countSubstrings(string s) {
+        int ans=0;
+        for(int i=0;i<s.size();i++){
+            // 由于每次扩展都是增加2个字符，因此如果只从(i,i)扩展，必然无法考虑到(i,i+1)，因为(i,i)拓展一次后就已经是(i-1,i+1)了
+            ans+=extend(s,i,i);
+            ans+=extend(s,i,i+1);
+        }
+        return ans;
+    }
+};
+```
+
+#### [712. 两个字符串的最小ASCII删除和](https://leetcode.cn/problems/minimum-ascii-delete-sum-for-two-strings/)
+
+```cpp
+class Solution {
+public:
+    int minimumDeleteSum(string s1, string s2) {
+        int m=s1.size();
+        int n=s2.size();
+        // dp[i][j]: 使s1[0..i-1]和s2[0..j-1]相等所需删除字符的ASCII值的最小和
+        vector<vector<int>>dp(m+1,vector<int>(n+1,0));
+        for(int i=1;i<=m;i++){
+            dp[i][0]=dp[i-1][0]+(int)s1[i-1];
+        }
+        for(int j=1;j<=n;j++){
+            dp[0][j]=dp[0][j-1]+(int)s2[j-1];
+        }
+
+        // 1. s1[i-1]==s2[j-1]: dp[i][j]=dp[i-1][j-1]，不用删除
+        // 2. s1[i-1]!=s2[j-1]: dp[i][j]=min(dp[i-1][j-1]+(int)s1[i-1]+(int)s2[j-1],min(dp[i-1][j]+(int)s1[i-1],dp[i][j-1]+(int)s2[j-1]))，删其中一个或者全删
+        // 状态转移方程由左上到右下，因此循环顺序是从上到下，从左到右
+        for(int i=1;i<=m;i++){
+            for(int j=1;j<=n;j++){
+                if(s1[i-1]==s2[j-1])dp[i][j]=dp[i-1][j-1];
+                else {
+                    int c1Val=(int)s1[i-1];
+                    int c2Val=(int)s2[j-1];
+                    dp[i][j]=min(dp[i-1][j-1]+c1Val+c2Val,min(dp[i-1][j]+c1Val,dp[i][j-1]+c2Val));
+                }
+            }
+        }
+
+        return dp[m][n];
+    }
+};
+```
+
 
 
 ### Hard
