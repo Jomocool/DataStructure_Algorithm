@@ -6682,6 +6682,35 @@ public:
 };
 ```
 
+#### [877. 石子游戏](https://leetcode.cn/problems/stone-game/)
+
+```cpp
+class Solution {
+public:
+    bool stoneGame(vector<int>& piles) {
+      int n=piles.size();
+      // 只能拿走第一堆或者最后一堆，意味着piles总是连续的
+      // 因此可以这样定义dp[i][j]: 
+      // 当剩下的石子堆为下标i到下标j时，即在下标范围[i,j]中，当前玩家与另一个玩家的石子数量之差的最大值，注意当前玩家不一定是先手 Alice
+      vector<vector<int>>dp(n,vector<int>(n,0));
+      for(int i=0;i<n;i++){
+        dp[i][i]=piles[i];
+      }
+      // 计算dp[i][j]: 即剩下piles[i~j]时，假设当前是Bob的回合，dp[i][j]是Bob行动后比Alice多的石子数的最大值
+      // dp[i+1][j]和dp[i][j-1]: 必然就是Alice比Bob多的石子数的最大值了
+      // 但由于当前是Bob的回合，因此Bob有优先权决定最优的走法、
+      // Alice回合也是如此
+      for(int i=n-2;i>=0;i--){
+        for(int j=i+1;j<n;j++){
+          // 当前回合获取的石子数-对方比自己多的石子数=当前回合结束后自己比对方多的石子数
+          dp[i][j]=max(piles[i]-dp[i+1][j],piles[j]-dp[i][j-1]);
+        }
+      }
+      return dp[0][n-1]>0;
+    }
+};
+```
+
 
 
 ### Hard
