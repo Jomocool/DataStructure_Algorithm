@@ -6711,6 +6711,140 @@ public:
 };
 ```
 
+#### [931. 下降路径最小和](https://leetcode.cn/problems/minimum-falling-path-sum/)
+
+```cpp
+class Solution {
+public:
+    int minFallingPathSum(vector<vector<int>>& matrix) {
+        int n=matrix.size();
+        // dp[i][j]: 到达matrix[i][j]的最小路径和
+        vector<vector<int>>dp(n,vector<int>(n,0));
+        for(int j=0;j<n;j++)
+        {
+            dp[0][j]=matrix[0][j];
+        }
+
+        // 每个格子可以往左下、正下、右下走，意味着从第二行开始，每个格子只能由它的左上、正上、右上抵达
+        // 特殊情况：第一格和最后一格，这两个格子只能由上一行的两个格子抵达
+        for(int i=1;i<n;i++)
+        {
+            for(int j=0;j<n;j++)
+            {
+                if(j==0&&j+1<n)dp[i][j]=min(dp[i-1][j],dp[i-1][j+1])+matrix[i][j];
+                else if(j==n-1&&j-1>=0)dp[i][j]=min(dp[i-1][j],dp[i-1][j-1])+matrix[i][j];
+                else
+                {
+                    dp[i][j]=min(dp[i-1][j-1],min(dp[i-1][j],dp[i-1][j+1]))+matrix[i][j];
+                }
+            }
+        }
+
+        return *min_element(dp[n-1].begin(),dp[n-1].end());
+    }
+};
+
+还可以优化空间效率，状态转移方程只用到了上一行的值，因此可以用一维数组存储即可
+```
+
+#### [1277. 统计全为 1 的正方形子矩阵](https://leetcode.cn/problems/count-square-submatrices-with-all-ones/)
+
+```cpp
+class Solution {
+public:
+    int countSquares(vector<vector<int>>& matrix) {
+        int m=matrix.size();
+        int n=matrix[0].size();
+        int ans=0;
+        
+        //dp[i][j]: 以matrix[i][j]格子为右下角的正方形最大边长（同时也是以该格子为右下角的正方形个数）
+        vector<vector<int>>dp(m,vector<int>(n,0));
+        for(int i=0;i<m;i++){
+            for(int j=0;j<n;j++){
+                // 无法往左上延伸
+                if(i==0||j==0){
+                    dp[i][j]=matrix[i][j];
+                }
+                else if (matrix[i][j]==0){
+                    dp[i][j]=0;
+                }
+                else{
+                    // 往左上延伸的最大边长受限于正左、正上和左上，因此要取以它们为右下角的正方形边长的最小值
+                    dp[i][j]=min(dp[i][j-1],min(dp[i-1][j],dp[i-1][j-1]))+1;
+                }
+                ans+=dp[i][j];
+            }
+        }
+        return ans;
+    }
+};
+```
+
+#### [1504. 统计全 1 子矩形](https://leetcode.cn/problems/count-submatrices-with-all-ones/)
+
+```cpp
+class Solution {
+public:
+    int numSubmat(vector<vector<int>>& mat) {
+        int res = 0;
+        int row=mat.size(),col=mat[0].size();
+
+        for(int i=0;i<row;i++){
+            for(int j=0;j<col;j++){
+                if(mat[i][j]==0)continue;
+                int count=0,colTmp=col;
+                // 以mat[i][j]为左上角，向其右下的区域去找右下角
+                for(int m=i;m<row;m++){
+                    for(int n=j;n<colTmp;n++){
+                        // 如果mat[m][n]==0，那之后的子矩形都不能够包含该格子，所以要缩小往右延伸的范围
+                        if(mat[m][n]==0){
+                            colTmp=n;
+                            break;
+                        }
+                        // 说明当前的格子能够作为右下角，左上角与右下角可以确定一个独立的矩形，因此子矩形数量加1
+                        count++;
+                    }
+                }
+                res+=count;
+            }
+        }
+
+        return res;
+    }
+};
+```
+
+#### [32. 最长有效括号](https://leetcode.cn/problems/longest-valid-parentheses/)
+
+```cpp
+class Solution {
+public:
+    int longestValidParentheses(string s) {
+        int n=s.size();
+        int maxLen=0;
+
+        //dp[i]: 以字符s[i]结尾的最长有效括号的长度
+        vector<int>dp(n,0);
+
+        // 1.s[i]=='('：由于没有右括号与其匹配，因此是一个无效的括号
+        // 2.s[i]==')':
+        //   2.1 s[i-1]=='(': dp[i]=dp[i-2]+2，s[i]与s[i-1]凑成一对
+        //   2.2 s[i-1]==')': dp[i]=dp[i-1]+dp[i-dp[i-1]-2]+2，可能可以和s[i-dp[i-1]-1]左括号匹配
+        for(int i=1;i<n;i++){
+            if(s[i]==')'){
+                if(s[i-1]=='(')dp[i]=(i>=2?dp[i-2]:0)+2;
+                else if(i-dp[i-1]>0 && s[i-dp[i-1]-1]=='('){
+                    dp[i]=dp[i-1]+((i-dp[i-1])-2>=0?dp[i-dp[i-1]-2]:0)+2;
+                }
+                maxLen=max(maxLen,dp[i]);
+            }
+        }
+
+        return maxLen;
+    }
+};
+```
+
 
 
 ### Hard
