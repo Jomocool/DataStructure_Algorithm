@@ -6995,7 +6995,7 @@ public:
 
 
 
-## 优先搜索
+## 深度优先搜索DFS
 
 ### Easy
 
@@ -7012,6 +7012,102 @@ public:
 ## 树
 
 ### Easy
+
+#### [面试题 04.02. 最小高度树](https://leetcode.cn/problems/minimum-height-tree-lcci/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    // 返回由nums[l..r]子数组组成的最矮二叉搜索树根节点
+    TreeNode* dfs(vector<int>&nums,int l,int r){
+        if(l<=r){
+            int mid = l+((r-l)>>1);
+            int val = nums[mid];
+            TreeNode *node = new TreeNode(val);
+
+            // 要想高度最低，左右子树的节点数量应尽可能相同，因此从mid分左右子树，恰好让nums[mid]做根节点
+            node->left=dfs(nums,l,mid-1);
+            node->right=dfs(nums,mid+1,r);
+
+            return node;
+        }
+        return NULL;
+    }
+
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+        int n=nums.size();
+        return dfs(nums,0,n-1);
+    }
+};
+```
+
+#### [104. 二叉树的最大深度](https://leetcode.cn/problems/maximum-depth-of-binary-tree/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int dfs(TreeNode* node){
+        if(node){
+            return max(dfs(node->left),dfs(node->right))+1;
+        }
+        return 0;
+    }
+
+    int maxDepth(TreeNode* root) {
+        return dfs(root);
+    }
+};
+```
+
+#### [111. 二叉树的最小深度](https://leetcode.cn/problems/minimum-depth-of-binary-tree/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int dfs(TreeNode* node){
+        if(!node)return 0;                                          // 空节点
+        else if(!node->left&&!node->right)return 1;                 // 叶子节点
+        else if(node->left&&!node->right)return dfs(node->left)+1;    // 只有左子节点
+        else if(!node->left&&node->right)return dfs(node->right)+1;   // 只有右子节点
+        return min(dfs(node->left),dfs(node->right))+1;             // 有两个子节点
+    }
+
+    int minDepth(TreeNode* root) {
+        return dfs(root);
+    }
+};
+```
 
 
 
