@@ -6999,20 +6999,6 @@ public:
 
 ### Easy
 
-
-
-### Medium
-
-
-
-### Hard
-
-
-
-## 树
-
-### Easy
-
 #### [面试题 04.02. 最小高度树](https://leetcode.cn/problems/minimum-height-tree-lcci/)
 
 ```cpp
@@ -7116,4 +7102,122 @@ public:
 
 
 ### Hard
+
+
+
+## 树
+
+### Easy
+
+#### [LCR 145. 判断对称二叉树](https://leetcode.cn/problems/dui-cheng-de-er-cha-shu-lcof/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    // l节点与r节点是否对称
+    bool dfs(TreeNode*l,TreeNode*r){
+        // l和r都是空节点，对称
+        if(!l&&!r)return true;
+        // l和r一个为空、一个不为空或者都不为空的情况下值不相等，不对称                           
+        else if(!l||!r||l->val!=r->val)return false;         
+        // l和r都不为空且值也相同还不能说明它们对称，还要判断它们的子树是否和对方的子树对称
+        // l->left和r->right比较，l->right和r-left比较，只有子树也对称，才能证明l和r对称
+        return dfs(l->left,r->right)&&dfs(l->right,r->left);
+    }
+
+    bool checkSymmetricTree(TreeNode* root) {
+        // 空树也是对称的
+        if(!root)return true;
+        return dfs(root->left,root->right);
+    }
+};
+```
+
+
+
+### Medium
+
+
+
+### Hard
+
+#### [LCR 156. 序列化与反序列化二叉树](https://leetcode.cn/problems/xu-lie-hua-er-cha-shu-lcof/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Codec {
+public:
+    // 先序遍历树，将节点值存入字符串
+    // 最后data会以","结尾，但是没关系，反序列化时需要用到最后一个","来当做一个节点值的结束符
+    void my_serialize(TreeNode*node,string& data){
+        if(!node)data+="null,";
+        else{
+            data+=to_string(node->val)+",";
+            my_serialize(node->left,data);
+            my_serialize(node->right,data);
+        }
+    }
+
+    // 按先序复原树，由于知道空节点的位置，因此这是可行的
+    TreeNode* my_deserialize(list<string>&l){
+        if(l.front()=="null"){
+            l.erase(l.begin());// 取出一个节点值，就要将其从l中删去
+            return NULL;
+        }
+
+        // 什么循序初始化l，就按什么顺序复原树
+        int val = stoi(l.front());
+        l.erase(l.begin());// 取出一个节点值，就要将其从l中删去
+        TreeNode* node = new TreeNode(val);
+        node->left = my_deserialize(l);
+        node->right = my_deserialize(l);
+        return node;
+    }
+
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+        string res;
+        my_serialize(root,res);
+        return res;
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        list<string>l;
+        string val;
+        for(auto&c:data){
+            if(c==','){
+                l.push_back(val);
+                val="";
+            }else{
+                val+=c;
+            }
+        }
+        return my_deserialize(l);
+    }
+};
+
+// Your Codec object will be instantiated and called as such:
+// Codec codec;
+// codec.deserialize(codec.serialize(root));
+```
 
