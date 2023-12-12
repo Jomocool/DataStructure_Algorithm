@@ -7144,6 +7144,44 @@ public:
 };
 ```
 
+#### [LCR 174. 寻找二叉搜索树中的目标节点](https://leetcode.cn/problems/er-cha-sou-suo-shu-de-di-kda-jie-dian-lcof/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int k;
+    int ans;
+
+    // 中序遍历二叉搜索树的值顺序是从小到大，按中序的逆序遍历二叉搜索树值的顺序就是从大到小了
+    void dfs(TreeNode*node){
+        if(!node)return;
+        dfs(node->right);
+        // 一直递归到到最右子节点才是最大的值，此时k才可以减
+        if(k==0)return;// 说明已经找到第cnt大的值了，直接return就行了
+        if(--k==0)ans=node->val;// 每遍历到一个值，就要让k减1，如果减1后，k=0，就代表是要找的值
+        dfs(node->left);
+    }
+
+    int findTargetNode(TreeNode* root, int cnt) {
+        k=cnt;
+        ans=0;
+        dfs(root);
+        return ans;
+    }
+};
+```
+
 
 
 ### Medium
