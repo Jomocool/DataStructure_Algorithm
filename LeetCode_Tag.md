@@ -7186,6 +7186,131 @@ public:
 
 ### Medium
 
+#### [230. 二叉搜索树中第K小的元素](https://leetcode.cn/problems/kth-smallest-element-in-a-bst/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int cnt;
+    int ans;
+
+    // 中序遍历二叉搜索树，节点值的顺序就是从小到大的，因此遍历到第k个即可
+    void dfs(TreeNode* node){
+        if(!node)return;
+        dfs(node->left);
+        if(cnt==0)return;
+        if(--cnt==0)ans=node->val;
+        dfs(node->right);
+    }
+
+    int kthSmallest(TreeNode* root, int k) {
+        cnt=k;
+        ans=0;
+        dfs(root);
+        return ans;
+    }
+};
+```
+
+#### [LCR 124. 推理二叉树](https://leetcode.cn/problems/zhong-jian-er-cha-shu-lcof/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    // 记录中序数组中值与下标的映射关系，方便通过前序的根节点值找到其在中序数组中的位置，用于区分左右子树数组
+    unordered_map<int,int>inorder_mp;
+
+    // 前序：根左右
+    // 中序：左根右
+    // 找到根节点后，就可以区分左、右子树了，向下递归，左子数组交给左子树处理，右子数组交给右子树处理
+    // pre_start..pre_end: 当前前序数组的范围
+    // in_start..in_end: 当前中序数组的范围
+    TreeNode* dfs(vector<int>& preorder, vector<int>& inorder, int pre_start,int pre_end,int in_start,int in_end){
+        if(pre_start<=pre_end&&in_start<=in_end){
+            int root_val = preorder[pre_start];
+            TreeNode* node = new TreeNode(root_val);
+            int idx=inorder_mp[root_val];
+            int left_num = idx-in_start;// 左子树节点个数
+            node->left=dfs(preorder,inorder,pre_start+1,pre_start+left_num,in_start,idx-1); // 左子树
+            node->right=dfs(preorder,inorder,pre_start+left_num+1,pre_end,idx+1,in_end); // 右子树
+            return node;
+        }
+        return NULL;
+    }
+
+
+    TreeNode* deduceTree(vector<int>& preorder, vector<int>& inorder) {
+        // 初始化inorder_mp
+        for(int i=0;i<inorder.size();i++){
+            inorder_mp[inorder[i]]=i;
+        }
+
+        int n=preorder.size();
+        return dfs(preorder,inorder,0,n-1,0,n-1);
+    }
+};
+```
+
+#### [LCR 152. 验证二叉搜索树的后序遍历序列](https://leetcode.cn/problems/er-cha-sou-suo-shu-de-hou-xu-bian-li-xu-lie-lcof/)
+
+```cpp
+class Solution {
+public:
+    unordered_map<int,int>inorder_mp;
+
+    // 如果是二叉搜索树，则排序后的后续遍历就是中序遍历，可以通过中序遍历和后序遍历构造树
+    // 如果构造的过程中有问题，就说明不是二叉搜索树了
+    bool canBuild(vector<int>&inorder,vector<int>&postorder,int in_start,int in_end,int post_start,int post_end){
+        if(in_start<=in_end&&post_start<=post_end){
+            int root_val=postorder[post_end];
+            int idx=inorder_mp[root_val];
+            // 本应在in_start..in_end范围里的root_val下标idx溢出了，说明中序遍历和后序遍历矛盾，那么后序遍历一定不是二叉搜索树
+            if(idx<in_start||idx>in_end)return false;
+            // 反之，可以构造，就判断左右子树的情况了
+            int right_num=in_end-idx;// 右子树节点个数
+            bool left_canBuild = canBuild(inorder,postorder,in_start,idx-1,post_start,post_end-right_num-1);
+            bool right_canBuild = canBuild(inorder,postorder,idx+1,in_end,post_end-right_num,post_end-1);
+            return left_canBuild&&right_canBuild;
+        }
+        return true;
+    }
+
+    bool verifyTreeOrder(vector<int>& postorder) {
+        vector<int>inorder(postorder.begin(),postorder.end());
+        sort(inorder.begin(),inorder.end());
+
+        int n=postorder.size();
+        for(int i=0;i<n;i++){
+            inorder_mp[inorder[i]]=i;
+        }
+
+        return canBuild(inorder,postorder,0,n-1,0,n-1);
+    }
+};
+```
+
 
 
 ### Hard
