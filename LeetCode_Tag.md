@@ -7182,6 +7182,47 @@ public:
 };
 ```
 
+#### [LCR 150. 彩灯装饰记录 II](https://leetcode.cn/problems/cong-shang-dao-xia-da-yin-er-cha-shu-ii-lcof/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> decorateRecord(TreeNode* root) {
+        if(!root)return {};
+
+        vector<vector<int>>res;
+        queue<TreeNode*>cur_layer_nodes;
+        cur_layer_nodes.push(root);
+        while(!cur_layer_nodes.empty()){
+            queue<TreeNode*>next_layer_nodes;
+            vector<int>cur_layer_vals;
+            while(!cur_layer_nodes.empty()){
+                TreeNode*node=cur_layer_nodes.front();
+                cur_layer_nodes.pop();
+                cur_layer_vals.push_back(node->val);
+                if(node->left)next_layer_nodes.push(node->left);
+                if(node->right)next_layer_nodes.push(node->right);
+            }
+            res.push_back(cur_layer_vals);
+            cur_layer_nodes=next_layer_nodes;
+        }
+
+        return res;
+    }
+};
+```
+
 
 
 ### Medium
@@ -7307,6 +7348,167 @@ public:
         }
 
         return canBuild(inorder,postorder,0,n-1,0,n-1);
+    }
+};
+```
+
+#### [LCR 153. 二叉树中和为目标值的路径](https://leetcode.cn/problems/er-cha-shu-zhong-he-wei-mou-yi-zhi-de-lu-jing-lcof/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>>res;
+    vector<int>path;
+
+    void backTracking(TreeNode*node,int left_target){
+        path.push_back(node->val);
+        // 叶子节点，且加上当前节点值后等于target
+        // 由于在递归前有一层对子节点是否为空的判断，因此这里node不会是空节点
+        if(!node->left&&!node->right&&node->val==left_target){
+            res.push_back(path);
+        }
+        else{
+            if(node->left)backTracking(node->left,left_target-node->val);
+            if(node->right)backTracking(node->right,left_target-node->val);
+        }
+        path.pop_back(); // 回溯
+    }
+
+    vector<vector<int>> pathTarget(TreeNode* root, int target) {
+        if(root)backTracking(root,target);
+        return res;
+    }
+};
+```
+
+#### [LCR 149. 彩灯装饰记录 I](https://leetcode.cn/problems/cong-shang-dao-xia-da-yin-er-cha-shu-lcof/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> decorateRecord(TreeNode* root) {
+        if(!root)return {};
+        // 层序遍历二叉树，只需要一个队列从左到右存储当前层即可
+        queue<TreeNode*>que;
+        vector<int>res;
+
+        que.push(root);
+        while(!que.empty()){
+            TreeNode*node=que.front();
+            que.pop();
+            res.push_back(node->val);
+            // 不需要空节点
+            if(node->left)que.push(node->left);
+            if(node->right)que.push(node->right);
+        }
+
+        return res;
+    }
+};
+```
+
+#### [LCR 151. 彩灯装饰记录 III](https://leetcode.cn/problems/cong-shang-dao-xia-da-yin-er-cha-shu-iii-lcof/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> decorateRecord(TreeNode* root) {
+        if(!root)return {};
+
+        vector<vector<int>>res;
+        queue<TreeNode*>que;
+        bool left2right=true;
+
+        que.push(root);
+        while(!que.empty()){
+            vector<int>cur_layer_vals;
+            if(left2right){
+                for(int i=que.size();i>0;i--){
+                    TreeNode*node=que.front();
+                    que.pop();
+                    cur_layer_vals.push_back(node->val);// 从左到右就是在后面插入新节点值
+                    if(node->left)que.push(node->left);
+                    if(node->right)que.push(node->right);
+                }
+            }else{
+                for(int i=que.size();i>0;i--){
+                    TreeNode*node=que.front();
+                    que.pop();
+                    cur_layer_vals.insert(cur_layer_vals.begin(),node->val);// 从右到左就是在前面插入新节点值
+                    if(node->left)que.push(node->left);
+                    if(node->right)que.push(node->right);
+                }
+            }
+            res.push_back(cur_layer_vals);
+            left2right=!left2right;
+        }
+
+        return res;
+    }
+};
+```
+
+#### [LCR 143. 子结构判断](https://leetcode.cn/problems/shu-de-zi-jie-gou-lcof/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    // isSubStructure()是找开始的根节点
+    // dfs()是深度遍历两个根节点，从而判断是否完全匹配
+
+
+    bool isSubStructure(TreeNode* A, TreeNode* B) {
+        //A、B都不能是空树，并且B是（A的子结构）或者B是（A的左子树的子结构）或者（B是A的右子树的子结构）
+        return (A && B) && (dfs(A,B) || isSubStructure(A->left,B) || isSubStructure(A->right,B));
+    }
+
+    // 判断node2是否为node1的子树，node2可以是空节点，因为会判断初始的B树是否为空树，如果不是才会进入dfs
+    bool dfs(TreeNode*node1,TreeNode*node2){
+        if(!node2)return true;// 代表遍历完B树的某一根节点到叶子节点的路径了，其中的结构都可以和A树的子结构匹配
+        if(!node1||node1->val!=node2->val)return false;// 结构不匹配或值不匹配
+        return dfs(node1->left,node2->left)&&dfs(node1->right,node2->right);// 左、右子树要分别都匹配才可以
     }
 };
 ```
