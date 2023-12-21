@@ -71,3 +71,54 @@ public:
 };
 ```
 
+
+
+## 双指针
+
+#### [283. 移动零](https://leetcode.cn/problems/move-zeroes/)
+
+```cpp
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+        int n=nums.size();
+        int nonzero_idx=0;
+
+        for(int i=0;i<n;i++){
+            // 非0元素按原相对顺序移到数组前面，后面直接补0即可
+            // nonzero_idx<=i：因为nums[i]还可能等于0，此时nonzero_idx不移动，因此肯定不会重覆盖还没遍历到的值
+            if(nums[i]!=0){
+                nums[nonzero_idx++]=nums[i];
+            }
+        }
+
+        for(int i=nonzero_idx;i<n;i++){
+            nums[i]=0;
+        }
+    }
+};
+```
+
+#### [11. 盛最多水的容器](https://leetcode.cn/problems/container-with-most-water/)
+
+```cpp
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int n=height.size();
+        int i=0;
+        int j=n-1;
+
+        int maxArea=0;
+        while(i<j){
+            // 移动短板
+            int w=j-i;
+            int h=height[i]<height[j]?height[i++]:height[j--];
+            maxArea=max(maxArea,h*w);
+        }
+
+        return maxArea;
+    }
+};
+```
+
