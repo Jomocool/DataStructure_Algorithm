@@ -75,7 +75,7 @@ public:
 
 ## 双指针
 
-#### [283. 移动零](https://leetcode.cn/problems/move-zeroes/)
+### [283. 移动零](https://leetcode.cn/problems/move-zeroes/)
 
 ```cpp
 class Solution {
@@ -99,7 +99,7 @@ public:
 };
 ```
 
-#### [11. 盛最多水的容器](https://leetcode.cn/problems/container-with-most-water/)
+### [11. 盛最多水的容器](https://leetcode.cn/problems/container-with-most-water/)
 
 ```cpp
 class Solution {
@@ -118,6 +118,74 @@ public:
         }
 
         return maxArea;
+    }
+};
+```
+
+### [15. 三数之和](https://leetcode.cn/problems/3sum/)
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        int n=nums.size();
+        if(n<3)return {};
+
+        vector<vector<int>>res;
+        // 排序nums数组，让相同的元素聚集在一起，方便去重
+        sort(nums.begin(),nums.end());
+
+        for(int i=0;i<n-2;i++){
+            if(i>0&&nums[i]==nums[i-1])continue; //去重 
+            int left=i+1;
+            int right=n-1;
+            while(left<right){
+                if(nums[i]+nums[left]+nums[right]==0){
+                    res.push_back({nums[i],nums[left],nums[right]});
+                    // 去重
+                    while(left<right&&nums[left]==nums[left+1])left++;
+                    while(left<right&&nums[right]==nums[right-1])right--;
+                    // 此时left和right都指向相同元素的最后一个，让它们再位移一次，就是新元素的开头
+                    left++;
+                    right--;
+                }else if(nums[i]+nums[left]+nums[right]>0){// 偏大
+                    right--;
+                }else{// 偏小
+                    left++;
+                }
+            }
+        }
+        
+        return res;
+    }
+};
+```
+
+### [42. 接雨水](https://leetcode.cn/problems/trapping-rain-water/)
+
+```cpp
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        // 下标i能接的雨水量是由左、右最高柱子中短的那根决定的
+        int left=0;
+        int right=height.size()-1;
+        int leftMax=0; // left左边最高柱子高度
+        int rightMax=0; // right右边最高柱子高度
+        int ans=0;
+
+        while(left<=right){
+            leftMax=max(height[left],leftMax);
+            rightMax=max(height[right],rightMax);
+            // 由于是先赋值leftMax和rightMax，因此可以把height[left]、height[right]类比成leftMax、rightMax
+            if(height[left]<height[right]){// leftMax<rightMax
+                ans+=leftMax-height[left++];
+            }else{// leftMax>=rightMax
+                ans+=rightMax-height[right--];
+            }
+        }
+
+        return ans;
     }
 };
 ```
