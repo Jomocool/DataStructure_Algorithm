@@ -190,3 +190,70 @@ public:
 };
 ```
 
+
+
+## 滑动窗口
+
+### [3. 无重复字符的最长子串](https://leetcode.cn/problems/longest-substring-without-repeating-characters/)
+
+```cpp
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        int left=0;// 滑动窗口左边界
+        int right=0;// 滑动窗口右边界
+        int n=s.size();
+        unordered_map<char,int>mp;//滑动窗口内部字符串的各字符出现频率
+        int maxLen=0;
+
+        while(right<n){
+            // 向右扩展直至出现重复字符
+            while(right<n&&mp[s[right]]==0){
+                mp[s[right]]=1;
+                right++;
+            }
+            maxLen=max(maxLen,right-left);
+            while(mp[s[right]]>0)mp[s[left++]]--;// 回收左边字符直至重复字符被筛除
+        }
+
+        return maxLen;
+    }
+};
+```
+
+### [438. 找到字符串中所有字母异位词](https://leetcode.cn/problems/find-all-anagrams-in-a-string/)
+
+```cpp
+class Solution {
+public:
+    vector<int> findAnagrams(string s, string p) {
+        vector<int>res;
+        int sLen=s.size();
+        int pLen=p.size();
+
+        if(sLen<pLen)return res;
+
+        vector<int>s_count(26,0);
+        vector<int>p_count(26,0);
+
+        for(int i=0;i<pLen;i++){
+            s_count[s[i]-'a']++;
+            p_count[p[i]-'a']++;
+        }
+
+        // 维护一个长度为pLen的窗口
+        for(int i=0;i<sLen-pLen;i++){
+            if(s_count==p_count)res.emplace_back(i);
+            // 窗口整体右移
+            s_count[s[i]-'a']--;
+            s_count[s[i+pLen]-'a']++;
+        }
+
+        // for循环在最后一次窗口右移后没有处理异位词的判断就退出循环了，因此要最后多判断一次，避免漏掉
+        if(s_count==p_count)res.emplace_back(sLen-pLen);
+
+        return res;
+    }
+};
+```
+
