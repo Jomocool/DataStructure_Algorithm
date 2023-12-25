@@ -257,3 +257,55 @@ public:
 };
 ```
 
+
+
+## 子数组
+
+### [560. 和为 K 的子数组](https://leetcode.cn/problems/subarray-sum-equals-k/)
+
+```cpp
+class Solution {
+public:
+    int subarraySum(vector<int>& nums, int k) {
+        // 逆向思考：sum[i~j]=k=sum[0~j]-sum[0,i-1]
+        unordered_map<int,int>mp; // 记录前缀和出现次数
+        mp[0]=1; // 用于处理pre-k=0的情况，此时子数组是从下标0开始，也属于一种情况
+        int res=0;
+
+        int pre=0;// 前缀和
+        for(auto&x:nums){
+            pre+=x;
+            if(mp.find(pre-k)!=mp.end()){
+                res+=mp[pre-k];
+            }
+            mp[pre]++;
+        }
+
+        return res;
+    }
+};
+```
+
+### [239. 滑动窗口最大值](https://leetcode.cn/problems/sliding-window-maximum/)
+
+```cpp
+class Solution {
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        // 严格单调递减(保证最大值在最前面)双端队列，但是存下标，因为这样既可以得到值，也可以得到下标用于计算窗口大小
+        deque<int>dqe;
+        vector<int>res;
+
+        for(int i=0;i<nums.size();i++){
+            while(!dqe.empty()&&nums[dqe.back()]<=nums[i])dqe.pop_back();
+            dqe.push_back(i);
+            // 窗口过大
+            if(dqe.back()-dqe.front()+1>k)dqe.pop_front(); // 舍弃最前面的
+            if(i>=k-1)res.push_back(nums[dqe.front()]);
+        }
+
+        return res;
+    }
+};
+```
+
