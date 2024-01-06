@@ -309,3 +309,64 @@ public:
 };
 ```
 
+### [76. 最小覆盖子串](https://leetcode.cn/problems/minimum-window-substring/)
+
+```cpp
+class Solution {
+public:
+    unordered_map <char,int>s_mp,t_mp;
+
+    bool check() {
+        for (const auto&pair:t_mp){
+            if(s_mp[pair.first]<pair.second)return false;
+        }
+
+        return true;
+    }
+
+    string minWindow(string s, string t) {
+        for(const auto&c:t){
+            ++t_mp[c];
+        }
+
+        int l=0,r=-1;
+        int minLen=INT_MAX,ansL=-1,ansR=-1;
+
+        while(r<int(s.size())){
+            s_mp[s[++r]]++;
+            while(check()&&l<=r){
+                if (r-l+1<minLen){
+                    minLen=r-l+1;
+                    ansL=l;
+                    ansR=r;
+                }
+                s_mp[s[l++]]--;
+            }
+        }
+
+        return ansL==-1?string():s.substr(ansL,minLen);
+    }
+};
+```
+
+## 普通数组
+
+### [53. 最大子数组和](https://leetcode.cn/problems/maximum-subarray/)
+
+```cpp
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int cnt_sum=0;
+        int max_sum=INT_MIN;
+
+        for(const auto&n:nums){
+            cnt_sum = cnt_sum>0?cnt_sum+n:n;
+            max_sum=max(max_sum,cnt_sum);
+        }
+
+        return max_sum;
+    }
+};
+```
+
