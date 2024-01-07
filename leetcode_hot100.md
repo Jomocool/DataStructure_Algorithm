@@ -370,3 +370,117 @@ public:
 };
 ```
 
+### [56. 合并区间](https://leetcode.cn/problems/merge-intervals/)
+
+```cpp
+class Solution {
+public:
+    static bool cmp(const vector<int>&v1,const vector<int>&v2){
+        if (v1[0]<v2[0])return true;
+        else if (v1[0]==v2[0])return v1[1]<v2[1];
+        return false;
+    }
+
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        sort(intervals.begin(),intervals.end(),cmp);
+
+        vector<vector<int>>res;
+        int start=0,end=0;
+        int cnt=0;
+        int n=intervals.size();
+
+        while(cnt<n){
+            if(cnt == 0){
+                start=intervals[cnt][0];
+                end=intervals[cnt][1];
+            }
+
+            while(cnt<n&&end>=intervals[cnt][0]){
+                end=max(end,intervals[cnt][1]);
+                cnt++;
+            }
+            
+            res.push_back({start,end});
+            if(cnt<n){
+                start=intervals[cnt][0];
+                end=intervals[cnt][1];
+            }
+        }
+
+        return res;
+    }
+};
+```
+
+### [189. 轮转数组](https://leetcode.cn/problems/rotate-array/)
+
+```cpp
+class Solution {
+public:
+    void rotate(vector<int>& nums, int k) {
+        int n=nums.size();
+        k=k%n;
+
+        // eg.[1,2,3,4,5,6,7] 3
+        // 反转所有元素 => [7,6,5,4,3,2,1]
+        reverse(nums.begin(),nums.end());
+        // 反转前k个元素 => [5,6,7,4,3,2,1]
+        reverse(nums.begin(),nums.begin()+k);
+        // 反转后k个元素 => [5,6,7,1,2,3,4]
+        reverse(nums.begin()+k,nums.end());
+    }
+};
+```
+
+### [238. 除自身以外数组的乘积](https://leetcode.cn/problems/product-of-array-except-self/)
+
+```cpp
+class Solution {
+public:
+    vector<int> productExceptSelf(vector<int>& nums) {
+        int n=nums.size();
+        vector<int>res(n,1);
+        int tmp=1;
+
+        // 左到右遍历获取左边乘积
+        for(int i=1;i<n;i++){
+            res[i]=tmp*nums[i-1];
+            tmp*=nums[i-1];
+        }
+
+        tmp=1;
+        // 右到左遍历获取右边乘积
+        for(int i=n-2;i>=0;i--){
+            res[i]*=tmp*nums[i+1];
+            tmp*=nums[i+1];
+        }
+
+        return res;
+    }
+};
+```
+
+### [41. 缺失的第一个正数](https://leetcode.cn/problems/first-missing-positive/)
+
+```cpp
+class Solution {
+public:
+    int firstMissingPositive(vector<int>& nums) {
+        // 让nums[i]=i+1;
+        int n=nums.size();
+        
+        for(int i=0;i<n;i++){
+            while(nums[i]>=1&&nums[i]<=n&&nums[i]!=nums[nums[i]-1]){
+                swap(nums[i],nums[nums[i]-1]);
+            }
+        }
+
+        for(int i=0;i<n;i++){
+            if(nums[i]!=i+1)return i+1;
+        }
+
+        return n+1;
+    }
+};
+```
+
