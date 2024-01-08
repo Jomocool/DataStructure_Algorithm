@@ -484,3 +484,97 @@ public:
 };
 ```
 
+
+
+## 矩阵
+
+### [73. 矩阵置零](https://leetcode.cn/problems/set-matrix-zeroes/)
+
+```cpp
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+        int n=matrix.size();
+        int m=matrix[0].size();
+        unordered_set<int>zero_row;
+        unordered_set<int>zero_col;
+
+        for(int i=0;i<n;i++){
+            for(int j=0;j<m;j++){
+                if(matrix[i][j]==0){
+                    zero_row.insert(i);
+                    zero_col.insert(j);
+                }
+            }
+        }
+
+        for (const auto&i:zero_row){
+            fill(matrix[i].begin(),matrix[i].end(),0);
+        }
+
+        for (const auto&j:zero_col){
+            for(int i=0;i<n;i++)matrix[i][j]=0;
+        }
+    }
+};
+```
+
+### [54. 螺旋矩阵](https://leetcode.cn/problems/spiral-matrix/)
+
+```cpp
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        vector<int>res;
+        int n=matrix.size();
+        int m=matrix[0].size();
+
+        pair<int,int>left_up(0,0);
+        pair<int,int>right_down(n-1,m-1);
+
+        while(left_up.first<=right_down.first&&left_up.second<=right_down.second){
+            int up=left_up.first;
+            int left=left_up.second;
+            int down=right_down.first;
+            int right=right_down.second;
+
+            // 只剩一行
+            if (up==down){
+                for(int j=left;j<=right;j++){
+                    res.emplace_back(matrix[up][j]);
+                }
+                break;
+            }
+
+            // 只剩一列
+            if (left==right){
+                for(int i=up;i<=down;i++){
+                    res.emplace_back(matrix[i][left]);
+                }
+                break;
+            }
+
+            for(int j=left;j<right;j++){
+                res.emplace_back(matrix[up][j]);
+            }
+            for(int i=up;i<down;i++){
+                res.emplace_back(matrix[i][right]);
+            }
+            for(int j=right;j>left;j--){
+                res.emplace_back(matrix[down][j]);
+            }
+            for(int i=down;i>up;i--){
+                res.emplace_back(matrix[i][left]);
+            }
+
+            left_up.first+=1;
+            left_up.second+=1;
+            right_down.first-=1;
+            right_down.second-=1;
+        }
+
+        return res;
+    }
+};
+```
+
