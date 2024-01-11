@@ -578,3 +578,128 @@ public:
 };
 ```
 
+### [48. 旋转图像](https://leetcode.cn/problems/rotate-image/)
+
+```cpp
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+        int n=matrix.size();
+        int m=matrix[0].size();
+
+        pair<int,int>left_up{0,0};
+        pair<int,int>right_down{n-1,m-1};
+
+        while(left_up.first<=right_down.first&&left_up.second<=right_down.second){
+            int left = left_up.first;
+            int up = left_up.second;
+            int right= right_down.first;
+            int down = right_down.second;
+
+            int tmp=0;
+            for(int i=0;i<right-left;i++){
+                int tmp=matrix[up][left+i];
+                matrix[up][left+i]=matrix[down-i][left];
+                matrix[down-i][left]=matrix[down][right-i];
+                matrix[down][right-i]=matrix[up+i][right];
+                matrix[up+i][right]=tmp;
+            }
+
+            left_up.first+=1;
+            left_up.second+=1;
+            right_down.first-=1;
+            right_down.second-=1;
+        }
+    }
+};
+```
+
+### [240. 搜索二维矩阵 II](https://leetcode.cn/problems/search-a-2d-matrix-ii/)
+
+![Picture1.png](https://pic.leetcode-cn.com/6584ea93812d27112043d203ea90e4b0950117d45e0452d0c630fcb247fbc4af-Picture1.png)
+
+```cpp
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int n=matrix.size();
+        int m=matrix[0].size();
+        int i=0;
+        int j=m-1;
+
+        while(i<n&&j>=0){
+            if (target>matrix[i][j])i++;
+            else if(target<matrix[i][j])j--;
+            else return true;
+        }
+
+        return false;
+    }
+};
+```
+
+
+
+## 链表
+
+### [160. 相交链表](https://leetcode.cn/problems/intersection-of-two-linked-lists/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        ListNode* tmpA=headA;
+        ListNode* tmpB=headB;
+
+        while(tmpA!=tmpB){
+            tmpA=tmpA?tmpA->next:headB;
+            tmpB=tmpB?tmpB->next:headA;
+        }
+
+        return tmpA;
+    }
+};
+```
+
+### [206. 反转链表](https://leetcode.cn/problems/reverse-linked-list/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* reverseList(ListNode* head) {
+        if(!head)return nullptr;
+
+        ListNode* dummy_head=new ListNode(-1);
+        ListNode* cur=head;
+        ListNode*next=cur->next;
+
+        while(cur){
+            next=cur->next;
+            cur->next=dummy_head->next;
+            dummy_head->next=cur;
+            cur=next;
+        }
+
+        return dummy_head->next;
+    }
+};
+```
+
