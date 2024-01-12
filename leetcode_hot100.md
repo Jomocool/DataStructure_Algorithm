@@ -703,3 +703,167 @@ public:
 };
 ```
 
+### [234. 回文链表](https://leetcode.cn/problems/palindrome-linked-list/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* reverse(ListNode* node){
+        if(!node)return nullptr;
+
+        ListNode* dummy_head=new ListNode(-1);
+        ListNode* cur=node;
+        ListNode* next=cur->next;
+
+        while(cur){
+            next=cur->next;
+            cur->next=dummy_head->next;
+            dummy_head->next=cur;
+            cur=next;
+        }
+
+        return dummy_head->next;
+    }
+
+    bool isPalindrome(ListNode* head) {
+        ListNode* slow=head;
+        ListNode* fast=head;
+        ListNode* pre= slow;
+
+        while(fast&&fast->next){
+            pre=slow;
+            slow=slow->next;
+            fast=fast->next->next;
+        }
+
+        pre->next=nullptr;
+        slow=reverse(slow);
+
+        fast=head;
+        while(fast&&slow){
+            if(fast->val!=slow->val)return false;
+            slow=slow->next;
+            fast=fast->next;
+        }
+
+        return true;
+    }
+};
+```
+
+### [141. 环形链表](https://leetcode.cn/problems/linked-list-cycle/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    bool hasCycle(ListNode *head) {
+        if(!head||!head->next)return false;
+        ListNode* slow=head;
+        ListNode* fast=head;
+
+        while(fast&&fast->next){
+            slow=slow->next;
+            fast=fast->next->next;
+            if(slow==fast)return true;
+        }
+
+        return false;
+    }
+};
+```
+
+### [142. 环形链表 II](https://leetcode.cn/problems/linked-list-cycle-ii/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode *detectCycle(ListNode *head) {
+        ListNode*fast=head;
+        ListNode*slow=head;
+
+        while(fast&&fast->next){
+            slow=slow->next;
+            fast=fast->next->next;
+            if(fast==slow)break;
+        }
+        if(!fast||!fast->next)return nullptr;
+
+        fast=head;
+        while(fast!=slow){
+            fast=fast->next;
+            slow=slow->next;
+        }
+
+        return fast;
+    }
+};
+```
+
+### [21. 合并两个有序链表](https://leetcode.cn/problems/merge-two-sorted-lists/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        ListNode* cur1=list1;
+        ListNode* cur2=list2;
+        ListNode* new_head=new ListNode(-1);
+        ListNode* cur_new_head=new_head;
+
+        while(cur1||cur2){
+            int val1=cur1?cur1->val:INT_MAX;
+            int val2=cur2?cur2->val:INT_MAX;
+
+            if(val1<val2){
+                cur_new_head->next=new ListNode(val1);
+                cur1=cur1->next;
+            }
+            else{
+                 cur_new_head->next=new ListNode(val2);
+                 cur2=cur2->next;
+            }
+            
+            cur_new_head=cur_new_head->next;
+        }
+
+        return new_head->next;
+    }
+};
+```
+
