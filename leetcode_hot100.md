@@ -867,3 +867,119 @@ public:
 };
 ```
 
+### [2. 两数相加](https://leetcode.cn/problems/add-two-numbers/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        int sum=0,cast=0;
+        int val1=0,val2=0;
+        ListNode*res_head=new ListNode(-1);
+        ListNode* cur=res_head;
+
+        while(l1||l2){
+            val1=l1?l1->val:0;
+            val2=l2?l2->val:0;
+            sum=val1+val2+cast;
+            cast=sum/10;
+            ListNode* node = new ListNode(sum%10);
+            cur->next=node;
+
+            if(l1)l1=l1->next;
+            if(l2)l2=l2->next;
+            cur=cur->next;
+        }
+
+        if(cast)cur->next=new ListNode(1);
+
+        return res_head->next;
+    }
+};
+```
+
+### [19. 删除链表的倒数第 N 个结点](https://leetcode.cn/problems/remove-nth-node-from-end-of-list/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* removeNthFromEnd(ListNode* head, int n) {
+        if(!head->next)return nullptr;
+
+        // 让快指针先走n个节点，然后慢指针和快指针同步移动，等快指针为空时，慢指针刚好指向倒数第n个节点
+        ListNode*fast = head, *slow=head , *pre=head;
+        for(int i=0;i<n&&fast;i++){
+            fast=fast->next;
+        }
+
+        while(fast){
+            fast=fast->next;
+            pre=slow;
+            slow=slow->next;
+        }
+
+        if(slow==head)return head->next;
+
+        pre->next=pre->next->next;
+
+        return head;
+    }
+};
+```
+
+### [24. 两两交换链表中的节点](https://leetcode.cn/problems/swap-nodes-in-pairs/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* swapPairs(ListNode* head) {
+        ListNode* dummy_head=new ListNode(-1);
+        dummy_head->next=head;
+        ListNode* cur=head;
+        ListNode* pre=dummy_head; // 需要前驱节点来连接前后两对节点
+        ListNode* next=nullptr;
+
+        while(cur&&cur->next){
+            next=cur->next->next;
+            cur->next->next=cur;
+            pre->next=cur->next;
+            cur->next=next;
+            pre=cur;
+            cur=next;
+        }
+
+        return dummy_head->next;
+    }
+};
+```
+
