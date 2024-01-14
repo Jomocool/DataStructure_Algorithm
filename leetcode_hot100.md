@@ -983,3 +983,118 @@ public:
 };
 ```
 
+### [25. K 个一组翻转链表](https://leetcode.cn/problems/reverse-nodes-in-k-group/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* reverse(ListNode* head) {
+        ListNode* dummy_head=new ListNode(-1);
+        ListNode* cur=head;
+        ListNode *next=nullptr;
+
+        while(cur){
+            next=cur->next;
+            cur->next=dummy_head->next;
+            dummy_head->next=cur;
+            cur=next;
+        }
+
+        return dummy_head->next;
+    }
+
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        // 需要依赖每次反转的k个节点链表的头尾节点和其前驱节点，以及下一次反转链表的头节点
+        ListNode* dummy_head=new ListNode(-1);
+        dummy_head->next=head;
+        ListNode* pre=dummy_head;
+        ListNode* begin_node=head;
+        ListNode* end_node=begin_node;
+        ListNode* next_begin_node=nullptr;
+        int tmp_k=0;
+
+        while(begin_node){
+            tmp_k=k;
+            while(tmp_k>1&&end_node){
+                end_node=end_node->next;
+                tmp_k--;
+            }
+            if(!end_node){
+                pre->next=begin_node;
+                break;
+            }
+            next_begin_node=end_node->next;
+            end_node->next=nullptr;
+            pre->next=reverse(begin_node);
+            pre=begin_node;
+            begin_node=next_begin_node;
+            end_node=begin_node;
+        }
+
+        return dummy_head->next;
+    }
+};
+```
+
+### [138. 随机链表的复制](https://leetcode.cn/problems/copy-list-with-random-pointer/)
+
+**深拷贝和浅拷贝一般是对于指针来说的：**
+
+- **浅拷贝：**只拷贝指针值（即某变量的地址），所以实际上二者还是共享内存，只要修改了就会互相影响
+
+- **深拷贝：**不共享内存，而是拷贝了整个对象，修改值不会影响到对方
+
+- ​    
+
+```cpp
+/*
+// Definition for a Node.
+class Node {
+public:
+    int val;
+    Node* next;
+    Node* random;
+    
+    Node(int _val) {
+        val = _val;
+        next = NULL;
+        random = NULL;
+    }
+};
+*/
+
+class Solution {
+public:
+    Node* copyRandomList(Node* head) {
+        // 哈希表存储原链表节点和其对应的新链表节点
+        // 这样的设计方便获取到next和random对应的新链表节点
+        unordered_map<Node*,Node*>old2new_mp;
+
+        Node* cur=head;
+        while(cur){
+            old2new_mp[cur]=new Node(cur->val);
+            cur=cur->next;
+        }
+
+        cur=head;
+        while(cur){
+            old2new_mp[cur]->next=old2new_mp[cur->next];
+            old2new_mp[cur]->random=old2new_mp[cur->random];
+            cur=cur->next;
+        }
+
+        return old2new_mp[head];
+    }
+};
+```
+
