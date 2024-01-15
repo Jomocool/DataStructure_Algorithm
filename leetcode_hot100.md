@@ -1098,3 +1098,183 @@ public:
 };
 ```
 
+### [148. 排序链表](https://leetcode.cn/problems/sort-list/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* sortList(ListNode* head) {
+        vector<int>list_vec;
+        ListNode* cur=head;
+
+        while(cur){
+            list_vec.emplace_back(cur->val);
+            cur=cur->next;
+        }
+
+        sort(list_vec.begin(),list_vec.end());
+
+        cur=head;
+
+        for(int i=0;i<list_vec.size();i++){
+            cur->val=list_vec[i];
+            cur=cur->next;
+        }
+
+        return head;
+    }
+};
+```
+
+### [23. 合并 K 个升序链表](https://leetcode.cn/problems/merge-k-sorted-lists/)
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* head1,ListNode*head2){
+        ListNode*dummy_head=new ListNode(-1);
+        ListNode*cur_dummy=dummy_head;
+        ListNode*cur1=head1;
+        ListNode*cur2=head2;
+
+        while(cur1&&cur2){
+            if(cur1->val<cur2->val){
+                cur_dummy->next=cur1;
+                cur1=cur1->next;
+            }
+            else{
+                cur_dummy->next=cur2;
+                cur2=cur2->next;
+            }
+
+            cur_dummy=cur_dummy->next;
+        }
+
+        if(cur1)cur_dummy->next=cur1;
+        else if(cur2)cur_dummy->next=cur2;
+
+        return dummy_head->next;
+    }
+
+    ListNode* merge(vector<ListNode*>& lists,int left,int right){
+        if(left==right)return lists[left];
+        else if(left>right)return nullptr;
+        int mid=left+((right-left)>>1);
+        return mergeTwoLists(merge(lists,left,mid),merge(lists,mid+1,right));
+    }
+
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        return merge(lists,0,lists.size()-1);
+    }
+};
+```
+
+### [146. LRU 缓存](https://leetcode.cn/problems/lru-cache/)
+
+```cpp
+struct DLinkedNode {
+    int key, value;
+    DLinkedNode* prev;
+    DLinkedNode* next;
+    DLinkedNode(): key(0), value(0), prev(nullptr), next(nullptr) {}
+    DLinkedNode(int _key, int _value): key(_key), value(_value), prev(nullptr), next(nullptr) {}
+};
+
+class LRUCache {
+private:
+    unordered_map<int, DLinkedNode*> cache;
+    DLinkedNode* dummy_head;
+    DLinkedNode* dummy_tail;
+    int size;
+    int capacity;
+
+public:
+    LRUCache(int capacity) {
+        this->dummy_head=new DLinkedNode();
+        this->dummy_tail=new DLinkedNode();
+        this->dummy_head->next=this->dummy_tail;
+        this->dummy_tail->prev=this->dummy_head;
+        this->size=0;
+        this->capacity=capacity;
+    }
+    
+    int get(int key) {
+        if(!cache.count(key))return -1;
+
+        DLinkedNode* node=cache[key];
+        moveToHead(node);
+        return node->value;
+    }
+    
+    void put(int key, int value) {
+        if(!cache.count(key)){
+            DLinkedNode* node=new DLinkedNode(key,value);
+            cache[key]=node;
+            addToHead(node);
+            this->size++;
+            
+            if(this->size>this->capacity){
+                DLinkedNode* removed=removeTail();
+                this->cache.erase(removed->key);
+                delete removed;
+                size--;
+            }
+        }else{
+            DLinkedNode* node=cache[key];
+            node->value=value;
+            moveToHead(node);
+        }
+    }
+
+    void addToHead(DLinkedNode* node){
+        node->next=this->dummy_head->next;
+        node->prev=this->dummy_head;
+        this->dummy_head->next->prev=node;
+        this->dummy_head->next=node;
+    }
+
+    void removeNode(DLinkedNode* node){
+        node->prev->next=node->next;
+        node->next->prev=node->prev;
+    }
+
+    void moveToHead(DLinkedNode* node){
+        removeNode(node);
+        addToHead(node);
+    }
+
+    DLinkedNode* removeTail() {
+        DLinkedNode* node = this->dummy_tail->prev;
+        removeNode(node);
+        return node;
+    }
+};
+
+/**
+ * Your LRUCache object will be instantiated and called as such:
+ * LRUCache* obj = new LRUCache(capacity);
+ * int param_1 = obj->get(key);
+ * obj->put(key,value);
+ */
+```
+
