@@ -1278,3 +1278,65 @@ public:
  */
 ```
 
+
+
+## 二叉树
+
+### [94. 二叉树的中序遍历](https://leetcode.cn/problems/binary-tree-inorder-traversal/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    void inorder(TreeNode*node, vector<int>&vec){
+        if(!node)return;
+        inorder(node->left,vec);
+        vec.emplace_back(node->val);
+        inorder(node->right,vec);
+    }
+
+    vector<int> inorderTraversal(TreeNode* root) {
+        vector<int>res;
+        inorder(root,res);
+        return res;
+    }
+};
+```
+
+### [104. 二叉树的最大深度](https://leetcode.cn/problems/maximum-depth-of-binary-tree/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int dfs(TreeNode* node) {
+        if(!node) return 0;
+        return max(dfs(node->left),dfs(node->right))+1;
+    }
+
+    int maxDepth(TreeNode* root) {
+        return dfs(root);
+    }
+};
+```
+
