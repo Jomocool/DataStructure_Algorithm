@@ -1340,3 +1340,175 @@ public:
 };
 ```
 
+### [226. 翻转二叉树](https://leetcode.cn/problems/invert-binary-tree/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* invertTree(TreeNode* root) {
+        if(!root)return nullptr;
+        queue<TreeNode*>que;
+        que.push(root);
+
+        while(!que.empty()){
+            for(int i=que.size();i>0;i--){
+                TreeNode* node=que.front();que.pop();
+                swap(node->left,node->right);
+                if(node->left)que.push(node->left);
+                if(node->right)que.push(node->right);
+            }
+        }
+
+        return root;
+    }
+};
+```
+
+### [101. 对称二叉树](https://leetcode.cn/problems/symmetric-tree/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    // 对称是两个子树要对称，而不只是左右子节点对称就行，因此需要两个子树的根节点
+    bool dfs(TreeNode* left,TreeNode*right){
+        if(!left&&!right)return true;
+        else if(!left||!right)return false;
+        else if(left->val!=right->val)return false;
+        return dfs(left->left,right->right)&&dfs(left->right,right->left);
+    }
+
+    bool isSymmetric(TreeNode* root) {
+        if(!root)return true;
+        return dfs(root->left,root->right);
+    }
+};
+```
+
+### [543. 二叉树的直径](https://leetcode.cn/problems/diameter-of-binary-tree/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int res;
+
+    int depth(TreeNode* node){
+        if(!node)return 0;
+        int L=depth(node->left);
+        int R=depth(node->right);
+        res=max(res,L+R);
+        return max(L,R)+1;
+    }
+
+    int diameterOfBinaryTree(TreeNode* root) {
+        res=0;
+        depth(root);
+        return res;
+    }
+};
+```
+
+### [102. 二叉树的层序遍历](https://leetcode.cn/problems/binary-tree-level-order-traversal/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        vector<vector<int>>res;
+        if(!root)return res;
+
+        queue<TreeNode*>que;
+        que.push(root);
+
+        while(!que.empty()){
+            vector<int>tmp;
+            for(int i=que.size();i>0;i--){
+                TreeNode*node=que.front();que.pop();
+                tmp.emplace_back(node->val);
+                if(node->left)que.push(node->left);
+                if(node->right)que.push(node->right);
+            }
+            res.emplace_back(tmp);
+        }
+
+        return res;
+    }
+};
+```
+
+### [108. 将有序数组转换为二叉搜索树](https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* dfs(vector<int>& nums,int left, int right){
+        if(left<=right){
+            int mid=left+((right-left)>>1);
+            TreeNode*node=new TreeNode(nums[mid]);
+            node->left=dfs(nums,left,mid-1);
+            node->right=dfs(nums,mid+1,right);
+            return node;
+        }
+        return nullptr;
+    }
+
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+        return dfs(nums,0,nums.size()-1);
+    }
+};
+```
+
