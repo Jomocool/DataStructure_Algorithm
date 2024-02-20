@@ -22,20 +22,40 @@ public:
 
 ### [49. 字母异位词分组](https://leetcode.cn/problems/group-anagrams/)
 
+#### **前言**
+
+**字母异位词：**两个字符串互为字母异位词，当且仅当两个字符串包含的字母相同。
+
+比如["hello", "lloeh", "olehl"]，都具有h、e、o和两个l，只是字母顺序不同
+
+
+
+**思路：**同一组字母异位词具有相同的标志，比如排序后相同。因此可以将排序后的字符串作为哈希表的键，字母异位词列表作为哈希表的值，这样同一组字母异位词就在同一个列表中
+
+
+
+**流程：**遍历每个字符串，对于每个字符串，得到该字符串所在的一组字母异位词的标志（即排序后的字符串），将当前字符串加入该组字母异位词的列表中。遍历全部字符串之后，哈希表中的每个键值对即为一组字母异位词。
+
+
+
+#### 代码（C++）
+
 ```cpp
 class Solution {
 public:
     vector<vector<string>> groupAnagrams(vector<string>& strs) {
         // 字母异位词排序后的结果是唯一的，可以以此做哈希表的key
-        vector<vector<string>>res;
-        unordered_map<string,vector<string>>mp;
-
+        vector<vector<string>>res; // 结果集
+        unordered_map<string,vector<string>>mp; // 字母异位词分组列表
+	
+        // 遍历字符串
         for(auto&str:strs){
             string key=str;
-            sort(key.begin(),key.end());
+            sort(key.begin(),key.end()); // 排序字符串以获取字母异位词标志
             mp[key].push_back(str);
         }
-
+	
+        // 将分组结果加入结果集
         for(auto&pair:mp){
             res.push_back(pair.second);
         }
@@ -1508,6 +1528,221 @@ public:
 
     TreeNode* sortedArrayToBST(vector<int>& nums) {
         return dfs(nums,0,nums.size()-1);
+    }
+};
+```
+
+### [98. 验证二叉搜索树](https://leetcode.cn/problems/validate-binary-search-tree/)
+
+```cpp
+思路：对于二叉搜索树有个十分经典的套路就是中序遍历一定是一个升序数组，可以利用此特性来处理一些情况
+
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    void inorder(TreeNode* node,vector<int>&vec){
+        if(node){
+            inorder(node->left,vec);
+            vec.emplace_back(node->val);
+            inorder(node->right,vec);
+        }
+    }
+
+    bool isAsc(vector<int>&vec){
+        for(int i=1;i<vec.size();i++){
+            if(vec[i]<=vec[i-1])return false;
+        }
+        return true;
+    }
+
+    bool isValidBST(TreeNode* root) {
+        if(!root){
+            return true;
+        }
+
+        vector<int>vec;
+        inorder(root,vec);
+
+        return isAsc(vec);
+    }
+};
+```
+
+### [230. 二叉搜索树中第K小的元素](https://leetcode.cn/problems/kth-smallest-element-in-a-bst/)
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+private:
+    int cnt;
+    int ans;
+
+public:
+    void dfs(TreeNode*node){
+        if(node){
+            dfs(node->left);
+            if(cnt==0)return;
+            if(cnt-1==0)ans=node->val;
+            cnt--;
+            dfs(node->right);
+        }
+    }
+
+    int kthSmallest(TreeNode* root, int k) {
+        cnt=k;
+        ans=0;
+        dfs(root);
+        return ans;
+    }
+};
+```
+
+### [199. 二叉树的右视图](https://leetcode.cn/problems/binary-tree-right-side-view/)
+
+```cpp
+思路：
+看到二叉树和上下层有关的，就要想起层序遍历，而层序遍历需要用到队列
+
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> rightSideView(TreeNode* root) {
+        vector<int>res;
+        if(!root)return res;
+        queue<TreeNode*>que;
+        que.push(root);
+
+        while(!que.empty()){
+            res.emplace_back(que.back()->val);
+            for(int i=que.size();i>0;i--){
+                TreeNode* node = que.front();que.pop();
+                if(node->left)que.push(node->left);
+                if(node->right)que.push(node->right);
+            }
+        }
+
+        return res;
+    }
+};
+```
+
+
+
+```cpp
+思路：
+    1
+   / \
+  2   5
+ / \   \
+3   4   6
+
+//将 1 的左子树插入到右子树的地方
+    1
+     \
+      2         5
+     / \         \
+    3   4         6        
+//将原来的右子树接到左子树的最右边节点
+    1
+     \
+      2          
+     / \          
+    3   4  
+         \
+          5
+           \
+            6
+            
+ //将 2 的左子树插入到右子树的地方
+    1
+     \
+      2          
+       \          
+        3       4  
+                 \
+                  5
+                   \
+                    6   
+        
+ //将原来的右子树接到左子树的最右边节点
+    1
+     \
+      2          
+       \          
+        3      
+         \
+          4  
+           \
+            5
+             \
+              6         
+  
+  ......
+
+作者：windliang
+链接：https://leetcode.cn/problems/flatten-binary-tree-to-linked-list/solutions/17274/xiang-xi-tong-su-de-si-lu-fen-xi-duo-jie-fa-by--26/
+
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    void flatten(TreeNode* root) {
+        /*
+        1.找到左子树的最右节点
+        2.将右子树接到左子树最右节点后（因为先序遍历的情况下，左子树的最优节点的下一个节点就是右子树根节点）
+        3.将左子树接到右子树的位置
+        */
+        while(root){
+            if(root->left){
+                TreeNode*pre=root->left;
+                while(pre->right)pre=pre->right;
+                pre->right=root->right;
+                root->right=root->left;
+                root->left=nullptr;
+                root=root->right;
+            }else{
+                root=root->right;
+            }
+        }
     }
 };
 ```
